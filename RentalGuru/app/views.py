@@ -10,16 +10,19 @@ from .serializers import RegisterSerializer, CustomUserSerializer, ChangePasswor
 
 
 class RegisterView(generics.CreateAPIView):
+    """Регистрация пользователя"""
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
 
 
 class UserListView(generics.ListAPIView):
+    """Получение списка всех пользователей"""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
 
 
 class ChangePasswordView(APIView):
+    """Смена пароля"""
     permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
@@ -31,5 +34,6 @@ class ChangePasswordView(APIView):
 
 
 class UserRetrieveAPIView(generics.UpdateAPIView, RetrieveAPIView, DestroyAPIView):
+    """Детальное получение, обновление, удаление пользователя по ID"""
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
