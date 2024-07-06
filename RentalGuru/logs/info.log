@@ -1,0 +1,20 @@
+2024-07-05 23:16:12,251 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-05 23:16:31,749 - WARNING - log - log.py - Not Found: /
+2024-07-05 23:16:31,750 - WARNING - basehttp - basehttp.py - "GET / HTTP/1.1" 404 2275
+2024-07-05 23:16:38,319 - WARNING - log - log.py - Not Found: /docs
+2024-07-05 23:16:38,320 - WARNING - basehttp - basehttp.py - "GET /docs HTTP/1.1" 404 2305
+2024-07-05 23:16:42,036 - WARNING - log - log.py - Not Found: /docs
+2024-07-05 23:16:42,036 - WARNING - basehttp - basehttp.py - "GET /docs HTTP/1.1" 404 2305
+2024-07-05 23:18:15,333 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-05 23:18:21,181 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-05 23:18:23,275 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4642
+2024-07-05 23:18:26,564 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 81898
+2024-07-05 23:20:16,889 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-05 23:20:17,828 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-05 23:20:18,353 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-05 23:20:18,786 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 81906
+2024-07-06 12:01:19,703 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 12:03:50,326 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 12:09:30,705 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 12:09:41,204 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 12:09:41,510 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 81680

@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+
+  api:
+    image: $DOCKER_USERNAME/rental-guru:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '8000:8000'
+
+
+  postgres:
+    image: postgres:13.0-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASSWORD
+      POSTGRES_DB: $DB_NAME
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: pg_isready -U $DB_USER -d $DB_NAME
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
+  logs:
