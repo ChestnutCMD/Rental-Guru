@@ -1,6 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic
-from .serializers import VehicleBrandSerializer, VehicleModelSerializer, AutoSerializer, BikeSerializer, ShipSerializer, HelicopterSerializer, SpecialTechnicSerializer
+from .serializers import VehicleBrandSerializer, VehicleModelSerializer, AutoSerializer, BikeSerializer, ShipSerializer, \
+    HelicopterSerializer, SpecialTechnicSerializer
 
 
 class VehicleBrandViewSet(viewsets.ModelViewSet):

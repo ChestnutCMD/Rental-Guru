@@ -18,3 +18,1803 @@
 2024-07-06 12:09:30,705 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
 2024-07-06 12:09:41,204 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
 2024-07-06 12:09:41,510 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 81680
+2024-07-06 12:23:35,292 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\.venv\Lib\site-packages\django\apps\config.py changed, reloading.
+2024-07-06 15:25:56,668 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:26:01,789 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 15:26:02,097 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 86369
+2024-07-06 15:26:18,977 - ERROR - log - log.py - Internal Server Error: /vehicle/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedTable: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 243, in get
+    return self.list(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 400, in __iter__
+    self._fetch_all()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+2024-07-06 15:26:18,982 - ERROR - basehttp - basehttp.py - "GET /vehicle/ HTTP/1.1" 500 20989
+2024-07-06 15:27:46,476 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:27:47,394 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:28:21,769 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:28:22,697 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:30:10,211 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:30:11,151 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:30:36,167 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:30:37,373 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:30:43,644 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:30:46,321 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 15:30:46,650 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 86369
+2024-07-06 15:31:51,478 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 15:31:51,660 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 86369
+2024-07-06 15:32:03,047 - ERROR - log - log.py - Internal Server Error: /vehicle/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedTable: relation "vehicle_vehicletype" does not exist
+LINE 1: ...icletype"."id", "vehicle_vehicletype"."name" FROM "vehicle_v...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 246, in post
+    return self.create(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 18, in create
+    serializer.is_valid(raise_exception=True)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 223, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 442, in run_validation
+    value = self.to_internal_value(data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 499, in to_internal_value
+    validated_value = field.run_validation(primitive_value)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\relations.py", line 155, in run_validation
+    return super().run_validation(data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\fields.py", line 538, in run_validation
+    value = self.to_internal_value(data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\relations.py", line 259, in to_internal_value
+    return queryset.get(pk=data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 645, in get
+    num = len(clone)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 382, in __len__
+    self._fetch_all()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: relation "vehicle_vehicletype" does not exist
+LINE 1: ...icletype"."id", "vehicle_vehicletype"."name" FROM "vehicle_v...
+                                                             ^
+
+2024-07-06 15:32:03,052 - ERROR - basehttp - basehttp.py - "POST /vehicle/ HTTP/1.1" 500 21761
+2024-07-06 15:35:49,233 - ERROR - log - log.py - Internal Server Error: /vehicle/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedTable: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 243, in get
+    return self.list(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 400, in __iter__
+    self._fetch_all()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+2024-07-06 15:35:49,235 - ERROR - basehttp - basehttp.py - "GET /vehicle/ HTTP/1.1" 500 20989
+2024-07-06 15:40:09,566 - ERROR - log - log.py - Internal Server Error: /vehicle/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedTable: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 243, in get
+    return self.list(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 400, in __iter__
+    self._fetch_all()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: relation "vehicle_vehicle" does not exist
+LINE 1: ..."vehicle_class", "vehicle_vehicle"."ratings" FROM "vehicle_v...
+                                                             ^
+
+2024-07-06 15:40:09,567 - ERROR - basehttp - basehttp.py - "GET /vehicle/ HTTP/1.1" 500 20989
+2024-07-06 15:43:01,211 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:43:02,160 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:43:30,182 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:43:31,571 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:43:57,004 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:44:45,704 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:44:46,600 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:46:18,951 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:46:19,877 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:46:47,978 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:46:48,940 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:48:39,213 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:48:58,542 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:48:59,994 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:52:05,420 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:52:11,149 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 15:52:11,433 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 86369
+2024-07-06 15:52:24,611 - ERROR - log - log.py - Internal Server Error: /app/token/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedTable: relation "app_user" does not exist
+LINE 1: ...ser"."push_notification", "app_user"."email" FROM "app_user"...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework_simplejwt\views.py", line 44, in post
+    serializer.is_valid(raise_exception=True)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 223, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 445, in run_validation
+    value = self.validate(value)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework_simplejwt\serializers.py", line 73, in validate
+    data = super().validate(attrs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework_simplejwt\serializers.py", line 54, in validate
+    self.user = authenticate(**authenticate_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\debug.py", line 75, in sensitive_variables_wrapper
+    return func(*func_args, **func_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\contrib\auth\__init__.py", line 79, in authenticate
+    user = backend.authenticate(request, **credentials)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\contrib\auth\backends.py", line 42, in authenticate
+    user = UserModel._default_manager.get_by_natural_key(username)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\contrib\auth\base_user.py", line 56, in get_by_natural_key
+    return self.get(**{self.model.USERNAME_FIELD: username})
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 645, in get
+    num = len(clone)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 382, in __len__
+    self._fetch_all()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: relation "app_user" does not exist
+LINE 1: ...ser"."push_notification", "app_user"."email" FROM "app_user"...
+                                                             ^
+
+2024-07-06 15:52:24,617 - ERROR - basehttp - basehttp.py - "POST /app/token/ HTTP/1.1" 500 22164
+2024-07-06 15:55:22,831 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 15:55:23,833 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 15:55:32,287 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 16:05:13,678 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:05:41,843 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:06:05,243 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:24:31,197 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:29:22,407 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:33:23,846 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:33:53,388 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:33:55,387 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 17:33:55,691 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 86369
+2024-07-06 17:34:11,008 - INFO - basehttp - basehttp.py - "GET /vehicle/ HTTP/1.1" 200 2
+2024-07-06 17:34:46,509 - WARNING - log - log.py - Not Found: /vehicle/1/
+2024-07-06 17:34:46,509 - WARNING - basehttp - basehttp.py - "GET /vehicle/1/ HTTP/1.1" 404 48
+2024-07-06 17:35:29,357 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 17:35:30,973 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:39:51,634 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 17:39:52,482 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 17:40:00,961 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-06 17:40:01,832 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:09:25,142 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:09:26,458 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:33:04,571 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:33:06,545 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:34:17,353 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:34:18,206 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:35:44,772 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:35:45,719 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:36:33,336 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:36:34,260 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:37:06,265 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:37:07,134 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:37:35,162 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:37:36,001 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:37:53,316 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:37:54,178 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:39:21,644 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:39:22,487 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:39:33,113 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:39:33,996 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:39:43,555 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:39:44,449 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:39:54,976 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:39:55,854 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:40:06,609 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:40:07,512 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:40:17,331 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:40:18,354 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:42:24,000 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:42:25,651 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:44:25,876 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:44:26,928 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:48:43,310 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:48:44,250 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:51:27,922 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:51:29,055 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:51:45,178 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:51:46,139 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:53:35,254 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:53:36,243 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 20:58:21,831 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 20:58:23,069 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:01:33,996 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:01:34,839 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:02:56,094 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:02:57,014 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:03:54,510 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:03:55,383 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:04:15,539 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:04:16,415 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:04:50,004 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:04:50,882 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:07:15,511 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:07:16,609 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:12:20,107 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:12:21,324 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:13:13,571 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:13:14,426 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:16:02,560 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:16:03,612 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:16:45,575 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:16:46,424 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:17:23,147 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:17:23,977 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:18:46,319 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:18:47,229 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:19:44,655 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:19:45,521 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:20:44,242 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:20:45,095 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:21:34,655 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:21:36,178 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:24:29,461 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:24:30,451 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:25:40,144 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:25:40,978 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:28:21,755 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:28:22,704 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:29:26,604 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:29:27,526 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:31:01,762 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:31:02,932 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:31:19,679 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:31:20,638 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:35:27,688 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-06 21:35:28,615 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:52:01,292 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\views.py changed, reloading.
+2024-07-06 21:52:02,180 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:53:18,206 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\urls.py changed, reloading.
+2024-07-06 21:53:19,075 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:53:50,377 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 21:53:52,429 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 21:53:52,786 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 152615
+2024-07-06 21:54:35,719 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 2
+2024-07-06 22:14:27,578 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-06 22:14:28,485 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-06 22:14:28,939 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-06 22:14:29,471 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 152630
+2024-07-07 21:48:48,961 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 21:51:45,980 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 21:59:29,223 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 21:59:30,341 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:00:35,584 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-07 22:00:36,433 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:02:30,598 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:03:38,380 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:05:45,383 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:05:46,260 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:06:12,716 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:06:13,626 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:06:27,664 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:06:28,570 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:06:42,833 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:06:43,839 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:06:54,845 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:06:56,020 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:07:11,141 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-07 22:07:12,019 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-07 22:07:24,297 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 16:49:59,664 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 16:52:45,638 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 16:52:46,519 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 16:57:41,251 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 16:59:28,301 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 16:59:29,260 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 16:59:41,686 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:12:38,130 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:12:40,198 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-08 17:12:40,789 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 152355
+2024-07-08 17:14:13,147 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\urls.py changed, reloading.
+2024-07-08 17:14:14,058 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:14:14,649 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-08 17:14:14,929 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 191055
+2024-07-08 17:15:11,776 - ERROR - log - log.py - Internal Server Error: /chat/trips/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\RentalGuru\chat\views.py", line 30, in create
+    content_type = ContentType.objects.get(model=vehicle_type)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 649, in get
+    raise self.model.DoesNotExist(
+django.contrib.contenttypes.models.ContentType.DoesNotExist: ContentType matching query does not exist.
+2024-07-08 17:15:11,778 - ERROR - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 500 18678
+2024-07-08 17:18:00,320 - WARNING - log - log.py - Unauthorized: /app/token/
+2024-07-08 17:18:00,321 - WARNING - basehttp - basehttp.py - "POST /app/token/ HTTP/1.1" 401 116
+2024-07-08 17:18:22,441 - INFO - basehttp - basehttp.py - "GET /app/users/ HTTP/1.1" 200 2
+2024-07-08 17:20:07,280 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 59
+2024-07-08 17:21:13,182 - WARNING - log - log.py - Bad Request: /app/register/
+2024-07-08 17:21:13,183 - WARNING - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 400 87
+2024-07-08 17:21:22,603 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 60
+2024-07-08 17:22:18,053 - WARNING - log - log.py - Bad Request: /vehicle/brands/
+2024-07-08 17:22:18,054 - WARNING - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 400 101
+2024-07-08 17:22:41,088 - WARNING - log - log.py - Bad Request: /vehicle/brands/
+2024-07-08 17:22:41,088 - WARNING - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 400 101
+2024-07-08 17:23:10,185 - WARNING - log - log.py - Not Found: /vehicle/vehicle_brands
+2024-07-08 17:23:10,185 - WARNING - basehttp - basehttp.py - "GET /vehicle/vehicle_brands HTTP/1.1" 404 10382
+2024-07-08 17:23:10,285 - WARNING - log - log.py - Not Found: /favicon.ico
+2024-07-08 17:23:10,286 - WARNING - basehttp - basehttp.py - "GET /favicon.ico HTTP/1.1" 404 2657
+2024-07-08 17:23:30,409 - INFO - basehttp - basehttp.py - "GET /vehicle/brands HTTP/1.1" 301 0
+2024-07-08 17:23:30,492 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 8906
+2024-07-08 17:23:30,547 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 304 0
+2024-07-08 17:23:30,556 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 304 0
+2024-07-08 17:23:30,557 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/default.css HTTP/1.1" 304 0
+2024-07-08 17:23:30,559 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/prettify.css HTTP/1.1" 304 0
+2024-07-08 17:23:30,560 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,563 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/csrf.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,564 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,564 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/default.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,565 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,565 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,567 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 304 0
+2024-07-08 17:23:30,574 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/img/grid.png HTTP/1.1" 304 0
+2024-07-08 17:24:46,293 - INFO - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 201 9175
+2024-07-08 17:25:00,406 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:26:30,287 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 17:26:31,373 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:26:52,877 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 17:26:52,877 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9836
+2024-07-08 17:27:01,867 - ERROR - log - log.py - Internal Server Error: /vehicle/models/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 975, in create
+    raise_errors_on_nested_writes('create', self, validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 840, in raise_errors_on_nested_writes
+    assert not any(
+AssertionError: The `.create()` method does not support writable nested fields by default.
+Write an explicit `.create()` method for serializer `vehicle.serializers.VehicleModelSerializer`, or set `read_only=True` on nested serializer fields.
+2024-07-08 17:27:01,870 - ERROR - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 500 120610
+2024-07-08 17:27:54,910 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 17409
+2024-07-08 17:29:22,791 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 17:29:22,792 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 17754
+2024-07-08 17:29:33,361 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 17:29:33,362 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 18465
+2024-07-08 17:30:00,605 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 975, in create
+    raise_errors_on_nested_writes('create', self, validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 840, in raise_errors_on_nested_writes
+    assert not any(
+AssertionError: The `.create()` method does not support writable nested fields by default.
+Write an explicit `.create()` method for serializer `vehicle.serializers.AutoSerializer`, or set `read_only=True` on nested serializer fields.
+2024-07-08 17:30:00,606 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 143959
+2024-07-08 17:30:49,877 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:30:55,961 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 975, in create
+    raise_errors_on_nested_writes('create', self, validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 840, in raise_errors_on_nested_writes
+    assert not any(
+AssertionError: The `.create()` method does not support writable nested fields by default.
+Write an explicit `.create()` method for serializer `vehicle.serializers.AutoSerializer`, or set `read_only=True` on nested serializer fields.
+2024-07-08 17:30:55,964 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 143959
+2024-07-08 17:34:55,025 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 17:34:56,239 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:35:10,091 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 17:35:10,091 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 18013
+2024-07-08 17:35:28,025 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 17:35:28,026 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 19213
+2024-07-08 17:44:22,222 - WARNING - log - log.py - Not Found: /vehicle/¸˘‚Û‰˚/
+2024-07-08 17:44:22,222 - WARNING - basehttp - basehttp.py - "GET /vehicle/%D1%8C%D1%89%D0%B2%D1%83%D0%B4%D1%8B/ HTTP/1.1" 404 10403
+2024-07-08 17:44:31,750 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:50:16,941 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 17:50:18,328 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:50:19,924 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:50:21,020 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:50:21,781 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:50:39,624 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:50:43,048 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:54:32,373 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:54:33,873 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9481
+2024-07-08 17:54:44,253 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 17:54:44,253 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9836
+2024-07-08 17:54:49,995 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9880
+2024-07-08 17:56:36,189 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 17:56:37,154 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 17:56:39,818 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 17:56:39,819 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9789
+2024-07-08 17:56:45,574 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 17:56:45,574 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9789
+2024-07-08 17:56:49,923 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9826
+2024-07-08 17:57:06,535 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9826
+2024-07-08 17:57:27,908 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 17:57:27,909 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9789
+2024-07-08 18:01:25,816 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 18:01:26,986 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:02:36,246 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:02:40,369 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:02:40,369 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10122
+2024-07-08 18:04:10,455 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 18:04:11,651 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:04:12,992 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:04:12,993 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10081
+2024-07-08 18:05:00,859 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:05:00,860 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:07:47,284 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 18:07:48,285 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:08:20,962 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 18:08:21,924 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:09:34,055 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 18:09:34,945 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:09:38,297 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:09:38,298 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:09:44,879 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:09:44,880 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:09:51,050 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:09:51,051 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:13:06,254 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:13:06,255 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:13:18,117 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:13:18,117 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:19:16,573 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:19:21,561 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:19:21,561 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 18:19:31,955 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:19:31,955 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10594
+2024-07-08 18:19:51,773 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:19:51,773 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10313
+2024-07-08 18:20:02,984 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:20:02,984 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10594
+2024-07-08 18:22:07,862 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 18:22:08,813 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:22:10,875 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:22:10,875 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10543
+2024-07-08 18:22:15,912 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:22:15,913 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10543
+2024-07-08 18:22:24,119 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:22:30,223 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:22:30,224 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10543
+2024-07-08 18:22:33,702 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 18:22:33,703 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10543
+2024-07-08 18:22:51,415 - WARNING - log - log.py - Not Found: /vehicle/Ù„Â˘˚/
+2024-07-08 18:22:51,415 - WARNING - basehttp - basehttp.py - "GET /vehicle/%D1%84%D0%B3%D0%B5%D1%89%D1%8B/ HTTP/1.1" 404 10393
+2024-07-08 18:22:57,351 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 18782
+2024-07-08 18:24:35,701 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 18:24:36,721 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 18:24:38,342 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 18841
+2024-07-08 21:14:08,702 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:14:09,886 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:14:13,861 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:14:18,003 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 18833
+2024-07-08 21:14:19,231 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 18833
+2024-07-08 21:14:26,686 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 10073
+2024-07-08 21:14:39,844 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:14:39,844 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:15:01,769 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:15:01,770 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:17:50,807 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:17:50,807 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10308
+2024-07-08 21:26:37,720 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:26:38,590 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:26:41,058 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:26:41,059 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10308
+2024-07-08 21:26:49,359 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:26:49,359 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10606
+2024-07-08 21:26:58,622 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:27:01,439 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-08 21:27:01,846 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 194890
+2024-07-08 21:27:20,089 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 10073
+2024-07-08 21:27:30,135 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:27:30,135 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:28:40,704 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:28:40,705 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10606
+2024-07-08 21:28:56,940 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:28:56,940 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:30:56,583 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:30:57,567 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:31:07,403 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:31:08,269 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:31:10,740 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:31:10,740 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:31:25,282 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:31:30,945 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:31:30,946 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10589
+2024-07-08 21:31:38,243 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:31:38,244 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10591
+2024-07-08 21:32:57,504 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:33:04,455 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:33:04,456 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10591
+2024-07-08 21:33:10,029 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:33:10,029 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 21:33:15,415 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:33:15,415 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10593
+2024-07-08 21:35:37,739 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 10068
+2024-07-08 21:35:52,462 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:35:52,463 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 10360
+2024-07-08 21:36:00,403 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 10074
+2024-07-08 21:36:18,561 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 10149
+2024-07-08 21:37:40,996 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:37:42,083 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:37:43,565 - ERROR - log - log.py - Internal Server Error: /vehicle/models/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "brand_id" of relation "vehicle_vehiclemodel" violates not-null constraint
+DETAIL:  Failing row contains (5, dfs467222, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "brand_id" of relation "vehicle_vehiclemodel" violates not-null constraint
+DETAIL:  Failing row contains (5, dfs467222, null).
+
+2024-07-08 21:37:43,571 - ERROR - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 500 192971
+2024-07-08 21:37:46,374 - ERROR - log - log.py - Internal Server Error: /vehicle/models/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "brand_id" of relation "vehicle_vehiclemodel" violates not-null constraint
+DETAIL:  Failing row contains (6, dfs467222, null).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "brand_id" of relation "vehicle_vehiclemodel" violates not-null constraint
+DETAIL:  Failing row contains (6, dfs467222, null).
+
+2024-07-08 21:37:46,377 - ERROR - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 500 192971
+2024-07-08 21:41:18,459 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:41:19,357 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:41:27,166 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:41:31,958 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:41:31,959 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9394
+2024-07-08 21:41:44,876 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9248
+2024-07-08 21:41:47,895 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9248
+2024-07-08 21:41:51,180 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9248
+2024-07-08 21:41:55,433 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9248
+2024-07-08 21:41:58,104 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9248
+2024-07-08 21:42:55,445 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-08 21:42:56,331 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:43:00,313 - WARNING - log - log.py - Bad Request: /vehicle/models/
+2024-07-08 21:43:00,313 - WARNING - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 400 9424
+2024-07-08 21:43:15,824 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9252
+2024-07-08 21:45:37,183 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 17742
+2024-07-08 21:53:45,494 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:53:46,544 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:53:47,409 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16192
+2024-07-08 21:54:41,023 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9006
+2024-07-08 21:54:50,052 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9086
+2024-07-08 21:54:57,692 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16266
+2024-07-08 21:55:45,842 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 21:55:45,843 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 17095
+2024-07-08 21:56:15,168 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 21:56:15,168 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 16692
+2024-07-08 21:56:32,904 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 51, in create
+    auto = VehicleModel.objects.create(brand=brand, model=model, **validated_data)
+TypeError: django.db.models.query.QuerySet.create() got multiple values for keyword argument 'brand'
+2024-07-08 21:56:32,907 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 126792
+2024-07-08 21:58:03,525 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-08 21:58:04,453 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-08 21:58:06,419 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (1, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-10, 2024-07-19, 30, vehicles/dl-5CZ2.png, null, automatic, petrol, off-road, 4, premium, 1, 1, 13).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (1, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-10, 2024-07-19, 30, vehicles/dl-5CZ2.png, null, automatic, petrol, off-road, 4, premium, 1, 1, 13).
+
+2024-07-08 21:58:06,427 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 228162
+2024-07-08 21:58:11,157 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-08 21:58:11,157 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 16692
+2024-07-08 21:58:21,518 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (2, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-10, 2024-07-19, null, vehicles/dl-5CZ2_xpaRvW1.png, null, automatic, petrol, off-road, 4, premium, 1, 1, 13).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (2, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-10, 2024-07-19, null, vehicles/dl-5CZ2_xpaRvW1.png, null, automatic, petrol, off-road, 4, premium, 1, 1, 13).
+
+2024-07-08 21:58:21,520 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 228330
+2024-07-09 13:07:08,868 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:07:27,743 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:07:30,260 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-09 13:07:30,659 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 193352
+2024-07-09 13:09:13,216 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16266
+2024-07-09 13:09:13,268 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 304 0
+2024-07-09 13:09:13,275 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/prettify.css HTTP/1.1" 304 0
+2024-07-09 13:09:13,276 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 304 0
+2024-07-09 13:09:13,285 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/csrf.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,288 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,291 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/default.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,293 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,293 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,295 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/css/default.css HTTP/1.1" 304 0
+2024-07-09 13:09:13,295 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,297 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 304 0
+2024-07-09 13:09:13,303 - INFO - basehttp - basehttp.py - "GET /static/rest_framework/img/grid.png HTTP/1.1" 304 0
+2024-07-09 13:09:13,509 - WARNING - log - log.py - Not Found: /favicon.ico
+2024-07-09 13:09:13,510 - WARNING - basehttp - basehttp.py - "GET /favicon.ico HTTP/1.1" 404 2657
+2024-07-09 13:10:12,610 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-09 13:10:12,611 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 16695
+2024-07-09 13:10:23,110 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (3, 2019, null, t, f,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-11, 2024-07-26, 200, vehicles/dl-5CZ2_QoIowAn.png, null, robot, hybrid, off-road, 4, premium, 1, 1, 13).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "features" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (3, 2019, null, t, f,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-11, 2024-07-26, 200, vehicles/dl-5CZ2_QoIowAn.png, null, robot, hybrid, off-road, 4, premium, 1, 1, 13).
+
+2024-07-09 13:10:23,120 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 228245
+2024-07-09 13:12:35,655 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-09 13:12:36,620 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:13:43,430 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-09 13:13:44,297 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:15:07,432 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\migrations\0001_initial.py changed, reloading.
+2024-07-09 13:15:08,852 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:15:34,953 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:15:55,591 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-09 13:15:55,592 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 17087
+2024-07-09 13:16:15,338 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 8906
+2024-07-09 13:16:46,872 - INFO - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 201 9199
+2024-07-09 13:16:56,808 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9006
+2024-07-09 13:17:13,514 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9086
+2024-07-09 13:17:22,218 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16121
+2024-07-09 13:18:28,338 - WARNING - log - log.py - Bad Request: /vehicle/autos/
+2024-07-09 13:18:28,339 - WARNING - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 400 16436
+2024-07-09 13:26:59,596 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:27:00,558 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:28:04,924 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:28:05,734 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:28:14,891 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 48, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 677, in create
+    obj = self.model(**kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 543, in __init__
+    _setattr(self, field.name, rel_obj)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\fields\related_descriptors.py", line 284, in __set__
+    raise ValueError(
+ValueError: Cannot assign "<django.contrib.auth.models.AnonymousUser object at 0x000001C65B8A2620>": "Auto.owner" must be a "User" instance.
+2024-07-09 13:28:14,896 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 161248
+2024-07-09 13:30:37,212 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-09 13:30:38,133 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:32:25,325 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\urls.py changed, reloading.
+2024-07-09 13:32:26,236 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:32:27,949 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 15852
+2024-07-09 13:32:29,487 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 15852
+2024-07-09 13:33:55,806 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\urls.py changed, reloading.
+2024-07-09 13:33:56,878 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:33:58,799 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 15919
+2024-07-09 13:34:35,995 - WARNING - log - log.py - Not Found: /users/
+2024-07-09 13:34:35,995 - WARNING - basehttp - basehttp.py - "GET /users/ HTTP/1.1" 404 2860
+2024-07-09 13:34:48,099 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-09 13:34:48,477 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 193846
+2024-07-09 13:35:01,887 - WARNING - log - log.py - Not Found: /app/app_register_create
+2024-07-09 13:35:01,888 - WARNING - basehttp - basehttp.py - "GET /app/app_register_create HTTP/1.1" 404 3911
+2024-07-09 13:35:12,367 - INFO - basehttp - basehttp.py - "GET /app/register HTTP/1.1" 301 0
+2024-07-09 13:35:12,384 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 13:35:12,385 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 8966
+2024-07-09 13:35:32,447 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9045
+2024-07-09 13:35:36,853 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/app/register/ HTTP/1.1" 200 2715
+2024-07-09 13:35:45,595 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 13:35:45,652 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 13:35:45,652 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 9495
+2024-07-09 13:36:12,494 - WARNING - log - log.py - Not Found: /autos/
+2024-07-09 13:36:12,494 - WARNING - basehttp - basehttp.py - "GET /autos/ HTTP/1.1" 404 2860
+2024-07-09 13:36:23,631 - INFO - basehttp - basehttp.py - "GET /vehicle/ HTTP/1.1" 200 6875
+2024-07-09 13:36:34,281 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16448
+2024-07-09 13:36:58,385 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "ratings" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (1, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-09, 2024-07-20, 120, vehicles/dl-5CZ2_B2GoIBI.png, null, automatic, electric, automatic, 4, premium, 1, 1, 1).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 48, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "ratings" of relation "vehicle_auto" violates not-null constraint
+DETAIL:  Failing row contains (1, 2019, null, f, t,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-09, 2024-07-20, 120, vehicles/dl-5CZ2_B2GoIBI.png, null, automatic, electric, automatic, 4, premium, 1, 1, 1).
+
+2024-07-09 13:36:58,391 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 236898
+2024-07-09 13:38:56,111 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\urls.py changed, reloading.
+2024-07-09 13:38:57,215 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:40:47,356 - INFO - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 201 17585
+2024-07-09 13:46:31,420 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:46:32,378 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:47:38,640 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:47:39,811 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:47:59,170 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:48:00,038 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:49:06,346 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:49:07,260 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:49:09,898 - ERROR - log - log.py - Internal Server Error: /vehicle/autos/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 18, in create
+    serializer.is_valid(raise_exception=True)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 223, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 442, in run_validation
+    value = self.to_internal_value(data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 495, in to_internal_value
+    for field in fields:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 378, in _writable_fields
+    for field in self.fields.values():
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Field name `name` is not valid for model `Auto` in `vehicle.serializers.AutoSerializer`.
+2024-07-09 13:49:09,902 - ERROR - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 500 148123
+2024-07-09 13:49:44,490 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 13:49:45,355 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 13:49:46,147 - INFO - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 201 17585
+2024-07-09 13:50:00,199 - WARNING - log - log.py - Not Found: /vehicle/bike/
+2024-07-09 13:50:00,199 - WARNING - basehttp - basehttp.py - "GET /vehicle/bike/ HTTP/1.1" 404 10573
+2024-07-09 13:50:05,295 - INFO - basehttp - basehttp.py - "GET /vehicle/bikes/ HTTP/1.1" 200 14607
+2024-07-09 13:51:11,880 - ERROR - log - log.py - Internal Server Error: /vehicle/bikes/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "ratings" of relation "vehicle_bike" violates not-null constraint
+DETAIL:  Failing row contains (1, 2021, null, t, f,  ¿— Œ, 10.00, œÂÛÌÓ‚ 10, 2024-07-05, 2024-07-26, 20, vehicles/¡ÂÁ˚ÏˇÌÌ˚È.jpg, null, automatic, 27, 2, premium, 1, 1, 1).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 63, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "ratings" of relation "vehicle_bike" violates not-null constraint
+DETAIL:  Failing row contains (1, 2021, null, t, f,  ¿— Œ, 10.00, œÂÛÌÓ‚ 10, 2024-07-05, 2024-07-26, 20, vehicles/¡ÂÁ˚ÏˇÌÌ˚È.jpg, null, automatic, 27, 2, premium, 1, 1, 1).
+
+2024-07-09 13:51:11,886 - ERROR - basehttp - basehttp.py - "POST /vehicle/bikes/ HTTP/1.1" 500 230901
+2024-07-09 13:51:23,472 - INFO - basehttp - basehttp.py - "POST /vehicle/bikes/ HTTP/1.1" 201 15823
+2024-07-09 13:52:25,733 - INFO - basehttp - basehttp.py - "GET /vehicle/ships/ HTTP/1.1" 200 17237
+2024-07-09 13:53:30,210 - ERROR - log - log.py - Internal Server Error: /vehicle/ships/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "ratings" of relation "vehicle_ship" violates not-null constraint
+DETAIL:  Failing row contains (1, 1966, null, t, t,  ¿— Œ, 12222.00, 123˚˚˚˚˚, 2024-07-10, 2024-07-26, 222222, vehicles/WhatsApp_Image_2021-11-15_at_21.19.55.jpg, null, , 222, 3333, 222, 4532, 21, 2, 3, 4, 5, premium, 3333, 288, 74, 1, 1, 1).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 63, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "ratings" of relation "vehicle_ship" violates not-null constraint
+DETAIL:  Failing row contains (1, 1966, null, t, t,  ¿— Œ, 12222.00, 123˚˚˚˚˚, 2024-07-10, 2024-07-26, 222222, vehicles/WhatsApp_Image_2021-11-15_at_21.19.55.jpg, null, , 222, 3333, 222, 4532, 21, 2, 3, 4, 5, premium, 3333, 288, 74, 1, 1, 1).
+
+2024-07-09 13:53:30,212 - ERROR - basehttp - basehttp.py - "POST /vehicle/ships/ HTTP/1.1" 500 247526
+2024-07-09 13:53:50,435 - INFO - basehttp - basehttp.py - "POST /vehicle/ships/ HTTP/1.1" 201 18755
+2024-07-09 13:54:26,914 - WARNING - log - log.py - Not Found: /vehicle/scpecialtechnics/
+2024-07-09 13:54:26,914 - WARNING - basehttp - basehttp.py - "GET /vehicle/scpecialtechnics/ HTTP/1.1" 404 10609
+2024-07-09 13:54:42,218 - INFO - basehttp - basehttp.py - "GET /vehicle/special-technics/ HTTP/1.1" 200 14860
+2024-07-09 13:55:51,662 - ERROR - log - log.py - Internal Server Error: /vehicle/special-technics/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 63, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 49, in save
+    self.clean()
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 46, in clean
+    raise ValidationError({'year': f'Year must be between 1900 and {current_year}.'})
+django.core.exceptions.ValidationError: {'year': ['Year must be between 1900 and 2024.']}
+2024-07-09 13:55:51,664 - ERROR - basehttp - basehttp.py - "POST /vehicle/special-technics/ HTTP/1.1" 500 153879
+2024-07-09 13:56:02,269 - ERROR - log - log.py - Internal Server Error: /vehicle/special-technics/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.NotNullViolation: null value in column "ratings" of relation "vehicle_specialtechnic" violates not-null constraint
+DETAIL:  Failing row contains (1, 2023, null, t, f,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-18, 2024-07-19, 42, vehicles/dl-5CZ2_RTDIpcR.png, null, gggttgt, 23333, 23, 34, 543, 3444, 1, 1, 1).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 19, in create
+    self.perform_create(serializer)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 24, in perform_create
+    serializer.save()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 208, in save
+    self.instance = self.create(validated_data)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py", line 63, in create
+    return super().create(validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\serializers.py", line 989, in create
+    instance = ModelClass._default_manager.create(**validated_data)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 679, in create
+    obj.save(force_insert=True, using=self.db)
+  File "D:\Python\RentalGuru\RentalGuru\vehicle\models.py", line 50, in save
+    super().save(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 822, in save
+    self.save_base(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 909, in save_base
+    updated = self._save_table(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1071, in _save_table
+    results = self._do_insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\base.py", line 1112, in _do_insert
+    return manager._insert(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 1847, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\sql\compiler.py", line 1823, in execute_sql
+    cursor.execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.IntegrityError: null value in column "ratings" of relation "vehicle_specialtechnic" violates not-null constraint
+DETAIL:  Failing row contains (1, 2023, null, t, f,  ¿— Œ, 120.00, œÂÛÌÓ‚ 10, 2024-07-18, 2024-07-19, 42, vehicles/dl-5CZ2_RTDIpcR.png, null, gggttgt, 23333, 23, 34, 543, 3444, 1, 1, 1).
+
+2024-07-09 13:56:02,271 - ERROR - basehttp - basehttp.py - "POST /vehicle/special-technics/ HTTP/1.1" 500 233285
+2024-07-09 13:56:19,178 - INFO - basehttp - basehttp.py - "POST /vehicle/special-technics/ HTTP/1.1" 201 15977
+2024-07-09 13:56:47,947 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 9759
+2024-07-09 14:01:36,555 - INFO - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 201 9803
+2024-07-09 14:01:41,514 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 10019
+2024-07-09 14:02:15,795 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9763
+2024-07-09 14:02:29,159 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9759
+2024-07-09 14:02:35,517 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9759
+2024-07-09 14:02:41,743 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9759
+2024-07-09 14:02:52,092 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9763
+2024-07-09 14:02:58,228 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9765
+2024-07-09 14:03:08,238 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 10019
+2024-07-09 14:03:16,242 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/1 HTTP/1.1" 301 0
+2024-07-09 14:03:16,303 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/1/ HTTP/1.1" 200 11217
+2024-07-09 14:31:39,253 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:31:40,309 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:33:03,956 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:33:04,775 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:35:49,364 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:35:50,188 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:36:32,872 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:36:33,806 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:37:08,238 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:37:09,128 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:46:29,218 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:46:30,098 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:50:10,573 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\views.py changed, reloading.
+2024-07-09 14:50:11,421 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:50:29,217 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\urls.py changed, reloading.
+2024-07-09 14:50:30,060 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:50:44,006 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:50:49,227 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/1/ HTTP/1.1" 200 11338
+2024-07-09 14:50:58,386 - ERROR - log - log.py - Internal Server Error: /vehicle/brands/BMW
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 212, in get
+    return self.retrieve(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\mixins.py", line 54, in retrieve
+    instance = self.get_object()
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\generics.py", line 92, in get_object
+    assert lookup_url_kwarg in self.kwargs, (
+AssertionError: Expected view VehicleBrandDetailView to be called with a URL keyword argument named "pk". Fix your URL conf, or set the `.lookup_field` attribute on the view correctly.
+2024-07-09 14:50:58,389 - ERROR - basehttp - basehttp.py - "GET /vehicle/brands/BMW HTTP/1.1" 500 102840
+2024-07-09 14:52:26,965 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\urls.py changed, reloading.
+2024-07-09 14:52:27,833 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:53:03,397 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\urls.py changed, reloading.
+2024-07-09 14:53:04,307 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:53:04,931 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/BMW HTTP/1.1" 301 0
+2024-07-09 14:53:05,019 - WARNING - log - log.py - Not Found: /vehicle/brands/BMW/
+2024-07-09 14:53:05,020 - WARNING - basehttp - basehttp.py - "GET /vehicle/brands/BMW/ HTTP/1.1" 404 10946
+2024-07-09 14:53:33,162 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 10019
+2024-07-09 14:53:48,883 - WARNING - log - log.py - Not Found: /vehicle/brands/BMW/
+2024-07-09 14:53:48,883 - WARNING - basehttp - basehttp.py - "GET /vehicle/brands/BMW/ HTTP/1.1" 404 10946
+2024-07-09 14:54:00,965 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/1/ HTTP/1.1" 200 11217
+2024-07-09 14:58:51,833 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\serializers.py changed, reloading.
+2024-07-09 14:58:52,904 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:59:16,115 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 14:59:32,484 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader

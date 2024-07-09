@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'app',
     'vehicle',
+    'chat',
     'drf_spectacular',
 ]
 
@@ -95,8 +96,7 @@ AUTH_USER_MODEL = 'app.User'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',
-                                       'rest_framework.authentication.SessionAuthentication'
-                                       ],
+                                       'rest_framework.authentication.SessionAuthentication'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
