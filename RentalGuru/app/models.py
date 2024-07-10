@@ -12,7 +12,7 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True, blank=True)
     telephone = models.CharField(max_length=11, null=True, blank=True)
     currency = models.CharField(max_length=3, null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to='images/avatars/', null=True, blank=True)
     about = models.TextField(null=True, blank=True)
     email_notification = models.BooleanField(default=False)
     push_notification = models.BooleanField(default=False)

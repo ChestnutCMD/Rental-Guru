@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'vehicle',
     'chat',
     'drf_spectacular',
+    'polymorphic',
 ]
 
 MIDDLEWARE = [

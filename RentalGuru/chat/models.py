@@ -1,18 +1,21 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from RentalGuru import settings
+from vehicle.models import Vehicle
 
 
 class Trip(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    vehicle = GenericForeignKey('content_type', 'object_id')
-
-    renter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='trips', on_delete=models.CASCADE)
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='organized_trips')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='trips')
     start_date = models.DateField()
     end_date = models.DateField()
+
+    @property
+    def owner(self):
+        return self.vehicle.owner
+
+    def __str__(self):
+        return f'Trip id-{self.pk}'
 
 
 class Chat(models.Model):

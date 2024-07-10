@@ -1818,3 +1818,221 @@ AssertionError: Expected view VehicleBrandDetailView to be called with a URL key
 2024-07-09 14:58:52,904 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
 2024-07-09 14:59:16,115 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
 2024-07-09 14:59:32,484 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 18:10:43,570 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 18:10:45,646 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-09 18:10:46,148 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 191002
+2024-07-09 18:11:11,138 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 18:11:11,138 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 9495
+2024-07-09 18:11:24,844 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9583
+2024-07-09 18:11:33,442 - INFO - basehttp - basehttp.py - "POST /api-auth/logout/?next=/app/register/ HTTP/1.1" 302 0
+2024-07-09 18:11:33,458 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 18:11:33,459 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 8966
+2024-07-09 18:11:34,284 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/app/register/ HTTP/1.1" 200 2715
+2024-07-09 18:11:42,982 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 18:11:43,026 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 18:11:43,026 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 9495
+2024-07-09 18:11:50,060 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-09 18:11:50,468 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 191002
+2024-07-09 18:12:34,881 - INFO - basehttp - basehttp.py - "GET /chat/trips HTTP/1.1" 301 0
+2024-07-09 18:12:34,932 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 12194
+2024-07-09 18:19:57,710 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 18:20:02,013 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 11778
+2024-07-09 18:20:32,009 - ERROR - log - log.py - Internal Server Error: /chat/trips/
+Traceback (most recent call last):
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\Python\RentalGuru\RentalGuru\chat\views.py", line 30, in create
+    content_type = ContentType.objects.get(model=vehicle_type)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "D:\Python\RentalGuru\.venv\lib\site-packages\django\db\models\query.py", line 649, in get
+    raise self.model.DoesNotExist(
+django.contrib.contenttypes.models.ContentType.DoesNotExist: ContentType matching query does not exist.
+2024-07-09 18:20:32,012 - ERROR - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 500 105897
+2024-07-09 18:53:49,496 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 18:53:50,490 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 18:54:21,958 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 18:54:23,173 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:31:18,411 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 19:31:19,390 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:32:13,533 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 19:32:14,389 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:34:42,192 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 19:34:43,106 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:40:36,432 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 19:40:37,281 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:41:52,737 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\urls.py changed, reloading.
+2024-07-09 19:41:53,632 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:43:37,427 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\apps.py changed, reloading.
+2024-07-09 19:43:38,287 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:44:11,728 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\apps.py changed, reloading.
+2024-07-09 19:44:12,664 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:45:55,513 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 19:45:56,382 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:46:06,564 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 19:46:07,461 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:46:34,271 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 19:46:35,197 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:46:59,977 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:48:29,882 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 19:48:30,963 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:48:39,040 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\urls.py changed, reloading.
+2024-07-09 19:48:39,915 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 19:49:04,619 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\signals.py changed, reloading.
+2024-07-09 19:49:05,469 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 20:54:26,661 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 20:54:28,278 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:18:07,121 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 21:18:08,019 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:18:48,354 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 21:18:49,196 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:18:58,741 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 21:18:59,745 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:19:06,039 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 21:19:06,977 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:19:52,400 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 21:19:53,232 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:23:41,206 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\urls.py changed, reloading.
+2024-07-09 21:23:42,063 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:25:46,629 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:30:17,528 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\models.py changed, reloading.
+2024-07-09 21:30:18,394 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:31:31,689 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\vehicle\models.py changed, reloading.
+2024-07-09 21:31:32,682 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:35:19,994 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:35:22,192 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-09 21:35:22,620 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 191027
+2024-07-09 21:35:38,745 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 21:35:38,746 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 8966
+2024-07-09 21:35:50,019 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9045
+2024-07-09 21:36:05,144 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9054
+2024-07-09 21:36:23,153 - INFO - basehttp - basehttp.py - "GET /vehicle/brands/ HTTP/1.1" 200 8974
+2024-07-09 21:36:36,018 - INFO - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 201 9243
+2024-07-09 21:36:52,311 - INFO - basehttp - basehttp.py - "POST /vehicle/brands/ HTTP/1.1" 201 9274
+2024-07-09 21:37:03,541 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 9150
+2024-07-09 21:37:11,257 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9230
+2024-07-09 21:37:16,586 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9230
+2024-07-09 21:37:22,517 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9230
+2024-07-09 21:37:38,370 - INFO - basehttp - basehttp.py - "POST /vehicle/models/ HTTP/1.1" 201 9236
+2024-07-09 21:37:41,845 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/vehicle/models/ HTTP/1.1" 200 2717
+2024-07-09 21:37:50,794 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 21:37:50,838 - INFO - basehttp - basehttp.py - "GET /vehicle/models/ HTTP/1.1" 200 10018
+2024-07-09 21:38:11,140 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 16750
+2024-07-09 21:39:12,124 - INFO - basehttp - basehttp.py - "POST /vehicle/autos/ HTTP/1.1" 201 17887
+2024-07-09 21:39:26,505 - INFO - basehttp - basehttp.py - "POST /api-auth/logout/?next=/vehicle/autos/ HTTP/1.1" 302 0
+2024-07-09 21:39:26,581 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 17295
+2024-07-09 21:39:28,479 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/vehicle/autos/ HTTP/1.1" 200 2716
+2024-07-09 21:39:35,456 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 21:39:35,525 - INFO - basehttp - basehttp.py - "GET /vehicle/autos/ HTTP/1.1" 200 17824
+2024-07-09 21:39:52,319 - WARNING - log - log.py - Not Found: /chat/autos/
+2024-07-09 21:39:52,320 - WARNING - basehttp - basehttp.py - "GET /chat/autos/ HTTP/1.1" 404 6276
+2024-07-09 21:39:58,214 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 10236
+2024-07-09 21:42:49,397 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 21:42:50,471 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:43:58,112 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 21:43:59,279 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:43:59,966 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 9811
+2024-07-09 21:44:02,399 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 9811
+2024-07-09 21:44:14,203 - INFO - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 201 10028
+2024-07-09 21:44:37,103 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 9936
+2024-07-09 21:44:57,160 - INFO - basehttp - basehttp.py - "GET /chat/chats/1 HTTP/1.1" 301 0
+2024-07-09 21:44:57,237 - INFO - basehttp - basehttp.py - "GET /chat/chats/1/ HTTP/1.1" 200 11123
+2024-07-09 21:45:02,904 - INFO - basehttp - basehttp.py - "GET /chat/chats/2/ HTTP/1.1" 200 11123
+2024-07-09 21:45:46,258 - INFO - basehttp - basehttp.py - "GET /chat/chats/1/ HTTP/1.1" 200 11123
+2024-07-09 21:45:52,566 - INFO - basehttp - basehttp.py - "GET /chat/chats/2/ HTTP/1.1" 200 11123
+2024-07-09 21:46:04,690 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 10026
+2024-07-09 21:46:21,468 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 9936
+2024-07-09 21:48:56,476 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\RentalGuru\settings.py changed, reloading.
+2024-07-09 21:48:57,482 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:49:29,895 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 10026
+2024-07-09 21:49:40,413 - INFO - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 201 10028
+2024-07-09 21:49:48,707 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 10304
+2024-07-09 21:53:17,017 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\signals.py changed, reloading.
+2024-07-09 21:53:17,992 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:54:55,911 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\signals.py changed, reloading.
+2024-07-09 21:54:57,120 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:55:16,937 - INFO - basehttp - basehttp.py - "GET /chat/trips/ HTTP/1.1" 200 10241
+2024-07-09 21:55:33,293 - INFO - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 201 10028
+2024-07-09 21:55:39,628 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 10528
+2024-07-09 21:56:05,502 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 10320
+2024-07-09 21:57:51,602 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 21:57:52,888 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 21:57:54,492 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 9904
+2024-07-09 22:00:59,000 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\serializers.py changed, reloading.
+2024-07-09 22:00:59,996 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:01:21,783 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 22:01:22,836 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:03:01,437 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 22:03:02,432 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:04:37,843 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:04:44,535 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 9904
+2024-07-09 22:05:03,635 - INFO - basehttp - basehttp.py - "POST /chat/messages/ HTTP/1.1" 201 10128
+2024-07-09 22:05:10,227 - INFO - basehttp - basehttp.py - "POST /api-auth/logout/?next=/chat/messages/ HTTP/1.1" 302 0
+2024-07-09 22:05:10,237 - WARNING - log - log.py - Unauthorized: /chat/messages/
+2024-07-09 22:05:10,237 - WARNING - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 401 5382
+2024-07-09 22:05:11,295 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/chat/messages/ HTTP/1.1" 200 2716
+2024-07-09 22:05:26,624 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 22:05:26,682 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 10132
+2024-07-09 22:05:30,277 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 10132
+2024-07-09 22:07:22,891 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 22:07:24,105 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:11:14,917 - INFO - autoreload - autoreload.py - D:\Python\RentalGuru\RentalGuru\chat\views.py changed, reloading.
+2024-07-09 22:11:15,919 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-09 22:11:31,239 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 22:11:31,239 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 9495
+2024-07-09 22:11:52,849 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9571
+2024-07-09 22:12:03,043 - INFO - basehttp - basehttp.py - "POST /app/register/ HTTP/1.1" 201 9571
+2024-07-09 22:12:05,877 - INFO - basehttp - basehttp.py - "POST /api-auth/logout/?next=/app/register/ HTTP/1.1" 302 0
+2024-07-09 22:12:05,895 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 22:12:05,896 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 8966
+2024-07-09 22:12:06,756 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/app/register/ HTTP/1.1" 200 2715
+2024-07-09 22:12:18,993 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 22:12:19,046 - WARNING - log - log.py - Method Not Allowed: /app/register/
+2024-07-09 22:12:19,046 - WARNING - basehttp - basehttp.py - "GET /app/register/ HTTP/1.1" 405 9495
+2024-07-09 22:12:39,653 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 9904
+2024-07-09 22:12:57,872 - INFO - basehttp - basehttp.py - "POST /chat/messages/ HTTP/1.1" 201 5913
+2024-07-09 22:13:20,189 - INFO - basehttp - basehttp.py - "GET /chat/messages/5 HTTP/1.1" 301 0
+2024-07-09 22:13:20,251 - WARNING - log - log.py - Not Found: /chat/messages/5/
+2024-07-09 22:13:20,252 - WARNING - basehttp - basehttp.py - "GET /chat/messages/5/ HTTP/1.1" 404 11299
+2024-07-09 22:13:29,610 - WARNING - log - log.py - Not Found: /chat/messages/4/
+2024-07-09 22:13:29,611 - WARNING - basehttp - basehttp.py - "GET /chat/messages/4/ HTTP/1.1" 404 11299
+2024-07-09 22:13:35,057 - WARNING - log - log.py - Not Found: /chat/messages/3/
+2024-07-09 22:13:35,058 - WARNING - basehttp - basehttp.py - "GET /chat/messages/3/ HTTP/1.1" 404 11299
+2024-07-09 22:13:41,168 - WARNING - log - log.py - Not Found: /chat/messages/1/
+2024-07-09 22:13:41,168 - WARNING - basehttp - basehttp.py - "GET /chat/messages/1/ HTTP/1.1" 404 11299
+2024-07-09 22:13:47,024 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 9940
+2024-07-09 22:14:19,945 - INFO - basehttp - basehttp.py - "POST /api-auth/logout/?next=/chat/chats/ HTTP/1.1" 302 0
+2024-07-09 22:14:19,954 - WARNING - log - log.py - Unauthorized: /chat/chats/
+2024-07-09 22:14:19,955 - WARNING - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 401 5346
+2024-07-09 22:14:21,121 - INFO - basehttp - basehttp.py - "GET /api-auth/login/?next=/chat/chats/ HTTP/1.1" 200 2713
+2024-07-09 22:14:26,369 - INFO - basehttp - basehttp.py - "POST /api-auth/login/ HTTP/1.1" 302 0
+2024-07-09 22:14:26,434 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 10660
+2024-07-09 22:14:43,397 - INFO - basehttp - basehttp.py - "GET /chat/messages/ HTTP/1.1" 200 10349
+2024-07-09 22:15:43,289 - INFO - basehttp - basehttp.py - "GET /chat/chats/ HTTP/1.1" 200 10660
+2024-07-09 22:16:04,420 - INFO - basehttp - basehttp.py - "GET /chat/chats/2/ HTTP/1.1" 200 11415
+2024-07-09 22:16:09,687 - INFO - basehttp - basehttp.py - "GET /chat/chats/5/ HTTP/1.1" 200 11415
+2024-07-10 14:16:04,062 - INFO - autoreload - autoreload.py - Watching for file changes with StatReloader
+2024-07-10 14:16:07,513 - INFO - basehttp - basehttp.py - "GET / HTTP/1.1" 200 4644
+2024-07-10 14:16:07,953 - INFO - basehttp - basehttp.py - "GET /api/schema/ HTTP/1.1" 200 191195
+2024-07-10 14:16:23,474 - WARNING - log - log.py - Bad Request: /chat/trips/
+2024-07-10 14:16:23,475 - WARNING - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 400 116
+2024-07-10 14:17:11,191 - INFO - basehttp - basehttp.py - "POST /app/token/ HTTP/1.1" 200 483
+2024-07-10 14:17:47,828 - WARNING - log - log.py - Unauthorized: /chat/trips/
+2024-07-10 14:17:47,829 - WARNING - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 401 275
+2024-07-10 14:18:11,209 - WARNING - log - log.py - Bad Request: /chat/trips/
+2024-07-10 14:18:11,209 - WARNING - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 400 116
+2024-07-10 14:18:24,307 - INFO - basehttp - basehttp.py - "POST /chat/trips/ HTTP/1.1" 201 84

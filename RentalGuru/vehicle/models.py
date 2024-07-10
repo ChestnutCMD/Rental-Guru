@@ -1,13 +1,14 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from polymorphic.models import PolymorphicModel
 
 from RentalGuru import settings
 
 
 class VehicleBrand(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    logo = models.ImageField(upload_to='brand_logo')
+    logo = models.ImageField(upload_to='images/brand_logo')
 
     def __str__(self):
         return f'{self.name}'
@@ -21,7 +22,7 @@ class VehicleModel(models.Model):
         return f'{self.name}'
 
 
-class Vehicle(models.Model):
+class Vehicle(PolymorphicModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE)
     model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE)
@@ -36,7 +37,7 @@ class Vehicle(models.Model):
     available_to = models.DateField()
 
     acceptable_mileage = models.IntegerField()
-    photo = models.ImageField(upload_to='vehicles/')
+    photo = models.ImageField(upload_to='images/vehicles/')
 
     ratings = models.JSONField(default=dict)
 
@@ -48,9 +49,10 @@ class Vehicle(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-
+"""
     class Meta:
         abstract = True
+"""
 
 
 class Auto(Vehicle):
@@ -84,11 +86,7 @@ class Auto(Vehicle):
         ('van', 'Фургон'),
         ('convertible', 'Кабриолет')
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='owned_cars',
-        on_delete=models.CASCADE
-    )
+
     transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES)
     fuel_type = models.CharField(max_length=13, choices=FUEL_CHOICES)
     body_type = models.CharField(max_length=13, choices=BODY_CHOICES)
@@ -115,11 +113,7 @@ class Bike(Vehicle):
         ('automatic', 'Автоматическая'),
         ('manual', 'Механическая'),
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='owned_bikes',
-        on_delete=models.CASCADE
-    )
+
     transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES)
     engine_capacity = models.IntegerField(null=True, blank=True)
     seats = models.PositiveIntegerField(default=2)
@@ -140,11 +134,7 @@ class Ship(Vehicle):
         ('comfort', 'Комфорт'),
         ('casual', 'Эконом')
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='owned_ships',
-        on_delete=models.CASCADE
-    )
+
     type_ship = models.CharField(null=True, blank=True)
     grot = models.CharField(null=True, blank=True)
     length = models.FloatField(null=True, blank=True)
@@ -171,11 +161,7 @@ class Helicopter(Vehicle):
         ('comfort', 'Комфорт'),
         ('casual', 'Эконом')
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='owned_helicopters',
-        on_delete=models.CASCADE
-    )
+
     max_speed = models.IntegerField(null=True, blank=True)
     cruising_speed = models.IntegerField(null=True, blank=True)
     flight_range = models.IntegerField(null=True, blank=True)
@@ -195,11 +181,7 @@ class Helicopter(Vehicle):
 
 
 class SpecialTechnic(Vehicle):
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='owned_special_technics',
-        on_delete=models.CASCADE
-    )
+
     type_technic = models.CharField(null=True, blank=True)
     engine_power = models.IntegerField(null=True, blank=True)
     length = models.FloatField(null=True, blank=True)
