@@ -1,16 +1,36 @@
-"""
-ASGI config for RentalGuru project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
-"""
-
 import os
-
-from django.core.asgi import get_asgi_application
+import django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'RentalGuru.settings')
+django.setup()
 
-application = get_asgi_application()
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from django.core.asgi import get_asgi_application
+import chat.routing
+import logging.config
+
+# Определение базового логгера
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Создание обработчика для вывода в консоль
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Определение форматтера
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Добавление обработчика к логгеру
+logger.addHandler(console_handler)
+
+
+application = ProtocolTypeRouter({
+    'http': get_asgi_application(),
+    'websocket': AuthMiddlewareStack(
+        URLRouter(
+            chat.routing.websocket_urlpatterns
+        )
+    ),
+})

@@ -1,3 +1,4 @@
+import os
 from os import getenv
 from pathlib import Path
 from dotenv import load_dotenv
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'channels',
     'app',
     'vehicle',
     'chat',
@@ -66,18 +68,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'RentalGuru.wsgi.application'
+ASGI_APPLICATION = 'RentalGuru.asgi.application'
 
-
-# Database sqlite
-
-"""
-DATABASES = {
+REDIS_HOST = getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = getenv('REDIS_PORT', '6379')
+REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
+CHANNEL_LAYERS = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [REDIS_URL],
+        },
+    },
 }
-"""
 
 # Database postgres
 
@@ -113,32 +116,32 @@ SPECTACULAR_SETTINGS = {
 
 # Logging into 'info.log'
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-
-    'formatters': {
-        'main_format': {
-            'format': '{asctime} - {levelname} - {module} - {filename} - {message}',
-            'style': '{',
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
         },
     },
-    'handlers': {
-        'file': {
-            'formatter': 'main_format',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/info.log',
-        },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': getenv('DJANGO_LOG_LEVEL'),
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'chat': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -171,6 +174,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

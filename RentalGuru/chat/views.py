@@ -1,3 +1,5 @@
+import redis
+from django.http import JsonResponse
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import Trip, Chat, Message
@@ -29,3 +31,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return Message.objects.filter(chat__participants=user)
+
+
+def check_redis(request):
+    try:
+        r = redis.Redis(host='127.0.0.1', port=6379, db=0)
+        r.ping()
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})

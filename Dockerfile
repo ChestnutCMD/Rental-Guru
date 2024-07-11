@@ -6,5 +6,5 @@ RUN pip install -r requirements.txt
 COPY /RentalGuru .
 
 ENTRYPOINT ["bash", "entrypoint.sh"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "RentalGuru.asgi:application"]
 EXPOSE 8000
