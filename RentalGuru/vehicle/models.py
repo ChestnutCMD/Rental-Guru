@@ -63,9 +63,9 @@ class Auto(Vehicle):
         ('diesel', 'Дизель'),
     )
     CLASS_CHOICES = (
+        ('business', 'Бизнес'),
         ('premium', 'Премиум'),
-        ('comfort', 'Комфорт'),
-        ('casual', 'Эконом')
+        ('casual', 'Средний')
     )
     TRANSMISSION_CHOICES = (
         ('automatic', 'Автоматическая'),
@@ -92,7 +92,7 @@ class Auto(Vehicle):
     body_type = models.CharField(max_length=13, choices=BODY_CHOICES)
 
     seats = models.PositiveIntegerField(default=2)
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES)
+    vehicle_class = models.CharField(max_length=8, choices=CLASS_CHOICES)
 
     def __str__(self):
         return f'Автомобиль {self.brand.name} {self.model.name}'

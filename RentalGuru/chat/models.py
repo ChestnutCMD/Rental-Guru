@@ -1,12 +1,50 @@
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.db import models
 
 from RentalGuru import settings
 from vehicle.models import Vehicle
 
 
+class RequestRent(models.Model):
+    STATUS_CHOICES = (
+        ('accept', 'Принять'),
+        ('denied', 'Отказать'),
+        ('unknown', 'Не рассмотренно')
+    )
+    status = models.CharField(max_length=7, default='unknown', choices=STATUS_CHOICES)
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='request_rent_organized_trips')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='request_rent_trips')
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    @property
+    def owner(self):
+        return self.vehicle.owner
+
+    def __str__(self):
+        return f'request rent id-{self.pk}'
+
+    def save(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        if self.pk:  # Проверка на обновление объекта
+            old_status = RequestRent.objects.get(pk=self.pk).status
+            if old_status != self.status and self.status == 'accept':
+                # Проверяем, что только владелец транспортного средства может изменить статус на "accept"
+                if self.owner != user:
+                    raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
+                # Создаем объект Trip
+                Trip.objects.create(
+                    organizer=self.organizer,
+                    vehicle=self.vehicle,
+                    start_date=self.start_date,
+                    end_date=self.end_date
+                )
+        super().save(*args, **kwargs)
+
+
 class Trip(models.Model):
-    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='organized_trips')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='trips')
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='trip_trips')
     start_date = models.DateField()
     end_date = models.DateField()
 

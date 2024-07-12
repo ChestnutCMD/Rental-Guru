@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+from app.models import Renter
 from .models import Trip, Chat, Message
 
 
