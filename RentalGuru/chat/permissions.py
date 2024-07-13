@@ -1,6 +1,5 @@
 from rest_framework import permissions
 
-from app.models import Renter
 from .models import Trip, Chat, Message
 
 
@@ -23,3 +22,26 @@ class IsAdminOrOwner(permissions.BasePermission):
             return request.user in obj.chat.participants.all()
 
         return False
+
+
+class IsParticipantOrAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        # Администратор имеет доступ ко всем чатам
+        if request.user.role == 'admin':
+            return True
+        # Участники чата имеют доступ только к своим чатам
+        return request.user in obj.participants.all()
+
+
+class IsChatCreatorOrAdmin(permissions.BasePermission):
+    """
+    Разрешение для разрешения доступа к действиям чата только создателю чата или администратору.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Разрешить GET запросы для всех пользователей
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Разрешить обновление только создателю чата или администратору
+        return obj.creator == request.user or request.user.role == 'admin'

@@ -66,3 +66,24 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class TopicSupport(models.Model):
+    name = models.CharField(null=False)
+    count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+
+class ChatSupport(models.Model):
+    topic = models.ForeignKey(TopicSupport, null=False, related_name='chat_support', on_delete=models.CASCADE)
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_chats', on_delete=models.CASCADE)
+
+
+class MessageSupport(models.Model):
+    support_chat = models.ForeignKey(ChatSupport, related_name='message_support', on_delete=models.CASCADE)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
