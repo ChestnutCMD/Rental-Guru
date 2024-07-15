@@ -24,18 +24,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Extract member_type
         member_type = validated_data.pop('member_type')
 
-        # Create the user
         user = User.objects.create(
             email=validated_data['email'],
+            first_name=validated_data.get('first_name', None),
+            last_name=validated_data.get('last_name', None),
             role='member'
         )
         user.set_password(validated_data['password'])
         user.save()
 
-        # Create the corresponding lessor or renter based on the member_type
         if member_type == 'lessor':
             Lessor.objects.create(user=user)
         else:

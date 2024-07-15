@@ -17,6 +17,9 @@ class User(AbstractUser):
     email_notification = models.BooleanField(default=False)
     push_notification = models.BooleanField(default=False)
 
+    first_name = models.CharField(null=True, max_length=150, blank=True)
+    last_name = models.CharField(null=True, max_length=150, blank=True)
+
     email = models.EmailField(unique=True)
     username = None
 

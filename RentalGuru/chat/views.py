@@ -13,7 +13,6 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 
 class TripViewSet(viewsets.ModelViewSet):
-    queryset = Trip.objects.all()
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
 
@@ -25,7 +24,6 @@ class TripViewSet(viewsets.ModelViewSet):
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
-    queryset = Chat.objects.all()
 
     def get_queryset(self):
         user = self.request.user
@@ -35,7 +33,6 @@ class ChatViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
-    queryset = Message.objects.all()
 
     def get_queryset(self):
         user = self.request.user
@@ -52,7 +49,6 @@ def check_redis(request):
 
 
 class RequestRentViewSet(viewsets.ModelViewSet):
-    queryset = RequestRent.objects.all()
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -78,7 +74,6 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 
 
 class ChatSupportViewSet(viewsets.ModelViewSet):
-    queryset = ChatSupport.objects.all()
     serializer_class = ChatSupportSerializer
     permission_classes = [IsChatCreatorOrAdmin]
 
@@ -101,12 +96,10 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-
         # Для вывода сообщений используем связанный ресурс message_support внутри сериализатора
         serializer = self.get_serializer(instance)
         data = serializer.data
@@ -118,7 +111,6 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
 
         # Добавляем название темы
         data['topic_name'] = instance.topic.name if instance.topic else None
-
         return Response(data)
 
 

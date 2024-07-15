@@ -4,13 +4,13 @@ from .views import TripViewSet, ChatViewSet, MessageViewSet, check_redis, Reques
     ChatSupportViewSet, MessageSupportViewSet
 
 router = DefaultRouter()
-router.register(r'request_rents', RequestRentViewSet)
-router.register(r'trips', TripViewSet)
-router.register(r'chats', ChatViewSet)
-router.register(r'messages', MessageViewSet)
-router.register(r'topics', TopicSupportViewSet)
-router.register(r'support_chat', ChatSupportViewSet)
-router.register(r'support_messages', MessageSupportViewSet)
+router.register(r'request_rents', RequestRentViewSet, basename='request')
+router.register(r'trips', TripViewSet, basename='trip')
+router.register(r'chats', ChatViewSet, basename='chat')
+router.register(r'messages', MessageViewSet, basename='message')
+router.register(r'topics', TopicSupportViewSet, basename='topic')
+router.register(r'support_chat', ChatSupportViewSet, basename='support')
+router.register(r'support_messages', MessageSupportViewSet, basename='support_message')
 
 urlpatterns = [
     path('', include(router.urls)),
