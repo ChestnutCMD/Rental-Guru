@@ -1,6 +1,7 @@
 import redis
 from django.db.models import Q
 from django.http import JsonResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,6 +13,7 @@ from .serializers import TripSerializer, ChatSerializer, MessageSerializer, Requ
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 
+@extend_schema(summary="Поездка", description='Поездка')
 class TripViewSet(viewsets.ModelViewSet):
     """ Поездка """
     serializer_class = TripSerializer
@@ -22,6 +24,10 @@ class TripViewSet(viewsets.ModelViewSet):
         return Trip.objects.filter(Q(organizer=user) | Q(vehicle__owner=user))
 
 
+@extend_schema(summary="Чат между арендатором и арендодателем", description='Чат между арендатором и арендодателем. '
+                                                                            'Создается автоматически при создании '
+                                                                            'поездки. Чат доступен по адресу '
+                                                                            'wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>')
 class ChatViewSet(viewsets.ModelViewSet):
     """ Чат между арендатором и арендодателем. Создается автоматически при создании поездки """
     serializer_class = ChatSerializer
@@ -32,6 +38,8 @@ class ChatViewSet(viewsets.ModelViewSet):
         return Chat.objects.filter(participants=user)
 
 
+@extend_schema(summary="Сообщения чата арендодателя и арендатора", description="Сообщения чата арендодателя и "
+                                                                               "арендатора")
 class MessageViewSet(viewsets.ModelViewSet):
     """ Сообщения чата арендодателя и арендатора """
     serializer_class = MessageSerializer
@@ -52,6 +60,10 @@ def check_redis(request):
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
+@extend_schema(summary="Заявка на аренду", description="Заявка на аренду. Создать может только пользователь renter.\
+                                                После создания пользователь, который является владельцем транспорта,\
+                                                может обновить статус заявки - принять или отклонить (accept|denied).\
+                                                При изменении статуса на denied автоматически создается поездка Trip)")
 class RequestRentViewSet(viewsets.ModelViewSet):
     """ Заявка на аренду. Создать может только пользователь renter.
     После создания пользователь, который является владельцем транспорта,
@@ -75,14 +87,16 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
 # Чат с техподдержкой
 
-
+@extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
 class TopicSupportViewSet(viewsets.ModelViewSet):
-    """ Тема чата с техподдержкой"""
+    """ Тема чата с техподдержкой """
     queryset = TopicSupport.objects.all()
     serializer_class = TopicSupportSerializer
     permissions = [IsAuthenticated]
 
 
+@extend_schema(summary="Чат с техподдержкой", description="Чат с техподдержкой. Доступен по адресу "
+                                                          "wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>")
 class ChatSupportViewSet(viewsets.ModelViewSet):
     """ Чат с техподдержкой """
     serializer_class = ChatSupportSerializer
@@ -125,6 +139,7 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
+@extend_schema(summary="Сообщения чата техподдержки", description="Сообщения чата техподдержки")
 class MessageSupportViewSet(viewsets.ModelViewSet):
     """ Сообщения чата техподдержки """
     queryset = MessageSupport.objects.all()
