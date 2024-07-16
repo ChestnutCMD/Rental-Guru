@@ -17,7 +17,7 @@ class RegisterView(generics.CreateAPIView):
 
 class UserListView(generics.ListAPIView):
     """Получение списка всех пользователей"""
-    queryset = User.objects.all()
+    queryset = User.objects.all().select_related('lessor', 'renter')
     serializer_class = CustomUserSerializer
 
 
@@ -35,5 +35,5 @@ class ChangePasswordView(APIView):
 
 class UserRetrieveAPIView(generics.UpdateAPIView, RetrieveAPIView, DestroyAPIView):
     """Детальное получение, обновление, удаление пользователя по ID"""
-    queryset = User.objects.all()
+    queryset = User.objects.all().select_related('lessor', 'renter')
     serializer_class = UserUpdateSerializer

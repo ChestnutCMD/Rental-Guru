@@ -51,10 +51,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message_content = text_data_json['message']
+        message_content = text_data_json.get('message')
+        file = text_data_json.get('file')
         user = self.scope['user']
 
-        message = await self.save_message(user, message_content)
+        message = await self.save_message(user, message_content, file)
 
         await self.channel_layer.group_send(
             self.chat_group_name,
@@ -65,9 +66,9 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def save_message(self, user, message_content):
+    def save_message(self, user, message_content, file):
         chat = self.get_chat_instance()
-        return self.create_message_instance(chat, user, message_content)
+        return self.create_message_instance(chat, user, message_content, file)
 
     async def chat_message(self, event):
         message = event['message']
@@ -102,7 +103,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         }))
 
     def format_message(self, message, user):
-        return {
+        message_data = {
             'id': message.id,
             'sender': {
                 'id': user.id,
@@ -112,7 +113,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             'content': message.content,
             'timestamp': message.timestamp.isoformat(),
         }
-    # Abstract methods to be defined in subclasses
+
+        if message.file:
+            message_data['file'] = message.file.url
+
+        return message_data
 
     def get_chat_instance(self):
         raise NotImplementedError
@@ -120,7 +125,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     def get_chat_model(self):
         raise NotImplementedError
 
-    def create_message_instance(self, chat, user, message_content):
+    def create_message_instance(self, chat, user, message_content, file):
         raise NotImplementedError
 
     def get_messages_queryset(self, chat):
@@ -137,8 +142,8 @@ class ChatConsumer(BaseChatConsumer):
     def get_chat_model(self):
         return Chat
 
-    def create_message_instance(self, chat, user, message_content):
-        return Message.objects.create(chat=chat, sender=user, content=message_content)
+    def create_message_instance(self, chat, user, message_content, file):
+        return Message.objects.create(chat=chat, sender=user, content=message_content, file=file)
 
     def get_messages_queryset(self, chat):
         return chat.messages.order_by('timestamp').select_related('sender').all()
@@ -156,8 +161,8 @@ class ChatSupportConsumer(BaseChatConsumer):
     def get_chat_model(self):
         return ChatSupport
 
-    def create_message_instance(self, chat, user, message_content):
-        return MessageSupport.objects.create(support_chat=chat, sender=user, content=message_content)
+    def create_message_instance(self, chat, user, message_content, file):
+        return MessageSupport.objects.create(support_chat=chat, sender=user, content=message_content, file=file)
 
     def get_messages_queryset(self, chat):
         return chat.message_support.select_related('sender').order_by('timestamp').all()

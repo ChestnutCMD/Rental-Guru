@@ -5,35 +5,42 @@ from .serializers import VehicleBrandSerializer, VehicleModelSerializer, AutoSer
 
 
 class VehicleBrandViewSet(viewsets.ModelViewSet):
+    """ Марка транспорта """
     queryset = VehicleBrand.objects.all()
     serializer_class = VehicleBrandSerializer
 
 
 class VehicleModelViewSet(viewsets.ModelViewSet):
-    queryset = VehicleModel.objects.all()
+    """ Модель транспорта """
+    queryset = VehicleModel.objects.all().select_related('brand')
     serializer_class = VehicleModelSerializer
 
 
 class AutoViewSet(viewsets.ModelViewSet):
-    queryset = Auto.objects.all()
+    """ Автомобиль """
+    queryset = Auto.objects.all().select_related('owner', 'brand', 'model')
     serializer_class = AutoSerializer
 
 
 class BikeViewSet(viewsets.ModelViewSet):
-    queryset = Bike.objects.all()
+    """ Мотоцикл """
+    queryset = Bike.objects.all().select_related('owner', 'brand', 'model')
     serializer_class = BikeSerializer
 
 
 class ShipViewSet(viewsets.ModelViewSet):
-    queryset = Ship.objects.all()
+    """ Судно """
+    queryset = Ship.objects.all().select_related('owner', 'brand', 'model')
     serializer_class = ShipSerializer
 
 
 class HelicopterViewSet(viewsets.ModelViewSet):
-    queryset = Helicopter.objects.all()
+    """ Вертолет """
+    queryset = Helicopter.objects.all().select_related('owner', 'brand', 'model')
     serializer_class = HelicopterSerializer
 
 
 class SpecialTechnicViewSet(viewsets.ModelViewSet):
-    queryset = SpecialTechnic.objects.all()
+    """ Спецтехника """
+    queryset = SpecialTechnic.objects.all().select_related('owner', 'brand', 'model')
     serializer_class = SpecialTechnicSerializer

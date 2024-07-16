@@ -20,18 +20,6 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = '__all__'
-        read_only_fields = ['sender']
-
-    def create(self, validated_data):
-        request = self.context.get('request')
-        validated_data['sender'] = request.user
-        return super().create(validated_data)
-
-
 class RequestRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestRent
@@ -57,7 +45,34 @@ class RequestRentSerializer(serializers.ModelSerializer):
             instance.save(user=self.context['request'].user)
         return instance
 
+
+class BaseMessageSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        request = self.context.get('request')
+        validated_data['sender'] = request.user
+        if 'file' in validated_data:
+            file = validated_data.pop('file')
+            validated_data['file'] = file
+        return super().create(validated_data)
+
+    class Meta:
+        abstract = True
+
+
+class MessageSerializer(BaseMessageSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'
+        read_only_fields = ['sender']
+
+
 # Чат с техподдержкой
+
+class MessageSupportSerializer(BaseMessageSerializer):
+    class Meta:
+        model = MessageSupport
+        fields = '__all__'
+        read_only_fields = ['sender']
 
 
 class TopicSupportSerializer(serializers.ModelSerializer):
@@ -102,12 +117,6 @@ class ChatSupportSerializer(serializers.ModelSerializer):
         MessageSupport.objects.create(support_chat=chat, sender=creator, content=message_content)
 
         return chat
-
-
-class MessageSupportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MessageSupport
-        fields = ['id', 'support_chat', 'sender', 'content', 'timestamp']
 
 
 class ChatSupportRetrieveSerializer(serializers.ModelSerializer):

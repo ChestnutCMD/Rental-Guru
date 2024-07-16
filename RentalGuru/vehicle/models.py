@@ -8,7 +8,7 @@ from RentalGuru import settings
 
 class VehicleBrand(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    logo = models.ImageField(upload_to='images/brand_logo')
+    logo = models.ImageField(upload_to='media/images/brand_logo')
 
     def __str__(self):
         return f'{self.name}'
@@ -37,7 +37,7 @@ class Vehicle(PolymorphicModel):
     available_to = models.DateField()
 
     acceptable_mileage = models.IntegerField()
-    photo = models.ImageField(upload_to='images/vehicles/')
+    photo = models.ImageField(upload_to='media/images/vehicles/')
 
     ratings = models.JSONField(default=dict)
 
@@ -49,10 +49,6 @@ class Vehicle(PolymorphicModel):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-"""
-    class Meta:
-        abstract = True
-"""
 
 
 class Auto(Vehicle):

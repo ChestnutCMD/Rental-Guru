@@ -13,6 +13,7 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 
 class TripViewSet(viewsets.ModelViewSet):
+    """ Поездка """
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
 
@@ -22,6 +23,7 @@ class TripViewSet(viewsets.ModelViewSet):
 
 
 class ChatViewSet(viewsets.ModelViewSet):
+    """ Чат между арендатором и арендодателем. Создается автоматически при создании поездки """
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
@@ -31,6 +33,7 @@ class ChatViewSet(viewsets.ModelViewSet):
 
 
 class MessageViewSet(viewsets.ModelViewSet):
+    """ Сообщения чата арендодателя и арендатора """
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
@@ -40,6 +43,7 @@ class MessageViewSet(viewsets.ModelViewSet):
 
 
 def check_redis(request):
+    """ Проверка redis """
     try:
         r = redis.Redis(host='127.0.0.1', port=6379, db=0)
         r.ping()
@@ -49,6 +53,11 @@ def check_redis(request):
 
 
 class RequestRentViewSet(viewsets.ModelViewSet):
+    """ Заявка на аренду. Создать может только пользователь renter.
+    После создания пользователь, который является владельцем транспорта,
+    может обновить статус заявки - принять или отклонить (accept|denied).
+    При изменении статуса на denied автоматически создается поездка Trip)
+    """
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -68,12 +77,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
 
 class TopicSupportViewSet(viewsets.ModelViewSet):
+    """ Тема чата с техподдержкой"""
     queryset = TopicSupport.objects.all()
     serializer_class = TopicSupportSerializer
     permissions = [IsAuthenticated]
 
 
 class ChatSupportViewSet(viewsets.ModelViewSet):
+    """ Чат с техподдержкой """
     serializer_class = ChatSupportSerializer
     permission_classes = [IsChatCreatorOrAdmin]
 
@@ -115,6 +126,7 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
 
 
 class MessageSupportViewSet(viewsets.ModelViewSet):
+    """ Сообщения чата техподдержки """
     queryset = MessageSupport.objects.all()
     serializer_class = MessageSupportSerializer
     permission_classes = [IsParticipantOrAdmin]

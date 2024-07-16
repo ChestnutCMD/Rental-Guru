@@ -66,6 +66,7 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    file = models.FileField(upload_to='media/chat_files/', blank=True, null=True)
 
 
 class TopicSupport(models.Model):
@@ -87,3 +88,4 @@ class MessageSupport(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    file = models.FileField(upload_to='media/support_chat_files/', blank=True, null=True)
