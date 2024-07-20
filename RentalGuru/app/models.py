@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from app.manager import UserManager
+
 
 class User(AbstractUser):
     ROLES = (
@@ -22,7 +24,7 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     username = None
-
+    objects = UserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
