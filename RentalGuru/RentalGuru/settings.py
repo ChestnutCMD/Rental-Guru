@@ -106,11 +106,12 @@ REST_FRAMEWORK = {
 # CSRF_TRUSTED_ORIGINS = ['https://']
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Rental-Guru',
     'DESCRIPTION': 'rental vehicles',
-    'VERSION': '1.0.0'
+    'VERSION': '1.0.0',
 }
 
 # Logging into 'info.log'

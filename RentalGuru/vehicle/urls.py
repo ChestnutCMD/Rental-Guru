@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import VehicleBrandViewSet, VehicleModelViewSet, AutoViewSet, BikeViewSet, ShipViewSet, HelicopterViewSet, \
-    SpecialTechnicViewSet
+    SpecialTechnicViewSet, UpdateRatingView
 
 router = DefaultRouter()
 router.register(r'brands', VehicleBrandViewSet)
@@ -14,4 +14,5 @@ router.register(r'special-technics', SpecialTechnicViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('update-rating/', UpdateRatingView.as_view(), name='update-rating')
 ]

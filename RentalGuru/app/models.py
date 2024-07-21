@@ -33,17 +33,17 @@ class User(AbstractUser):
 
 
 class Lessor(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lessor')
     super_host = models.BooleanField(default=False)
     count_trip = models.PositiveIntegerField(default=0)
     average_response_time = models.TimeField(null=True, blank=True)
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
 
 class Renter(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='renter')
 
     def __str__(self):
-        return self.user
+        return str(self.user)

@@ -75,6 +75,11 @@ class VehicleDocumentInline(admin.TabularInline):
     extra = 1
 
 
+class VehiclePhotoInline(admin.TabularInline):
+    model = VehiclePhoto
+    extra = 1
+
+
 class RentPriceInline(admin.TabularInline):
     model = RentPrice
     extra = 1
@@ -82,23 +87,38 @@ class RentPriceInline(admin.TabularInline):
 
 
 class BaseVehicleAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'model', 'year', 'owner', 'get_vehicle_type')
+    list_display = ('brand', 'model', 'year', 'owner', 'get_vehicle_type', 'get_average_rating')
     search_fields = ('brand__name', 'model__name', 'year', 'owner__email')
     list_filter = ('brand', 'model', 'year', 'owner')
     ordering = ('-year',)
     list_per_page = 20
+    readonly_fields = ('ratings', 'get_average_rating')
 
-    inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline]
+    inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline]
 
     def get_vehicle_type(self, obj):
         return obj.__class__.__name__
     get_vehicle_type.short_description = 'Vehicle Type'
 
+    def get_average_rating(self, obj):
+        average_ratings = obj.get_average_rating()
+        return ', '.join(f"{category}: {rating:.1f}" for category, rating in average_ratings.items())
+
+    get_average_rating.short_description = 'Average Rating'
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:
+            # Include the average rating in the fieldsets if the object exists
+            fieldsets = list(fieldsets)  # Convert to list to modify
+            fieldsets.append(('Рейтинг', {'fields': ('get_average_rating',)}))
+        return fieldsets
+
 
 class AutoAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', 'ratings')
+            'fields': ('owner', )
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'body_type', 'seats', 'transmission', 'fuel_type',
@@ -119,16 +139,17 @@ class AutoAdmin(BaseVehicleAdmin):
         ('Местоположение', {
             'fields': ('location', )
         }),
-        ('Фото', {
-            'fields': ('photo', )
-        }),
+        ('Рейтинг', {
+            'fields': ('get_average_rating',),
+            'classes': ('collapse',)
+        })
     )
 
 
 class BikeAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', 'ratings')
+            'fields': ('owner', )
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'seats', 'engine_capacity', 'transmission', 'year', 'description',
@@ -149,16 +170,17 @@ class BikeAdmin(BaseVehicleAdmin):
         ('Местоположение', {
             'fields': ('location',)
         }),
-        ('Фото', {
-            'fields': ('photo',)
-        }),
+        ('Рейтинг', {
+            'fields': ('get_average_rating',),
+            'classes': ('collapse',)
+        })
     )
 
 
 class ShipAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', 'ratings')
+            'fields': ('owner', )
         }),
         ('Характеристики', {
             'fields': ('type_ship', 'brand', 'model', 'year', 'grot', 'length', 'width', 'precipitation', 'seats',
@@ -181,16 +203,17 @@ class ShipAdmin(BaseVehicleAdmin):
         ('Местоположение', {
             'fields': ('location',)
         }),
-        ('Фото', {
-            'fields': ('photo',)
-        }),
+        ('Рейтинг', {
+            'fields': ('get_average_rating',),
+            'classes': ('collapse',)
+        })
     )
 
 
 class HelicopterAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', 'ratings')
+            'fields': ('owner', )
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'year', 'max_speed', 'cruising_speed', 'flight_range',
@@ -210,16 +233,17 @@ class HelicopterAdmin(BaseVehicleAdmin):
         ('Местоположение', {
             'fields': ('location',)
         }),
-        ('Фото', {
-            'fields': ('photo',)
-        }),
+        ('Рейтинг', {
+            'fields': ('get_average_rating',),
+            'classes': ('collapse',)
+        })
     )
 
 
 class SpecialTechnicAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', 'ratings')
+            'fields': ('owner', )
         }),
         ('Характеристики', {
             'fields': ('type_technic', 'brand', 'model', 'year', 'engine_power', 'length', 'width', 'high',
@@ -237,8 +261,9 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
         ('Местоположение', {
             'fields': ('location',)
         }),
-        ('Фото', {
-            'fields': ('photo',)
+        ('Рейтинг', {
+            'fields': ('get_average_rating',),
+            'classes': ('collapse',)
         })
     )
 

@@ -1,54 +1,155 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from chat.permissions import IsAdminOrOwner
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic
-from .serializers import VehicleBrandSerializer, VehicleModelSerializer, AutoSerializer, BikeSerializer, ShipSerializer, HelicopterSerializer, SpecialTechnicSerializer
+from .permission import IsAdminUser, IsAdminOrLessor
+from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
+from .serializers.auto import AutoGetSerializer, AutoSerializer, AutoListSerializer
+from .serializers.bike import BikeSerializer, BikeGetSerializer, BikeListSerializer
+from .serializers.rating import UpdateRatingSerializer
+from .serializers.ship import ShipSerializer, ShipGetSerializer, ShipListSerializer
+from .serializers.helicopter import HelicopterSerializer, HelicopterGetSerializer, HelicopterListSerializer
+from .serializers.specialtechnic import SpecialTechnicSerializer, SpecialTechnicGetSerializer, \
+    SpecialTechnicListSerializer
 
 
 @extend_schema(summary="Марка транспорта", description="Марка транспорта")
 class VehicleBrandViewSet(viewsets.ModelViewSet):
     queryset = VehicleBrand.objects.all()
     serializer_class = VehicleBrandSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
 
 @extend_schema(summary="Модель транспорта", description="Модель транспорта")
 class VehicleModelViewSet(viewsets.ModelViewSet):
     queryset = VehicleModel.objects.all().select_related('brand')
     serializer_class = VehicleModelSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+
+class BaseViewSet(viewsets.ModelViewSet):
+    def get_permissions(self):
+        if self.action == 'list':
+            self.permission_classes = [AllowAny]
+        elif self.action == 'retrieve':
+            self.permission_classes = [IsAuthenticated]
+        elif self.action == 'create':
+            self.permission_classes = [IsAuthenticated, IsAdminOrLessor]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsAdminOrOwner]
+        return super().get_permissions()
 
 
 @extend_schema(summary="Автомобиль", description="Автомобиль")
-class AutoViewSet(viewsets.ModelViewSet):
+class AutoViewSet(BaseViewSet):
     queryset = (Auto.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'features_for_children', 'features_functions',
+                prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
                                  'features_additionally', 'availabilities', 'documents', 'rent_prices'))
-    serializer_class = AutoSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return AutoGetSerializer
+        elif self.action == 'list':
+            return AutoListSerializer
+        return AutoSerializer
 
 
 @extend_schema(summary="Мотоцикл", description="Мотоцикл")
-class BikeViewSet(viewsets.ModelViewSet):
+class BikeViewSet(BaseViewSet):
     queryset = (Bike.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
-                                 'documents', 'rent_prices'))
-    serializer_class = BikeSerializer
+                                 'documents', 'rent_prices', 'photos'))
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return BikeGetSerializer
+        elif self.action == 'list':
+            return BikeListSerializer
+        return BikeSerializer
 
 
 @extend_schema(summary="Судно", description="Судно")
-class ShipViewSet(viewsets.ModelViewSet):
+class ShipViewSet(BaseViewSet):
     queryset = (Ship.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_functions', 'features_additionally', 'features_equipment',
-                                 'availabilities', 'documents', 'rent_prices'))
-    serializer_class = ShipSerializer
+                                 'availabilities', 'documents', 'rent_prices', 'photos'))
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ShipGetSerializer
+        elif self.action == 'list':
+            return ShipListSerializer
+        return ShipSerializer
 
 
 @extend_schema(summary="Вертолет", description="Вертолет")
-class HelicopterViewSet(viewsets.ModelViewSet):
+class HelicopterViewSet(BaseViewSet):
     queryset = (Helicopter.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices'))
-    serializer_class = HelicopterSerializer
+                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return HelicopterGetSerializer
+        elif self.action == 'list':
+            return HelicopterListSerializer
+        return HelicopterSerializer
 
 
 @extend_schema(summary="Спецтехника", description="Спецтехника")
-class SpecialTechnicViewSet(viewsets.ModelViewSet):
+class SpecialTechnicViewSet(BaseViewSet):
     queryset = (SpecialTechnic.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices'))
-    serializer_class = SpecialTechnicSerializer
+                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return SpecialTechnicGetSerializer
+        elif self.action == 'list':
+            return SpecialTechnicListSerializer
+        return SpecialTechnicSerializer
+
+
+@extend_schema(summary="Обновление рейтинга", description="Обновление рейтинга")
+class UpdateRatingView(APIView):
+    serializer_class = UpdateRatingSerializer
+
+    def patch(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            vehicle_type = data['Vehicle_type']
+            vehicle_id = data['Vehicle_id']
+
+            # Определяем модель транспортного средства
+            model = {
+                'Auto': Auto,
+                'Bike': Bike,
+                'Ship': Ship,
+                'Helicopter': Helicopter,
+                'SpecialTechnic': SpecialTechnic
+            }.get(vehicle_type)
+
+            if not model:
+                return Response({"error": "Invalid vehicle type"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                vehicle = model.objects.get(id=vehicle_id)
+            except model.DoesNotExist:
+                return Response({"error": "Vehicle not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Обновляем рейтинги
+            ratings_fields = ['Cleanliness', 'Maintenance', 'Communication', 'Convenience', 'Accuracy']
+            for field in ratings_fields:
+                rating = data[field]
+                field_ratings = vehicle.ratings.get(field, {})
+                star_key = f"{rating}_stars"
+                field_ratings[star_key] = field_ratings.get(star_key, 0) + 1
+                vehicle.ratings[field] = field_ratings
+
+            vehicle.save()
+            return Response({"status": "Ratings updated successfully"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

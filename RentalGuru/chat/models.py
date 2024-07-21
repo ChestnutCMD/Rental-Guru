@@ -40,7 +40,6 @@ class RequestRent(models.Model):
                     end_date=self.end_date
                 )
         super().save(*args, **kwargs)
-        self.vehicle.update_free_dates(self.start_date, self.end_date)
 
 
 class Trip(models.Model):

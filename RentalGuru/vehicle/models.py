@@ -1,5 +1,4 @@
 from datetime import date
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -10,7 +9,7 @@ from RentalGuru import settings
 
 class VehicleBrand(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    logo = models.ImageField(upload_to='media/images/brand_logo')
+    logo = models.ImageField(upload_to='media/images/vehicle/brand_logo')
 
     def __str__(self):
         return self.name
@@ -109,40 +108,45 @@ class PaymentMethod(models.Model):
         verbose_name_plural = 'Способы платежей'
 
 
+def year_validate(value):
+    if value < 1900 or value > timezone.now().year:
+        raise ValidationError(f'Год выпуска должен быть в пределах 1900 и {timezone.now().year} года.')
+
+
+def default_rating():
+    rating = {
+        "Cleanliness": {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0},
+        "Maintenance": {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0},
+        "Communication": {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0},
+        "Convenience": {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0},
+        "Accuracy": {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0},
+    }
+    return rating
+
+
 class Vehicle(PolymorphicModel):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vehicle')
-    brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, related_name='vehicle')
-    model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='vehicle')
-    year = models.IntegerField(null=True, blank=True)  # Год выпуска транспорта
-    description = models.CharField(max_length=255, null=True, blank=True)
-    long_distance = models.BooleanField(default=False)  # Междугородние поездки
-    delivery = models.BooleanField(default=False)  # Доставка транспорта
-    ensurance = models.CharField(max_length=30)  # Страховка
 
-    drivers_rating = models.DecimalField(null=True, blank=True, decimal_places=1, max_digits=2)  # Условия аренды
-    drivers_only_verified = models.BooleanField(default=True)  # Условия аренды
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Владелец')
+    brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Марка')
+    model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Модель')
+    year = models.IntegerField(null=True, blank=True, validators=[year_validate], verbose_name='Год выпуска')
+    description = models.CharField(max_length=255, null=True, blank=True, verbose_name='Описание')
+    long_distance = models.BooleanField(default=False, verbose_name='Междугородние поездки')
+    delivery = models.BooleanField(default=False, verbose_name='Доставка')
+    ensurance = models.CharField(max_length=30, verbose_name='Страховка')
 
-    price_delivery = models.DecimalField(decimal_places=2, max_digits=10)  #
-    price_deposit = models.DecimalField(decimal_places=2, max_digits=10)  #
-    min_rent_day = models.PositiveIntegerField(default=1)  #
-    max_rent_day = models.PositiveIntegerField(default=365)  #
+    drivers_rating = models.DecimalField(null=True, blank=True, decimal_places=1, max_digits=2, verbose_name='Рейтинг арендатора')
+    drivers_only_verified = models.BooleanField(default=True, verbose_name='Сдавать только верифицированным пользователям')
 
-    payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles')  # Способ оплаты
+    price_delivery = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость доставки транспорта')
+    price_deposit = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='депозит')
+    min_rent_day = models.PositiveIntegerField(default=1, verbose_name='Минимальный срок аренды')
+    max_rent_day = models.PositiveIntegerField(default=365, verbose_name='Максимальный срок аренды')
 
-    location = models.CharField(max_length=255)
+    payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
 
-    photo = models.ImageField(upload_to='media/images/vehicles/')
-
-    ratings = models.JSONField(default=dict)
-
-    def clean(self):
-        current_year = timezone.now().year
-        if self.year and (self.year < 1900 or self.year > current_year):
-            raise ValidationError({'year': f'Year must be between 1900 and {current_year}.'})
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
+    location = models.CharField(max_length=255, verbose_name='Местоположение')
+    ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
 
     def update_free_dates(self, start_date, end_date):
         # Удаляем период доступности, который пересекается с поездкой
@@ -164,6 +168,24 @@ class Vehicle(PolymorphicModel):
 
         Availability.objects.bulk_create(new_availabilities)
 
+    def get_average_rating(self):
+        average_ratings = {}
+        overall_total_stars = 0
+        overall_total_ratings = 0
+
+        for category, ratings in self.ratings.items():
+            total_stars = sum(int(stars.split('_')[0]) * count for stars, count in ratings.items())
+            total_ratings = sum(ratings.values())
+            average_rating = total_stars / total_ratings if total_ratings > 0 else 0
+            average_ratings[category] = average_rating
+            overall_total_stars += total_stars
+            overall_total_ratings += total_ratings
+
+        overall_average = overall_total_stars / overall_total_ratings if overall_total_ratings > 0 else 0
+        average_ratings['rating'] = overall_average
+
+        return average_ratings
+
     def __str__(self):
         return f'Vehicle id-{self.pk}'
 
@@ -176,11 +198,11 @@ class RentPrice(models.Model):
         ('year', 'Год'),
     )
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='rent_prices')
-    name = models.CharField(choices=RENT_PERIOD, max_length=5)
-    price = models.DecimalField(decimal_places=2, max_digits=10)
-    commission = models.DecimalField(decimal_places=2, max_digits=10)
-    discount = models.PositiveIntegerField(default=0)
-    total = models.DecimalField(decimal_places=2, max_digits=10)
+    name = models.CharField(choices=RENT_PERIOD, max_length=5, verbose_name='Период')
+    price = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость')
+    commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия')
+    discount = models.PositiveIntegerField(default=0, verbose_name='Скидка')
+    total = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='ИТОГО')
 
     def save(self, *args, **kwargs):
         self.total = (float(self.price) + float(self.commission)) * (100 - float(self.discount)) / 100
@@ -190,23 +212,33 @@ class RentPrice(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Стоимость аренды'
+        verbose_name = 'Период'
         verbose_name_plural = 'Стоимость аренды'
         unique_together = ('vehicle', 'name')
 
 
 class Availability(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='availabilities')
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(verbose_name='Начало')
+    end_date = models.DateField(verbose_name='Конец')
 
     def __str__(self):
         return f'Availability {self.start_date} to {self.end_date}'
 
+    class Meta:
+        verbose_name = 'Дата аренды'
+        verbose_name_plural = 'Даты аренды'
+
+
+def vehicle_documents_upload_to(instance, filename):
+    vehicle_type = instance.vehicle._meta.model_name
+    return f'media/images/vehicles/{vehicle_type}/{instance.vehicle.id}/documents/{filename}'
+
 
 class VehicleDocument(models.Model):
-    name = models.CharField(max_length=50)
-    image = models.ImageField(upload_to=f'media/images/vehicle/')
+    name = models.CharField(max_length=50, verbose_name='Вид документа')
+    image = models.ImageField(upload_to=vehicle_documents_upload_to, verbose_name='Фото документа')
+    number = models.IntegerField(verbose_name='Номер')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='documents')
 
     def __str__(self):
@@ -215,6 +247,23 @@ class VehicleDocument(models.Model):
     class Meta:
         verbose_name = 'Документ'
         verbose_name_plural = 'Документы'
+
+
+def vehicle_photo_upload_to(instance, filename):
+    vehicle_type = instance.vehicle._meta.model_name
+    return f'media/images/vehicles/{vehicle_type}/{instance.vehicle.id}/{filename}'
+
+
+class VehiclePhoto(models.Model):
+    vehicle = models.ForeignKey('Vehicle', related_name='photos', on_delete=models.CASCADE)
+    photo = models.ImageField(upload_to=vehicle_photo_upload_to, verbose_name='Фото')
+
+    def __str__(self):
+        return f'Photo for vehicle id-{self.vehicle.pk}'
+
+    class Meta:
+        verbose_name = 'Фото'
+        verbose_name_plural = 'Фото'
 
 
 class Auto(Vehicle):
@@ -249,20 +298,20 @@ class Auto(Vehicle):
         ('convertible', 'Кабриолет')
     )
 
-    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES)
-    fuel_type = models.CharField(max_length=13, choices=FUEL_CHOICES)
-    body_type = models.CharField(max_length=13, choices=BODY_CHOICES)
+    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES, verbose_name='Коробка передач')
+    fuel_type = models.CharField(max_length=13, choices=FUEL_CHOICES, verbose_name='Вид топлива')
+    body_type = models.CharField(max_length=13, choices=BODY_CHOICES, verbose_name='Тип кузова')
 
-    acceptable_mileage = models.IntegerField()  # Допустимый пробег в день
-    seats = models.PositiveIntegerField(default=4)
-    vehicle_class = models.CharField(max_length=8, choices=CLASS_CHOICES)
+    acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
+    seats = models.PositiveIntegerField(default=4, verbose_name='Количество мест')
+    vehicle_class = models.CharField(max_length=8, choices=CLASS_CHOICES, verbose_name='Класс')
 
-    drivers_age = models.PositiveIntegerField(null=True, blank=True)
-    drivers_experience = models.PositiveIntegerField(null=True, blank=True)
+    drivers_age = models.PositiveIntegerField(null=True, blank=True, verbose_name='Возраст водителя')
+    drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
-    features_for_children = models.ManyToManyField(FeaturesForChildren, related_name='auto', blank=True)  # Для детей
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='auto', blank=True)  # Функции
-    features_additionally = models.ManyToManyField(AutoFeaturesAdditionally, related_name='auto', blank=True)  # Дополнительно
+    features_for_children = models.ManyToManyField(FeaturesForChildren, related_name='auto', blank=True, verbose_name='Для детей')
+    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='auto', blank=True, verbose_name='Функции')
+    features_additionally = models.ManyToManyField(AutoFeaturesAdditionally, related_name='auto', blank=True, verbose_name='Дополнительно')
 
     def __str__(self):
         return f'Автомобиль {self.brand.name} {self.model.name}'
@@ -287,17 +336,17 @@ class Bike(Vehicle):
         ('manual', 'Механическая'),
     )
 
-    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES)
-    engine_capacity = models.IntegerField(null=True, blank=True)
-    seats = models.PositiveIntegerField(default=2)
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES)
-    acceptable_mileage = models.IntegerField()  # Допустимый пробег в день
+    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES, verbose_name='Коробка передач')
+    engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
+    seats = models.PositiveIntegerField(default=2, verbose_name='Количество мест')
+    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
+    acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
 
-    drivers_age = models.PositiveIntegerField(null=True, blank=True)
-    drivers_experience = models.PositiveIntegerField(null=True, blank=True)
+    drivers_age = models.PositiveIntegerField(null=True, blank=True, verbose_name='Возраст водителя')
+    drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='bike')  # Функции
-    features_additionally = models.ManyToManyField(BikeFeaturesAdditionally, related_name='bike')  # Допольнительно
+    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='bike', verbose_name='Функции')
+    features_additionally = models.ManyToManyField(BikeFeaturesAdditionally, related_name='bike', verbose_name='Допольнительно')
 
     def __str__(self):
         return f'Мотоцикл {self.brand.name} {self.model.name}'
@@ -318,25 +367,25 @@ class Ship(Vehicle):
         ('casual', 'Эконом')
     )
 
-    type_ship = models.CharField(null=True, blank=True)
-    grot = models.CharField(null=True, blank=True)
-    length = models.FloatField(null=True, blank=True)
-    width = models.FloatField(null=True, blank=True)
-    precipitation = models.FloatField(null=True, blank=True)
-    seats = models.PositiveIntegerField(default=2)
-    sleeping_place = models.PositiveIntegerField(null=True, blank=True)
-    one_sleeping_place = models.PositiveIntegerField(null=True, blank=True)
-    two_sleeping_place = models.PositiveIntegerField(null=True, blank=True)
-    toilet = models.PositiveIntegerField(null=True, blank=True)
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES)
-    engine_capacity = models.IntegerField(null=True, blank=True)
-    water_tank = models.IntegerField(null=True, blank=True)
-    fuel_tank = models.IntegerField(null=True, blank=True)
-    acceptable_mileage = models.IntegerField()  # Допустимый пробег в день
+    type_ship = models.CharField(null=True, blank=True, verbose_name='Тип транспорта')
+    grot = models.CharField(null=True, blank=True, verbose_name='Грот')
+    length = models.FloatField(null=True, blank=True, verbose_name='Длина, м')
+    width = models.FloatField(null=True, blank=True, verbose_name='Ширина, м')
+    precipitation = models.FloatField(null=True, blank=True, verbose_name='Осадка, м')
+    seats = models.PositiveIntegerField(default=2, verbose_name='Количество мест')
+    sleeping_place = models.PositiveIntegerField(null=True, blank=True, verbose_name='Спальных мест')
+    one_sleeping_place = models.PositiveIntegerField(null=True, blank=True, verbose_name='1-спальных кают')
+    two_sleeping_place = models.PositiveIntegerField(null=True, blank=True, verbose_name='2-спальных кают')
+    toilet = models.PositiveIntegerField(null=True, blank=True, verbose_name='Туалетов')
+    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
+    engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
+    water_tank = models.IntegerField(null=True, blank=True, verbose_name='Бак для воды, л')
+    fuel_tank = models.IntegerField(null=True, blank=True, verbose_name='Топливный бак, л')
+    acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
 
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='ship')  # Функции
-    features_additionally = models.ManyToManyField(ShipFeaturesAdditionally, related_name='ship')  # Допольнительно
-    features_equipment = models.ManyToManyField(FeaturesEquipment, related_name='ship')  # Оборудование
+    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='ship', verbose_name='Функции')
+    features_additionally = models.ManyToManyField(ShipFeaturesAdditionally, related_name='ship', verbose_name='Допольнительно')
+    features_equipment = models.ManyToManyField(FeaturesEquipment, related_name='ship', verbose_name='Оборудование')
 
     def __str__(self):
         return f'Судно {self.brand.name} {self.model.name}'
@@ -353,19 +402,19 @@ class Helicopter(Vehicle):
         ('casual', 'Эконом')
     )
 
-    max_speed = models.IntegerField(null=True, blank=True)
-    cruising_speed = models.IntegerField(null=True, blank=True)
-    flight_range = models.IntegerField(null=True, blank=True)
-    flight_duration = models.IntegerField(null=True, blank=True)
+    max_speed = models.IntegerField(null=True, blank=True, verbose_name='Максимальная скорость, км/ч')
+    cruising_speed = models.IntegerField(null=True, blank=True, verbose_name='Крейсерская скорость, км/ч')
+    flight_range = models.IntegerField(null=True, blank=True, verbose_name='Дальность полета,км')
+    flight_duration = models.IntegerField(null=True, blank=True, verbose_name='Длительность полета, ч')
 
-    power_cruising = models.IntegerField(null=True, blank=True)
-    take_off_power = models.IntegerField(null=True, blank=True)
-    full_take_weight = models.IntegerField(null=True, blank=True)
-    payload = models.IntegerField()
-    engine_capacity = models.IntegerField(null=True, blank=True)
-    fuel_tank = models.IntegerField(null=True, blank=True)
-    acceptable_mileage = models.IntegerField()  # Допустимый пробег в день
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES)
+    power_cruising = models.IntegerField(null=True, blank=True, verbose_name='Мощность, крейсерская, л.с.')
+    take_off_power = models.IntegerField(null=True, blank=True, verbose_name='Мощность взлетная, л.с.')
+    full_take_weight = models.IntegerField(null=True, blank=True, verbose_name='Полный взлетный вес, кг')
+    payload = models.IntegerField(verbose_name='Полезная нагрузка, кг')
+    engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
+    fuel_tank = models.IntegerField(null=True, blank=True, verbose_name='Объем топливного бака, л.')
+    acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
+    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
 
     def __str__(self):
         return f'Вертолет {self.brand.name} {self.model.name}'
@@ -376,12 +425,12 @@ class Helicopter(Vehicle):
 
 
 class SpecialTechnic(Vehicle):
-    type_technic = models.CharField(null=True, blank=True)
-    engine_power = models.IntegerField(null=True, blank=True)
-    length = models.FloatField(null=True, blank=True)
-    width = models.FloatField(null=True, blank=True)
-    high = models.FloatField(null=True, blank=True)
-    operating_weight = models.IntegerField()
+    type_technic = models.CharField(null=True, blank=True, verbose_name='Тип техники')
+    engine_power = models.IntegerField(null=True, blank=True, verbose_name='Мощность двигателя, л.с.')
+    length = models.FloatField(null=True, blank=True, verbose_name='Длина, м')
+    width = models.FloatField(null=True, blank=True, verbose_name='Ширина, м')
+    high = models.FloatField(null=True, blank=True, verbose_name='Высота, м')
+    operating_weight = models.IntegerField(verbose_name='Эксплутационная масса, кг')
 
     def __str__(self):
         return f'Спец техника {self.brand.name} {self.model.name}'

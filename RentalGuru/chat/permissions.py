@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .models import Trip, Chat, Message
 
 
@@ -45,3 +46,34 @@ class IsChatCreatorOrAdmin(permissions.BasePermission):
 
         # Разрешить обновление только создателю чата или администратору
         return obj.creator == request.user or request.user.role == 'admin'
+
+
+class IsOrganizerAndEndDateToday(permissions.BasePermission):
+    def has_permission(self, request, view):
+        vehicle_id = request.data.get('Vehicle_id')
+        vehicle_type = request.data.get('Vehicle_type')
+
+        if not vehicle_id or not vehicle_type:
+            return False
+
+        model = {
+            'Auto': Auto,
+            'Bike': Bike,
+            'Ship': Ship,
+            'Helicopter': Helicopter,
+            'SpecialTechnic': SpecialTechnic
+        }.get(vehicle_type)
+
+        if not model:
+            return False
+
+        try:
+            trip = Trip.objects.get(vehicle__id=vehicle_id, vehicle__polymorphic_ctype__model=model.__name__.lower())
+        except Trip.DoesNotExist:
+            return False
+
+        # Проверяем является ли пользователь организатором и совпадает ли end_date с текущей датой
+        if trip.organizer == request.user and trip.end_date == date.today():
+            return True
+
+        return False
