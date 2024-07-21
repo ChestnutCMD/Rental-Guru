@@ -8,8 +8,8 @@ from rest_framework.views import APIView
 
 from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
-from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic
-from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsTripOrganizerAndValid
+from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
+from .permission import IsAdminOrLessor, IsAdminOrReadOnly
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
 from .serializers.auto import AutoGetSerializer, AutoSerializer, AutoListSerializer
 from .serializers.bike import BikeSerializer, BikeGetSerializer, BikeListSerializer
@@ -118,7 +118,6 @@ class SpecialTechnicViewSet(BaseViewSet):
 @extend_schema(summary="Обновление рейтинга", description="Обновление рейтинга")
 class UpdateRatingView(APIView):
     serializer_class = UpdateRatingSerializer
-    permission_classes = [IsTripOrganizerAndValid]
 
     def patch(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -144,27 +143,48 @@ class UpdateRatingView(APIView):
             except model.DoesNotExist:
                 return Response({"error": "Транспорт не найден"}, status=status.HTTP_404_NOT_FOUND)
 
+            # Получаем content_type для данного транспортного средства
+            content_type = ContentType.objects.get_for_model(vehicle)
+
+            # Проверка, обновлял ли пользователь уже рейтинг
+            if RatingUpdateLog.objects.filter(user=request.user, content_type=content_type,
+                                              object_id=vehicle_id).exists():
+                return Response({"error": "Вы уже обновили рейтинг этого автомобиля."},
+                                status=status.HTTP_403_FORBIDDEN)
+
             # Пытаемся получить поездку
-            content_type = ContentType.objects.get_for_model(model)
             try:
-                trip = Trip.objects.get(organizer=request.user.id, content_type=content_type, object_id=vehicle_id)
+                trip = Trip.objects.get(
+                    organizer=request.user,
+                    content_type=content_type,
+                    object_id=vehicle_id
+                )
             except Trip.DoesNotExist:
-                return Response({"error": "Не найдено соответсвующей поездки"})
+                return Response({"error": "Не найдено соответствующей поездки"}, status=status.HTTP_404_NOT_FOUND)
 
             # Проверка завершения поездки
             if trip.end_date > timezone.now().date():
-                return Response({"error": "Поездка еще не завершилась"})
+                return Response({"error": "Поездка еще не завершилась"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Обновляем рейтинги
             ratings_fields = ['Cleanliness', 'Maintenance', 'Communication', 'Convenience', 'Accuracy']
             for field in ratings_fields:
-                rating = data[field]
-                field_ratings = vehicle.ratings.get(field, {})
-                star_key = f"{rating}_stars"
-                field_ratings[star_key] = field_ratings.get(star_key, 0) + 1
-                vehicle.ratings[field] = field_ratings
+                rating = data.get(field)
+                if rating is not None:
+                    field_ratings = vehicle.ratings.get(field, {})
+                    star_key = f"{rating}_stars"
+                    field_ratings[star_key] = field_ratings.get(star_key, 0) + 1
+                    vehicle.ratings[field] = field_ratings
 
             vehicle.save()
-            return Response({"status": "Рейтинг успешно обновлен!"}, status=status.HTTP_200_OK)
+
+            # Логируем обновление рейтинга
+            RatingUpdateLog.objects.create(
+                user=request.user,
+                content_type=content_type,
+                object_id=vehicle_id
+            )
+
+            return Response({"status": "Рейтинг успешно обновлен"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
