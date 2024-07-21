@@ -1,4 +1,5 @@
 import redis
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema
@@ -6,11 +7,12 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
 
 
 @extend_schema(summary="Поездка", description='Поездка')
@@ -21,7 +23,18 @@ class TripViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Trip.objects.filter(Q(organizer=user) | Q(vehicle__owner=user))
+        auto_content_type = ContentType.objects.get_for_model(Auto)
+        bike_content_type = ContentType.objects.get_for_model(Bike)
+        ship_content_type = ContentType.objects.get_for_model(Ship)
+        helicopter_content_type = ContentType.objects.get_for_model(Helicopter)
+        special_technic_content_type = ContentType.objects.get_for_model(SpecialTechnic)
+
+        return Trip.objects.filter(Q(organizer=user) |
+            Q(content_type=auto_content_type, object_id__in=Auto.objects.filter(owner=user).values('id')) |
+            Q(content_type=bike_content_type, object_id__in=Bike.objects.filter(owner=user).values('id')) |
+            Q(content_type=ship_content_type, object_id__in=Ship.objects.filter(owner=user).values('id')) |
+            Q(content_type=helicopter_content_type, object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
+            Q(content_type=special_technic_content_type, object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
 
 
 @extend_schema(summary="Чат между арендатором и арендодателем", description='Чат между арендатором и арендодателем. '
@@ -75,14 +88,55 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return RequestRent.objects.filter(Q(organizer=user) | Q(vehicle__owner=user))
+        content_types = {
+            Auto: ContentType.objects.get_for_model(Auto),
+            Bike: ContentType.objects.get_for_model(Bike),
+            Ship: ContentType.objects.get_for_model(Ship),
+            Helicopter: ContentType.objects.get_for_model(Helicopter),
+            SpecialTechnic: ContentType.objects.get_for_model(SpecialTechnic)
+        }
+
+        filters = Q(organizer=user)
+        for model, content_type in content_types.items():
+            filters |= Q(content_type=content_type, object_id__in=model.objects.filter(owner=user).values('id'))
+
+        return RequestRent.objects.filter(filters)
+
+    def check_permissions(self, request):
+        user = request.user
+        if hasattr(user, 'lessor') and request.method in ['POST']:
+            raise PermissionDenied("Арендодатели не могут создавать заявки на аренду.")
+        if hasattr(user, 'renter') and request.method in ['PATCH', 'PUT']:
+            raise PermissionDenied("Арендаторы не могут обновлять заявки на аренду.")
+        super().check_permissions(request)
 
     def perform_update(self, serializer):
         instance = self.get_object()
-        if 'status' in self.request.data and self.request.data['status'] == 'accept':
-            if instance.owner != self.request.user:
-                raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
+        if 'status' in self.request.data:
+            new_status = self.request.data['status']
+            if new_status == 'accept':
+                if instance.owner != self.request.user:
+                    raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
+                Trip.objects.create(
+                    organizer=instance.organizer,
+                    content_type=instance.content_type,
+                    object_id=instance.object_id,
+                    start_date=instance.start_date,
+                    end_date=instance.end_date
+                )
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        return super().create(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        return super().update(request, *args, **kwargs)
 
 
 # Чат с техподдержкой

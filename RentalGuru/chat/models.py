@@ -1,8 +1,9 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.db import models
 
 from RentalGuru import settings
-from vehicle.models import Vehicle
 
 
 class RequestRent(models.Model):
@@ -13,7 +14,11 @@ class RequestRent(models.Model):
     )
     status = models.CharField(max_length=7, default='unknown', choices=STATUS_CHOICES)
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='request_rent_organized_trips')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='request_rent_trips')
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')})
+    object_id = models.PositiveIntegerField()
+    vehicle = GenericForeignKey('content_type', 'object_id')
+
     start_date = models.DateField()
     end_date = models.DateField()
 
@@ -35,7 +40,10 @@ class RequestRent(models.Model):
                 # Создаем объект Trip
                 Trip.objects.create(
                     organizer=self.organizer,
-                    vehicle=self.vehicle,
+
+                    content_type=self.content_type,
+                    object_id=self.object_id,
+
                     start_date=self.start_date,
                     end_date=self.end_date
                 )
@@ -44,7 +52,11 @@ class RequestRent(models.Model):
 
 class Trip(models.Model):
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips')
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='trip_trips')
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')})
+    object_id = models.PositiveIntegerField()
+    vehicle = GenericForeignKey('content_type', 'object_id')
+
     start_date = models.DateField()
     end_date = models.DateField()
 

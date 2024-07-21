@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
 
@@ -14,36 +15,52 @@ class TripSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class ChatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Chat
-        fields = '__all__'
-
-
 class RequestRentSerializer(serializers.ModelSerializer):
+    vehicle_type = serializers.CharField(write_only=True)
+    vehicle_id = serializers.IntegerField(write_only=True)
+
     class Meta:
         model = RequestRent
-        fields = '__all__'
-
-    def get_fields(self, *args, **kwargs):
-        fields = super().get_fields(*args, **kwargs)
-        if self.instance:  # Если это обновление
-            for field in fields:
-                if field != 'status':
-                    fields[field].read_only = True
-        return fields
+        exclude = ['content_type', 'object_id']  # Исключаем content_type и object_id
+        read_only_fields = ['organizer']
 
     def create(self, validated_data):
-        if validated_data.get('status') != 'unknown':
-            validated_data['status'] = 'unknown'
+        vehicle_type = validated_data.pop('vehicle_type')
+        vehicle_id = validated_data.pop('vehicle_id')
+
+        try:
+            content_type = ContentType.objects.get(model=vehicle_type)
+        except ContentType.DoesNotExist:
+            raise serializers.ValidationError({"vehicle_type": "Недопустимый тип объекта."})
+
+        validated_data['content_type'] = content_type
+        validated_data['object_id'] = vehicle_id
+
+        request = self.context.get('request')
+        validated_data['organizer'] = request.user
+
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # Проверяем, что только поле status может быть обновлено
-        if 'status' in validated_data:
-            instance.status = validated_data.get('status', instance.status)
-            instance.save(user=self.context['request'].user)
-        return instance
+        if 'vehicle_type' in validated_data:
+            vehicle_type = validated_data.pop('vehicle_type')
+            try:
+                content_type = ContentType.objects.get(model=vehicle_type)
+            except ContentType.DoesNotExist:
+                raise serializers.ValidationError({"vehicle_type": "Недопустимый тип объекта."})
+            validated_data['content_type'] = content_type
+
+        if 'vehicle_id' in validated_data:
+            vehicle_id = validated_data.pop('vehicle_id')
+            validated_data['object_id'] = vehicle_id
+
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['vehicle_type'] = instance.content_type.model
+        representation['vehicle_id'] = instance.object_id
+        return representation
 
 
 class BaseMessageSerializer(serializers.ModelSerializer):
@@ -57,6 +74,12 @@ class BaseMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         abstract = True
+
+
+class ChatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat
+        fields = '__all__'
 
 
 class MessageSerializer(BaseMessageSerializer):

@@ -132,12 +132,12 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
         'chat': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'propagate': True,
         },
     },

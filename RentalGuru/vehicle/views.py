@@ -1,12 +1,15 @@
+from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic
-from .permission import IsAdminUser, IsAdminOrLessor
+from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsTripOrganizerAndValid
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
 from .serializers.auto import AutoGetSerializer, AutoSerializer, AutoListSerializer
 from .serializers.bike import BikeSerializer, BikeGetSerializer, BikeListSerializer
@@ -21,14 +24,14 @@ from .serializers.specialtechnic import SpecialTechnicSerializer, SpecialTechnic
 class VehicleBrandViewSet(viewsets.ModelViewSet):
     queryset = VehicleBrand.objects.all()
     serializer_class = VehicleBrandSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 @extend_schema(summary="Модель транспорта", description="Модель транспорта")
 class VehicleModelViewSet(viewsets.ModelViewSet):
     queryset = VehicleModel.objects.all().select_related('brand')
     serializer_class = VehicleModelSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class BaseViewSet(viewsets.ModelViewSet):
@@ -115,6 +118,7 @@ class SpecialTechnicViewSet(BaseViewSet):
 @extend_schema(summary="Обновление рейтинга", description="Обновление рейтинга")
 class UpdateRatingView(APIView):
     serializer_class = UpdateRatingSerializer
+    permission_classes = [IsTripOrganizerAndValid]
 
     def patch(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -133,12 +137,23 @@ class UpdateRatingView(APIView):
             }.get(vehicle_type)
 
             if not model:
-                return Response({"error": "Invalid vehicle type"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Неверный тип транспорта"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 vehicle = model.objects.get(id=vehicle_id)
             except model.DoesNotExist:
-                return Response({"error": "Vehicle not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Транспорт не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Пытаемся получить поездку
+            content_type = ContentType.objects.get_for_model(model)
+            try:
+                trip = Trip.objects.get(organizer=request.user.id, content_type=content_type, object_id=vehicle_id)
+            except Trip.DoesNotExist:
+                return Response({"error": "Не найдено соответсвующей поездки"})
+
+            # Проверка завершения поездки
+            if trip.end_date > timezone.now().date():
+                return Response({"error": "Поездка еще не завершилась"})
 
             # Обновляем рейтинги
             ratings_fields = ['Cleanliness', 'Maintenance', 'Communication', 'Convenience', 'Accuracy']
@@ -150,6 +165,6 @@ class UpdateRatingView(APIView):
                 vehicle.ratings[field] = field_ratings
 
             vehicle.save()
-            return Response({"status": "Ratings updated successfully"}, status=status.HTTP_200_OK)
+            return Response({"status": "Рейтинг успешно обновлен!"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

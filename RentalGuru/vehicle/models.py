@@ -1,10 +1,13 @@
 from datetime import date
+
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from polymorphic.models import PolymorphicModel
 
 from RentalGuru import settings
+from chat.models import RequestRent
 
 
 class VehicleBrand(models.Model):
@@ -125,7 +128,7 @@ def default_rating():
 
 
 class Vehicle(PolymorphicModel):
-
+    request_rents = GenericRelation(RequestRent, related_query_name='request_rent')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Владелец')
     brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Марка')
     model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Модель')
