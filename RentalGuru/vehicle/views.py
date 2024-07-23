@@ -115,7 +115,8 @@ class SpecialTechnicViewSet(BaseViewSet):
         return SpecialTechnicSerializer
 
 
-@extend_schema(summary="Обновление рейтинга", description="Обновление рейтинга")
+@extend_schema(summary="Обновление рейтинга", description="Обновить рейтинг может пользователь, который завершил "
+                                                          "поездку. Доступно один раз для одного транспорта")
 class UpdateRatingView(APIView):
     serializer_class = UpdateRatingSerializer
 

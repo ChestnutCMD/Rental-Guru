@@ -9,6 +9,7 @@ from polymorphic.models import PolymorphicModel
 
 from RentalGuru import settings
 from chat.models import RequestRent
+from vehicle.utils import merge_periods
 
 
 class VehicleBrand(models.Model):
@@ -152,26 +153,6 @@ class Vehicle(PolymorphicModel):
     location = models.CharField(max_length=255, verbose_name='Местоположение')
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
 
-    def update_free_dates(self, start_date, end_date):
-        # Удаляем период доступности, который пересекается с поездкой
-        availabilities = self.availabilities.filter(
-            models.Q(start_date__lte=start_date, end_date__gte=start_date) |
-            models.Q(start_date__lte=end_date, end_date__gte=end_date) |
-            models.Q(start_date__gte=start_date, end_date__lte=end_date)
-        )
-
-        new_availabilities = []
-        for availability in availabilities:
-            if availability.start_date < start_date:
-                new_availabilities.append(
-                    Availability(vehicle=self, start_date=availability.start_date, end_date=start_date - date(1)))
-            if availability.end_date > end_date:
-                new_availabilities.append(
-                    Availability(vehicle=self, start_date=end_date + date(1), end_date=availability.end_date))
-            availability.delete()
-
-        Availability.objects.bulk_create(new_availabilities)
-
     def get_average_rating(self):
         average_ratings = {}
         overall_total_stars = 0
@@ -189,6 +170,20 @@ class Vehicle(PolymorphicModel):
         average_ratings['rating'] = overall_average
 
         return average_ratings
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Получение всех текущих периодов доступности
+        availabilities = list(self.availabilities.values('start_date', 'end_date'))
+        if availabilities:
+            merged_availabilities = merge_periods(availabilities)
+
+            # Удаление всех текущих записей доступности
+            self.availabilities.all().delete()
+
+            # Сохранение объединенных периодов доступности
+            for availability in merged_availabilities:
+                Availability.objects.create(vehicle=self, **availability)
 
     def __str__(self):
         return f'Vehicle id-{self.pk}'
@@ -228,6 +223,15 @@ class Availability(models.Model):
 
     def __str__(self):
         return f'Availability {self.start_date} to {self.end_date}'
+
+    def clean(self):
+        """ Проверка, чтобы start_date не была позже end_date """
+        if self.start_date > self.end_date:
+            raise ValidationError('Дата начала не может быть позже даты окончания.')
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Вызов метода clean для проверки
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Дата аренды'

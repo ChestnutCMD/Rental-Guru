@@ -35,7 +35,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
         validated_data['content_type'] = content_type
         validated_data['object_id'] = vehicle_id
-
+        validated_data['status'] = 'unknown'
         request = self.context.get('request')
         validated_data['organizer'] = request.user
 

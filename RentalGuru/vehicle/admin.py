@@ -114,6 +114,23 @@ class BaseVehicleAdmin(admin.ModelAdmin):
             fieldsets.append(('Рейтинг', {'fields': ('get_average_rating',)}))
         return fieldsets
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+
+        availabilities = list(form.instance.availabilities.values('start_date', 'end_date'))
+        if availabilities:
+            merged_availabilities = merge_periods(availabilities)
+
+            # Удаление всех текущих записей доступности
+            form.instance.availabilities.all().delete()
+
+            # Сохранение объединенных периодов доступности
+            for availability in merged_availabilities:
+                Availability.objects.create(vehicle=form.instance, **availability)
+
 
 class AutoAdmin(BaseVehicleAdmin):
     fieldsets = (

@@ -29,26 +29,6 @@ class RequestRent(models.Model):
     def __str__(self):
         return f'request rent id-{self.pk}'
 
-    def save(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        if self.pk:  # Проверка на обновление объекта
-            old_status = RequestRent.objects.get(pk=self.pk).status
-            if old_status != self.status and self.status == 'accept':
-                # Проверяем, что только владелец транспортного средства может изменить статус на "accept"
-                if self.owner != user:
-                    raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
-                # Создаем объект Trip
-                Trip.objects.create(
-                    organizer=self.organizer,
-
-                    content_type=self.content_type,
-                    object_id=self.object_id,
-
-                    start_date=self.start_date,
-                    end_date=self.end_date
-                )
-        super().save(*args, **kwargs)
-
 
 class Trip(models.Model):
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips')

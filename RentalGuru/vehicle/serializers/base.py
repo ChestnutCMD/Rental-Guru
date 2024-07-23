@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
     VehicleBrand, VehicleFeaturesFunctions
+from vehicle.utils import merge_periods
 
 
 class AvailabilitySerializer(serializers.ModelSerializer):
@@ -94,6 +95,10 @@ class BaseVehicleSerializer(serializers.ModelSerializer):
         prices_data = validated_data.pop('rent_prices', [])
         photos_data = validated_data.pop('photos', [])
 
+        # Объединение периодов доступности
+        if availabilities_data:
+            availabilities_data = merge_periods(availabilities_data)
+
         vehicle = super().create(validated_data)
 
         for availability_data in availabilities_data:
@@ -109,6 +114,40 @@ class BaseVehicleSerializer(serializers.ModelSerializer):
             VehiclePhoto.objects.create(vehicle=vehicle, **photo_data)
 
         return vehicle
+
+    def update(self, instance, validated_data):
+        availabilities_data = validated_data.pop('availabilities', [])
+        documents_data = validated_data.pop('documents', [])
+        prices_data = validated_data.pop('rent_prices', [])
+        photos_data = validated_data.pop('photos', [])
+
+        if availabilities_data:
+            availabilities_data = merge_periods(availabilities_data)
+
+        instance = super().update(instance, validated_data)
+
+        # Удаление старых записей и добавление новых
+        if availabilities_data:
+            instance.availabilities.all().delete()
+            for availability_data in availabilities_data:
+                Availability.objects.create(vehicle=instance, **availability_data)
+
+        if documents_data:
+            instance.documents.all().delete()
+            for document_data in documents_data:
+                VehicleDocument.objects.create(vehicle=instance, **document_data)
+
+        if prices_data:
+            instance.rent_prices.all().delete()
+            for price_data in prices_data:
+                RentPrice.objects.create(vehicle=instance, **price_data)
+
+        if photos_data:
+            instance.photos.all().delete()
+            for photo_data in photos_data:
+                VehiclePhoto.objects.create(vehicle=instance, **photo_data)
+
+        return instance
 
     @extend_schema_field(serializers.FloatField())
     def get_average_ratings(self, obj):

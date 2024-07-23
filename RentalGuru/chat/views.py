@@ -7,17 +7,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
+from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
+from .utils import is_period_contained, subtract_periods, calculate_age
 
 
 @extend_schema(summary="Поездка", description='Поездка')
 class TripViewSet(viewsets.ModelViewSet):
-    """ Поездка """
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
 
@@ -42,7 +42,6 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                             'поездки. Чат доступен по адресу '
                                                                             'wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>')
 class ChatViewSet(viewsets.ModelViewSet):
-    """ Чат между арендатором и арендодателем. Создается автоматически при создании поездки """
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
@@ -54,7 +53,6 @@ class ChatViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Сообщения чата арендодателя и арендатора", description="Сообщения чата арендодателя и "
                                                                                "арендатора")
 class MessageViewSet(viewsets.ModelViewSet):
-    """ Сообщения чата арендодателя и арендатора """
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
@@ -76,39 +74,92 @@ def check_redis(request):
 @extend_schema(summary="Заявка на аренду", description="Заявка на аренду. Создать может только пользователь renter.\
                                                 После создания пользователь, который является владельцем транспорта,\
                                                 может обновить статус заявки - принять или отклонить (accept|denied).\
-                                                При изменении статуса на denied автоматически создается поездка Trip)")
+                                                При изменении статуса на accept автоматически создается поездка Trip)")
 class RequestRentViewSet(viewsets.ModelViewSet):
-    """ Заявка на аренду. Создать может только пользователь renter.
-    После создания пользователь, который является владельцем транспорта,
-    может обновить статус заявки - принять или отклонить (accept|denied).
-    При изменении статуса на denied автоматически создается поездка Trip)
-    """
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         content_types = {
-            Auto: ContentType.objects.get_for_model(Auto),
-            Bike: ContentType.objects.get_for_model(Bike),
-            Ship: ContentType.objects.get_for_model(Ship),
-            Helicopter: ContentType.objects.get_for_model(Helicopter),
-            SpecialTechnic: ContentType.objects.get_for_model(SpecialTechnic)
+            'Auto': ContentType.objects.get_for_model(Auto),
+            'Bike': ContentType.objects.get_for_model(Bike),
+            'Ship': ContentType.objects.get_for_model(Ship),
+            'Helicopter': ContentType.objects.get_for_model(Helicopter),
+            'SpecialTechnic': ContentType.objects.get_for_model(SpecialTechnic)
         }
 
         filters = Q(organizer=user)
-        for model, content_type in content_types.items():
+        for model_name, content_type in content_types.items():
+            model = content_type.model_class()
             filters |= Q(content_type=content_type, object_id__in=model.objects.filter(owner=user).values('id'))
 
         return RequestRent.objects.filter(filters)
 
     def check_permissions(self, request):
-        user = request.user
+        user = self.request.user
         if hasattr(user, 'lessor') and request.method in ['POST']:
             raise PermissionDenied("Арендодатели не могут создавать заявки на аренду.")
         if hasattr(user, 'renter') and request.method in ['PATCH', 'PUT']:
             raise PermissionDenied("Арендаторы не могут обновлять заявки на аренду.")
         super().check_permissions(request)
+
+    def create(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        vehicle_type = request.data.get('vehicle_type')
+        object_id = request.data.get('vehicle_id')
+        request_start_date = request.data.get('start_date')
+        request_end_date = request.data.get('end_date')
+
+        if not vehicle_type:
+            raise DRFValidationError("Vehicle type is required.")
+        if not object_id:
+            raise DRFValidationError("Object ID is required.")
+        if not request_start_date:
+            raise DRFValidationError("Start date is required.")
+        if not request_end_date:
+            raise DRFValidationError("End date is required.")
+
+        vehicle_type = vehicle_type.lower()  # Преобразуем к нижнему регистру для сравнения
+        model_mapping = {
+            'auto': Auto,
+            'bike': Bike,
+            'ship': Ship,
+            'helicopter': Helicopter,
+            'specialtechnic': SpecialTechnic
+        }
+
+        model = model_mapping.get(vehicle_type)
+
+        if not model:
+            raise DRFValidationError(f"Invalid vehicle type: {vehicle_type}")
+
+        try:
+            vehicle_instance = model.objects.get(id=object_id)
+        except model.DoesNotExist:
+            raise DRFValidationError(f"Vehicle with ID {object_id} does not exist.")
+
+        availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
+        if not availabilities:
+            raise DRFValidationError("No availability data found for this vehicle.")
+
+        # Преобразование дат в строки
+        for availability in availabilities:
+            availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d')
+            availability['end_date'] = availability['end_date'].strftime('%Y-%m-%d')
+
+        sub_period = {'start_date': request_start_date, 'end_date': request_end_date}
+
+        if not is_period_contained(availabilities, sub_period):
+            raise DRFValidationError("Requested period is not available for this vehicle.")
+
+        user_age = calculate_age(request.user.date_of_birth)
+        drivers_age = vehicle_instance.drivers_age
+
+        if request.user.date_of_birth is None or user_age < drivers_age:
+            raise DRFValidationError("User does not meet the age requirement for this vehicle.")
+
+        return super().create(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -116,7 +167,40 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             new_status = self.request.data['status']
             if new_status == 'accept':
                 if instance.owner != self.request.user:
-                    raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
+                    raise DRFValidationError("Only the vehicle owner can accept the request.")
+
+                model = instance.content_type.model_class()
+                object_id = instance.object_id
+                try:
+                    vehicle_instance = model.objects.get(id=object_id)
+                except model.DoesNotExist:
+                    raise DRFValidationError(f"Vehicle with ID {object_id} does not exist.")
+
+                availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
+                if not availabilities:
+                    raise DRFValidationError("No availability data found for this vehicle.")
+
+                # Преобразование дат в строки
+                for availability in availabilities:
+                    availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d')
+                    availability['end_date'] = availability['end_date'].strftime('%Y-%m-%d')
+
+                sub_period = {'start_date': instance.start_date.strftime('%Y-%m-%d'),
+                              'end_date': instance.end_date.strftime('%Y-%m-%d')}
+                new_availabilities = subtract_periods(availabilities, sub_period)
+
+                if isinstance(new_availabilities, str):
+                    raise DRFValidationError(new_availabilities)
+
+                # Обновление или создание новых объектов Availability
+                vehicle_instance.availabilities.all().delete()
+                for availability in new_availabilities:
+                    Availability.objects.create(
+                        vehicle=vehicle_instance,
+                        start_date=availability['start_date'],
+                        end_date=availability['end_date']
+                    )
+
                 Trip.objects.create(
                     organizer=instance.organizer,
                     content_type=instance.content_type,
@@ -125,10 +209,6 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                     end_date=instance.end_date
                 )
         serializer.save(user=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        self.check_permissions(request)
-        return super().create(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         self.check_permissions(request)
@@ -141,9 +221,9 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
 # Чат с техподдержкой
 
+
 @extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
 class TopicSupportViewSet(viewsets.ModelViewSet):
-    """ Тема чата с техподдержкой """
     queryset = TopicSupport.objects.all()
     serializer_class = TopicSupportSerializer
     permissions = [IsAuthenticated]
@@ -152,7 +232,6 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Чат с техподдержкой", description="Чат с техподдержкой. Доступен по адресу "
                                                           "wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>")
 class ChatSupportViewSet(viewsets.ModelViewSet):
-    """ Чат с техподдержкой """
     serializer_class = ChatSupportSerializer
     permission_classes = [IsChatCreatorOrAdmin]
 
@@ -195,7 +274,6 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
 
 @extend_schema(summary="Сообщения чата техподдержки", description="Сообщения чата техподдержки")
 class MessageSupportViewSet(viewsets.ModelViewSet):
-    """ Сообщения чата техподдержки """
     queryset = MessageSupport.objects.all()
     serializer_class = MessageSupportSerializer
     permission_classes = [IsParticipantOrAdmin]

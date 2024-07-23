@@ -1,3 +1,4 @@
+from datetime import timedelta
 from os import getenv
 from pathlib import Path
 from dotenv import load_dotenv
@@ -179,3 +180,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
+}
