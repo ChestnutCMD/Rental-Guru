@@ -145,7 +145,7 @@ LOGGING = {
         },
         'chat': {
             'handlers': ['console'],
-            'level': 'WARNING',
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
