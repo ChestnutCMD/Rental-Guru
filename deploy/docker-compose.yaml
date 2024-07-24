@@ -10,7 +10,7 @@ services:
     environment:
       DB_HOST: postgres
     volumes:
-      - .:/app
+      - ./staticfiles:/app/staticfiles
     depends_on:
       postgres:
         condition: service_healthy
