@@ -70,7 +70,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'RentalGuru.wsgi.application'
 ASGI_APPLICATION = 'RentalGuru.asgi.application'
 
-REDIS_HOST = getenv('REDIS_HOST', '127.0.0.1')
+REDIS_HOST = getenv('REDIS_HOST', 'redis')
 REDIS_PORT = getenv('REDIS_PORT', '6379')
 REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
 CHANNEL_LAYERS = {
