@@ -7,6 +7,5 @@ RUN pip install -r requirements.txt
 COPY /RentalGuru .
 
 ENTRYPOINT ["bash", "entrypoint.sh"]
-RUN python manage.py collectstatic --noinput
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "myproject.asgi:application", "--workers", "4", "--bind", "0.0.0.0:8000"]
 EXPOSE 8000
