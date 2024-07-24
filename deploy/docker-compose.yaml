@@ -10,7 +10,7 @@ services:
     environment:
       DB_HOST: postgres
     volumes:
-      - ./logs:/app/logs
+      - .:/app
     depends_on:
       postgres:
         condition: service_healthy
