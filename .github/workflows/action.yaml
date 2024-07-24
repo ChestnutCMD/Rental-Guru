@@ -20,7 +20,8 @@ jobs:
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       DB_NAME: ${{ secrets.DB_NAME }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY}}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
     steps:
       - name: clone code
         uses: actions/checkout@v2

@@ -114,10 +114,7 @@ SPECTACULAR_SETTINGS = {
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://saqartvel.ru',
-    'https://saqartvel.ru'
-]
+CSRF_TRUSTED_ORIGINS = getenv('CSRF_TRUSTED_ORIGINS')
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
