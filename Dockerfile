@@ -7,5 +7,5 @@ RUN pip install -r requirements.txt
 COPY /RentalGuru .
 
 ENTRYPOINT ["bash", "entrypoint.sh"]
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "RentalGuru.asgi:application"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "myproject.asgi:application", "--workers", "4", "--bind", "0.0.0.0:8000"]
 EXPOSE 8000
