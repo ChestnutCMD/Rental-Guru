@@ -1,3 +1,5 @@
+import os
+
 import redis
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -64,7 +66,7 @@ class MessageViewSet(viewsets.ModelViewSet):
 def check_redis(request):
     """ Проверка redis """
     try:
-        r = redis.Redis(host='redis', port=6379, db=0)
+        r = redis.Redis(host=os.getenv('REDIS_HOST'), port=6379, db=0)
         r.ping()
         return JsonResponse({'status': 'ok'})
     except Exception as e:

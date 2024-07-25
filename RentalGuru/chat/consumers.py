@@ -137,7 +137,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
 class ChatConsumer(BaseChatConsumer):
     def get_chat_instance(self):
-        return Chat.objects.select_related('trip', 'trip__organizer', 'trip__vehicle__owner').get(id=self.chat_id)
+        return Chat.objects.select_related(
+            'trip__organizer', 'trip__content_type'
+        ).only(
+            'id', 'trip__id', 'trip__organizer__id', 'trip__content_type__id', 'trip__object_id'
+        ).get(id=self.chat_id)
 
     def get_chat_model(self):
         return Chat
@@ -146,7 +150,11 @@ class ChatConsumer(BaseChatConsumer):
         return Message.objects.create(chat=chat, sender=user, content=message_content, file=file)
 
     def get_messages_queryset(self, chat):
-        return chat.messages.order_by('timestamp').select_related('sender').all()
+        return chat.messages.order_by('timestamp').select_related(
+            'sender'
+        ).only(
+            'id', 'chat_id', 'sender_id', 'content', 'timestamp', 'file', 'sender__id', 'sender__first_name', 'sender__avatar'
+        )
 
     def check_user_access(self, user, chat):
         if user.role == 'admin':
