@@ -1,6 +1,13 @@
 from django.contrib import admin
 from .models import *
 
+admin.site.site_header = "Rental Guru"
+admin.site.site_title = "Rental Guru Admin"
+admin.site.index_title = "CRM"
+admin.site.css = {
+            'all': ('css/custom_admin.css',)
+        }
+
 
 @admin.register(VehicleFeaturesFunctions)
 class VehicleFeaturesFunctionsAdmin(admin.ModelAdmin):
@@ -139,7 +146,8 @@ class AutoAdmin(BaseVehicleAdmin):
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'body_type', 'seats', 'transmission', 'fuel_type',
-                       'year', 'description', 'long_distance', 'delivery', 'ensurance', 'vehicle_class', 'acceptable_mileage')
+                       'year', 'description', 'long_distance', 'delivery', 'ensurance', 'vehicle_class',
+                       'acceptable_mileage')
         }),
         ('Особенности', {
             'fields': ('features_for_children', 'features_functions', 'features_additionally')

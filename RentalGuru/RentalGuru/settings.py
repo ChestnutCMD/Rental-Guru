@@ -1,3 +1,4 @@
+import os.path
 from datetime import timedelta
 from os import getenv
 from pathlib import Path
@@ -23,6 +24,7 @@ ALLOWED_HOSTS = [getenv('ALLOWED_HOSTS')]
 # Application definition
 
 INSTALLED_APPS = [
+    'jet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -140,12 +142,12 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
         'chat': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     },
@@ -191,3 +193,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
 }
+
+JET_THEMES = [
+    {
+        'theme': 'green',  # Название темы
+        'color': '#004a55',  # Цветовая схема
+        'title': 'green',  # Название темы, отображаемое в интерфейсе
+    },
+]
+
+JET_DEFAULT_THEME = 'green'
+
+# JET_INDEX_DASHBOARD = 'RentalGuru.jet.CustomIndexDashboard'
+# JET_APP_INDEX_DASHBOARD = 'RentalGuru.jet.CustomAppIndexDashboard'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
