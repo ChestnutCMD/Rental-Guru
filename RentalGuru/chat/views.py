@@ -34,11 +34,16 @@ class TripViewSet(viewsets.ModelViewSet):
         special_technic_content_type = ContentType.objects.get_for_model(SpecialTechnic)
 
         return Trip.objects.filter(Q(organizer=user) |
-            Q(content_type=auto_content_type, object_id__in=Auto.objects.filter(owner=user).values('id')) |
-            Q(content_type=bike_content_type, object_id__in=Bike.objects.filter(owner=user).values('id')) |
-            Q(content_type=ship_content_type, object_id__in=Ship.objects.filter(owner=user).values('id')) |
-            Q(content_type=helicopter_content_type, object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
-            Q(content_type=special_technic_content_type, object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
+                                   Q(content_type=auto_content_type,
+                                     object_id__in=Auto.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=bike_content_type,
+                                     object_id__in=Bike.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=ship_content_type,
+                                     object_id__in=Ship.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=helicopter_content_type,
+                                     object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=special_technic_content_type,
+                                     object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
 
 
 @extend_schema(summary="Чат между арендатором и арендодателем", description='Чат между арендатором и арендодателем. '
@@ -290,6 +295,10 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(summary="Отзывы", description="Отзывы к транспорту может оставлять только пользователь, который "
+                                             "пользовался транспортом, только после завершения поездки и только один "
+                                             "отзыв к одному транспорту. Отвечать на отзывы может только хозяин "
+                                             "транспорта")
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.select_related('user', 'content_type').all()
     permission_classes = [IsAuthenticated]
