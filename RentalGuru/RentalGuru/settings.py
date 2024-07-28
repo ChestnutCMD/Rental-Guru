@@ -196,16 +196,35 @@ SIMPLE_JWT = {
 
 JET_THEMES = [
     {
-        'theme': 'green',  # Название темы
-        'color': '#004a55',  # Цветовая схема
-        'title': 'green',  # Название темы, отображаемое в интерфейсе
+        'theme': 'default',
+        'color': '#47bac1',
+        'title': 'Default'
     },
+    {
+        'theme': 'green',
+        'color': '#44b78b',
+        'title': 'Green'
+    },
+    {
+        'theme': 'light-green',
+        'color': '#83C3AA',
+        'title': 'Light Green'
+    },
+    {
+        'theme': 'light-violet',
+        'color': '#C1A7CE',
+        'title': 'Light Violet'
+    },
+    {
+        'theme': 'light-blue',
+        'color': '#5EADDE',
+        'title': 'Light Blue'
+    },
+    {
+        'theme': 'light-gray',
+        'color': '#222',
+        'title': 'Light Gray'
+    }
 ]
 
 JET_DEFAULT_THEME = 'green'
-
-# JET_INDEX_DASHBOARD = 'RentalGuru.jet.CustomIndexDashboard'
-# JET_APP_INDEX_DASHBOARD = 'RentalGuru.jet.CustomAppIndexDashboard'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]

@@ -4,16 +4,18 @@ import redis
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import JsonResponse
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
-    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer
+    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, FeedbackUpdateSerializer, \
+    FeedbackSerializer, FeedbackCreateSerializer
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
 from .utils import is_period_contained, subtract_periods, calculate_age
 
@@ -286,3 +288,62 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
         message = MessageSupport.objects.create(support_chat=chat, sender=request.user, content=content)
         serializer = MessageSupportSerializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class FeedbackViewSet(viewsets.ModelViewSet):
+    queryset = Feedback.objects.select_related('user', 'content_type').all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ['create']:
+            return FeedbackCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return FeedbackUpdateSerializer
+        return FeedbackSerializer
+
+    def perform_create(self, serializer):
+        content_type_id = self.request.data.get('content_type')
+        object_id = self.request.data.get('object_id')
+
+        if not content_type_id or not object_id:
+            raise serializers.ValidationError("Необходимо указать content_type и object_id.")
+
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+        except ContentType.DoesNotExist:
+            raise serializers.ValidationError("Указанный тип контента не существует.")
+
+        # Проверка, оставлял ли уже пользователь отзыв для данного транспортного средства
+        existing_feedback = Feedback.objects.filter(user=self.request.user,
+                                                    content_type=content_type,
+                                                    object_id=object_id).exists()
+
+        if existing_feedback:
+            raise serializers.ValidationError("Вы уже оставили отзыв для данного транспортного средства.")
+        try:
+            trip = Trip.objects.get(
+                organizer=self.request.user,
+                content_type=content_type,
+                object_id=object_id
+            )
+        except Trip.DoesNotExist:
+            raise serializers.ValidationError(
+                "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом.")
+
+        if trip.end_date > timezone.now().date():
+            raise serializers.ValidationError("Поездка еще не завершена.")
+
+        serializer.save(user=self.request.user, content_type=content_type, object_id=object_id)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if 'answer' in request.data:
+            if instance.vehicle.owner != request.user:
+                raise serializers.ValidationError("Только владелец транспорта может оставлять ответы на отзывы.")
+            instance.answer = request.data['answer']
+            instance.save()
+            return Response(FeedbackSerializer(instance).data)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

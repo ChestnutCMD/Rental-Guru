@@ -1,12 +1,17 @@
 from django.contrib import admin
+from django.contrib.contenttypes.admin import GenericStackedInline
+
+from chat.models import Feedback
 from .models import *
 
 admin.site.site_header = "Rental Guru"
 admin.site.site_title = "Rental Guru Admin"
 admin.site.index_title = "CRM"
-admin.site.css = {
-            'all': ('css/custom_admin.css',)
-        }
+
+
+class FeedbackInline(GenericStackedInline):
+    model = Feedback
+    extra = 1
 
 
 @admin.register(VehicleFeaturesFunctions)
@@ -101,7 +106,7 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('ratings', 'get_average_rating')
 
-    inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline]
+    inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline, FeedbackInline]
 
     def get_vehicle_type(self, obj):
         return obj.__class__.__name__
@@ -116,8 +121,7 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj:
-            # Include the average rating in the fieldsets if the object exists
-            fieldsets = list(fieldsets)  # Convert to list to modify
+            fieldsets = list(fieldsets)
             fieldsets.append(('Рейтинг', {'fields': ('get_average_rating',)}))
         return fieldsets
 
@@ -137,6 +141,13 @@ class BaseVehicleAdmin(admin.ModelAdmin):
             # Сохранение объединенных периодов доступности
             for availability in merged_availabilities:
                 Availability.objects.create(vehicle=form.instance, **availability)
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = super().get_inline_instances(request, obj)
+        if not obj:
+
+            inline_instances = [inline for inline in inline_instances if not isinstance(inline, FeedbackInline)]
+        return inline_instances
 
 
 class AutoAdmin(BaseVehicleAdmin):
@@ -171,6 +182,7 @@ class AutoAdmin(BaseVehicleAdmin):
     )
 
 
+
 class BikeAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
@@ -200,6 +212,7 @@ class BikeAdmin(BaseVehicleAdmin):
             'classes': ('collapse',)
         })
     )
+
 
 
 class ShipAdmin(BaseVehicleAdmin):
@@ -235,6 +248,7 @@ class ShipAdmin(BaseVehicleAdmin):
     )
 
 
+
 class HelicopterAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
@@ -265,6 +279,7 @@ class HelicopterAdmin(BaseVehicleAdmin):
     )
 
 
+
 class SpecialTechnicAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
@@ -291,6 +306,7 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
             'classes': ('collapse',)
         })
     )
+
 
 
 admin.site.register(Auto, AutoAdmin)

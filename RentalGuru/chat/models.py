@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.db import models
 
 from RentalGuru import settings
@@ -121,3 +120,21 @@ class MessageSupport(models.Model):
 
     def __str__(self):
         return self.content
+
+
+class Feedback(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name='Пользователь')
+    content = models.CharField(max_length=255, verbose_name='Отзыв')
+    answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
+        'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
+    object_id = models.PositiveIntegerField(verbose_name='id транспорта')
+    vehicle = GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        return self.content
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'

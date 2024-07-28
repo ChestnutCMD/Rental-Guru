@@ -7,7 +7,7 @@ class RequestRentAdmin(admin.ModelAdmin):
     list_display = ('id', 'status', 'organizer', 'start_date', 'end_date', 'vehicle')
     search_fields = ('organizer__first_name', 'status')
     list_filter = ('status', 'start_date', 'end_date')
-    list_display_links = ('organizer__first_name', 'vehicle')
+    list_display_links = ('organizer', 'vehicle')
 
 
 @admin.register(Trip)
@@ -15,7 +15,7 @@ class TripAdmin(admin.ModelAdmin):
     list_display = ('id', 'organizer', 'start_date', 'end_date', 'vehicle')
     search_fields = ('organizer__first_name',)
     list_filter = ('start_date', 'end_date')
-    list_display_links = ('organizer__first_name', 'vehicle')
+    list_display_links = ('organizer', 'vehicle')
 
 
 class MessageInline(admin.TabularInline):

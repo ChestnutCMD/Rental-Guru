@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -150,3 +150,43 @@ class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
         model = ChatSupport
         fields = ['id', 'topic', 'participants', 'messages']
         read_only_fields = ['participants']
+
+
+class VehicleRelatedField(serializers.Field):
+    def to_representation(self, value):
+        return {
+            'id': value.id,
+            'type': value._meta.model_name,
+            'name': str(value)
+        }
+
+class FeedbackCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Feedback
+        fields = ['id', 'content', 'content_type', 'object_id']
+
+class FeedbackUpdateSerializer(serializers.ModelSerializer):
+    answer = serializers.CharField(required=True)
+
+    class Meta:
+        model = Feedback
+        fields = ['answer']
+
+    def validate_answer(self, value):
+        request = self.context.get('request')
+        if self.instance.vehicle.owner != request.user:
+            raise serializers.ValidationError("Только владелец транспорта может оставлять ответы на отзывы.")
+        return value
+
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    answer = serializers.CharField(required=False, allow_blank=True)
+    vehicle = VehicleRelatedField()
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'user', 'content', 'answer', 'content_type', 'object_id', 'vehicle']
+
+    def get_user(self, obj):
+        return obj.user.first_name if obj.user else None
