@@ -49,7 +49,8 @@ class TripViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Чат между арендатором и арендодателем", description='Чат между арендатором и арендодателем. '
                                                                             'Создается автоматически при создании '
                                                                             'поездки. Чат доступен по адресу '
-                                                                            'wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>')
+                                                                            'wss://<host_name>/ws/chat/<chat_id'
+                                                                            '>/?token=<JWT>&lang=<lang>')
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
@@ -239,7 +240,8 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(summary="Чат с техподдержкой", description="Чат с техподдержкой. Доступен по адресу "
-                                                          "wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>")
+                                                          "wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT"
+                                                          ">&lang=<lang>")
 class ChatSupportViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSupportSerializer
     permission_classes = [IsChatCreatorOrAdmin]

@@ -1,26 +1,26 @@
+from googletrans import Translator
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from django.contrib.auth import get_user_model
-
 import json
-
 from chat.models import MessageSupport, ChatSupport, Message, Chat
 
-User = get_user_model()
-
+translator = Translator()
 
 class BaseChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.chat_group_name = f'chat_{self.chat_id}'
 
+        query_params = dict(x.split('=') for x in self.scope['query_string'].decode().split('&'))
+        token = query_params.get('token')
+        self.language = query_params.get('lang', 'en')  # Default to English if no language is specified
+
         try:
-            token = self.scope['query_string'].decode().split('=')[1]
             UntypedToken(token)
-        except (IndexError, InvalidToken, TokenError):
+        except (InvalidToken, TokenError):
             await self.close()
             return
 
@@ -55,7 +55,20 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         file = text_data_json.get('file')
         user = self.scope['user']
 
-        message = await self.save_message(user, message_content, file)
+        # Log message content before translation
+        print(f"Original message: {message_content}")
+
+        # Translate message content
+        try:
+            translated_message_content = translator.translate(message_content, dest=self.language).text
+        except Exception as e:
+            print(f"Error during translation: {e}")
+            translated_message_content = message_content
+
+        # Log translated message content
+        print(f"Translated message: {translated_message_content}")
+
+        message = await self.save_message(user, translated_message_content, file)
 
         await self.channel_layer.group_send(
             self.chat_group_name,
@@ -93,8 +106,21 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     def get_previous_messages(self):
         chat = self.get_chat_instance()
         messages = self.get_messages_queryset(chat)
-        return [self.format_message(message, message.sender) for message in messages]
+        translated_messages = []
 
+        for message in messages:
+            try:
+                # Translate message content
+                translated_content = translator.translate(message.content, dest=self.language).text
+            except Exception as e:
+                print(f"Error during translation: {e}")
+                translated_content = message.content
+
+            message_data = self.format_message(message, message.sender)
+            message_data['content'] = translated_content
+            translated_messages.append(message_data)
+
+        return translated_messages
     async def send_previous_messages(self):
         previous_messages = await self.get_previous_messages()
         await self.send(text_data=json.dumps({
@@ -173,9 +199,9 @@ class ChatSupportConsumer(BaseChatConsumer):
         return MessageSupport.objects.create(support_chat=chat, sender=user, content=message_content, file=file)
 
     def get_messages_queryset(self, chat):
-        return chat.message_support.select_related('sender').order_by('timestamp').all()
+        return chat.message_support.select_related('sender').order_by('timestamp')
 
     def check_user_access(self, user, chat):
-        if user.role == 'admin':
+        if user.is_superuser or user.is_staff:
             return True
-        return user in chat.participants.all()
+        return chat.creator == user
