@@ -1,12 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from .models import User, Lessor, Renter
 
-
-class CustomUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'role']
+from .models import User, Lessor, Renter, RenterDocuments
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -43,8 +38,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-# Serializer for change password
-
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True, validators=[validate_password])
@@ -62,14 +55,68 @@ class ChangePasswordSerializer(serializers.Serializer):
         return user
 
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'date_of_birth', 'telephone', 'currency', 'avatar', 'about', 'email_notification', 'push_notification', 'date_joined']
-        read_only_fields = ['date_joined']
+        fields = ['id', 'first_name', 'last_name', 'email', 'role', 'avatar']
+
+
+class RenterDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RenterDocuments
+        fields = ['title', 'number', 'photo']
+
+
+class RenterDetailSerializer(serializers.ModelSerializer):
+    renter_documents = RenterDocumentsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Renter
+        fields = ['favorite', 'verification', 'renter_documents']
+
+
+class LessorDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lessor
+        fields = ['super_host', 'count_trip', 'average_response_time']
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    renter = RenterDetailSerializer(read_only=True)
+    lessor = LessorDetailSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 'last_name', 'email', 'role', 'avatar',
+            'date_of_birth', 'telephone', 'currency', 'about',
+            'email_notification', 'push_notification', 'renter', 'lessor'
+        ]
+        read_only_fields = ['role']
 
     def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+        user_role = self.context['request'].user.role
+        if user_role != 'admin':
+            if 'role' in validated_data:
+                validated_data.pop('role')
+            if hasattr(instance, 'renter') and 'renter' in validated_data:
+                renter_data = validated_data.pop('renter')
+                if 'verification' in renter_data:
+                    renter_data.pop('verification')
+                for attr, value in renter_data.items():
+                    setattr(instance.renter, attr, value)
+                instance.renter.save()
+            if hasattr(instance, 'lessor') and 'lessor' in validated_data:
+                lessor_data = validated_data.pop('lessor')
+                if 'super_host' in lessor_data:
+                    lessor_data.pop('super_host')
+                if 'count_trip' in lessor_data:
+                    lessor_data.pop('count_trip')
+                if 'average_response_time' in lessor_data:
+                    lessor_data.pop('average_response_time')
+                for attr, value in lessor_data.items():
+                    setattr(instance.lessor, attr, value)
+                instance.lessor.save()
+        return super().update(instance, validated_data)
+
+

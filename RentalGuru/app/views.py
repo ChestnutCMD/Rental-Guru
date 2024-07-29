@@ -1,27 +1,14 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
-from rest_framework.generics import RetrieveAPIView, DestroyAPIView
+from rest_framework import generics, status, viewsets
+
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import User
-from .serializers import RegisterSerializer, CustomUserSerializer, ChangePasswordSerializer, UserUpdateSerializer
-
-
-@extend_schema(summary="Регистрация пользователя", description="Регистрация пользователя")
-class RegisterView(generics.CreateAPIView):
-    """Регистрация пользователя"""
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-
-
-@extend_schema(summary="Получение списка всех пользователей", description="Получение списка всех пользователей")
-class UserListView(generics.ListAPIView):
-    """Получение списка всех пользователей"""
-    queryset = User.objects.all().select_related('lessor', 'renter')
-    serializer_class = CustomUserSerializer
+from .permissions import IsAdminOrSelf
+from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -37,8 +24,21 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Пользователь по ID", description="Детальное получение, обновление, удаление пользователя по ID")
-class UserRetrieveAPIView(generics.UpdateAPIView, RetrieveAPIView, DestroyAPIView):
-    """Детальное получение, обновление, удаление пользователя по ID"""
-    queryset = User.objects.all().select_related('lessor', 'renter')
-    serializer_class = UserUpdateSerializer
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return RegisterSerializer
+        elif self.action == 'list':
+            return UserListSerializer
+        return UserDetailSerializer
+
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAdminOrSelf]
+        return super().get_permissions()
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
