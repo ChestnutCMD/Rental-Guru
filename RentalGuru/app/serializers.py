@@ -1,6 +1,13 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 
+from vehicle.models import Vehicle, Auto, Bike, Ship
+from vehicle.serializers.auto import AutoListSerializer
+from vehicle.serializers.base import VehicleBrandSerializer, VehicleModelSerializer
+from vehicle.serializers.bike import BikeListSerializer
+from vehicle.serializers.helicopter import HelicopterListSerializer
+from vehicle.serializers.ship import ShipListSerializer
+from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments
 
 
@@ -120,3 +127,20 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class VehicleListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vehicle
+        fields = ['id', 'brand', 'model']
+
+    def to_representation(self, instance):
+        if isinstance(instance, Auto):
+            return AutoListSerializer(instance).data
+        elif isinstance(instance, Bike):
+            return BikeListSerializer(instance).data
+        elif isinstance(instance, Ship):
+            return ShipListSerializer(instance).data
+        elif isinstance(instance, Ship):
+            return HelicopterListSerializer(instance).data
+        elif isinstance(instance, Ship):
+            return SpecialTechnicListSerializer(instance).data
+        return super().to_representation(instance)
