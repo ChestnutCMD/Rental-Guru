@@ -15,6 +15,7 @@ class UserAdmin(admin.ModelAdmin):
                'currency',
                'about',
                'email_notification',
-               'push_notification')
+               'push_notification',
+               )
     search_fields = ('first_name',)
     ordering = ('first_name',)

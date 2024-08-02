@@ -1,3 +1,4 @@
+from django.utils import timezone
 from googletrans import Translator
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -8,6 +9,7 @@ import json
 from chat.models import MessageSupport, ChatSupport, Message, Chat
 
 translator = Translator()
+
 
 class BaseChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -162,6 +164,33 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
 
 class ChatConsumer(BaseChatConsumer):
+    # Сохраняем время подключения пользователя
+    async def connect(self):
+        self.connected_at = timezone.now()
+        await super().connect()
+
+    async def receive(self, text_data):
+        self.message_received_at = timezone.now()
+        await super().receive(text_data)
+        await self.update_response_time()
+
+    @database_sync_to_async
+    def update_response_time(self):
+        user = self.scope['user']
+        if hasattr(user, 'lessor'):
+            response_time = self.message_received_at - self.connected_at
+            lessor = user.lessor
+
+            if lessor.average_response_time is None:
+                lessor.average_response_time = response_time
+            else:
+                total_response_time = lessor.average_response_time * lessor.count_trip
+                total_response_time += response_time
+                lessor.count_trip += 1
+                lessor.average_response_time = total_response_time / lessor.count_trip
+
+            lessor.save()
+
     def get_chat_instance(self):
         return Chat.objects.select_related(
             'trip__organizer', 'trip__content_type'

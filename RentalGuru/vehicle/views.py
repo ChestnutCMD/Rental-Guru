@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from app.models import Lessor
 from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
@@ -155,11 +156,11 @@ class UpdateRatingView(APIView):
 
             # Пытаемся получить поездку
             try:
-                trip = Trip.objects.get(
+                trip = Trip.objects.filter(
                     organizer=request.user,
                     content_type=content_type,
                     object_id=vehicle_id
-                )
+                ).first()
             except Trip.DoesNotExist:
                 return Response({"error": "Не найдено соответствующей поездки"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -178,6 +179,13 @@ class UpdateRatingView(APIView):
                     vehicle.ratings[field] = field_ratings
 
             vehicle.save()
+
+            try:
+                lessor = Lessor.objects.get(user=vehicle.owner)
+                lessor.count_trip += 1
+                lessor.save()
+            except Lessor.DoesNotExist:
+                return Response({"error": "Арендодатель не найден"}, status=status.HTTP_404_NOT_FOUND)
 
             # Логируем обновление рейтинга
             RatingUpdateLog.objects.create(

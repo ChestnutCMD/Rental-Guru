@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from RentalGuru import settings
 from app.manager import UserManager
 from vehicle.models import Vehicle
 
@@ -41,7 +42,7 @@ class Lessor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lessor')
     super_host = models.BooleanField(default=False, verbose_name='Суперхост')
     count_trip = models.PositiveIntegerField(default=0, verbose_name='Колличество поездок')
-    average_response_time = models.TimeField(null=True, blank=True, verbose_name='Среднее время ответа')
+    average_response_time = models.DurationField(null=True, blank=True, verbose_name='Среднее время ответа')
 
     def __str__(self):
         return str(self.user)
@@ -51,10 +52,29 @@ class Lessor(models.Model):
         verbose_name_plural = 'Арендодатели'
 
 
+def default_rating():
+    return {"5_stars": 0, "4_stars": 0, "3_stars": 0, "2_stars": 0, "1_stars": 0}
+
+
 class Renter(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='renter')
     favorite = models.ManyToManyField(Vehicle, blank=True, verbose_name='Избранное')
     verification = models.BooleanField(default=False, verbose_name='Верифированный пользователь')
+    rating = models.JSONField(default=default_rating, verbose_name='Рейтинг')
+
+    def get_average_rating(self):
+        total_ratings = sum(self.rating.values())
+        if total_ratings == 0:
+            return 0
+
+        weighted_sum = (
+            self.rating["5_stars"] * 5 +
+            self.rating["4_stars"] * 4 +
+            self.rating["3_stars"] * 3 +
+            self.rating["2_stars"] * 2 +
+            self.rating["1_stars"] * 1
+        )
+        return weighted_sum / total_ratings
 
     def __str__(self):
         return str(self.user)
@@ -80,3 +100,15 @@ class RenterDocuments(models.Model):
     class Meta:
         verbose_name = 'Документ'
         verbose_name_plural = 'Документы'
+
+
+class Rating(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='given_ratings')
+    renter = models.ForeignKey(Renter, on_delete=models.CASCADE, related_name='received_ratings')
+    rating = models.PositiveSmallIntegerField(choices=[(1, '1 Star'), (2, '2 Stars'), (3, '3 Stars'), (4, '4 Stars'), (5, '5 Stars')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'renter')
+        verbose_name = 'Рейтинг'
+        verbose_name_plural = 'Рейтинги'

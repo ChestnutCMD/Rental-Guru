@@ -1,17 +1,20 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from chat.models import Trip
 from vehicle.models import Vehicle
-from .models import User, RenterDocuments, Renter
+from .models import User, RenterDocuments, Renter, Rating
 from .permissions import IsAdminOrSelf
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
-    RenterDocumentsSerializer, VehicleListSerializer
+    RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -147,3 +150,43 @@ class FavoriteVehicleViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Vehicle.DoesNotExist:
             return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(summary="Обновление рейтинга арендатора", description="Выставляется владельцем транспорта, после "
+                                                                     "завершения поездки. Принимает JSON: {"
+                                                                     "'rating': 5}")
+class UpdateRatingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, renter_id):
+        renter = get_object_or_404(Renter.objects.select_related('user'), id=renter_id)
+        user = request.user
+
+        # Получаем все поездки арендатора и проверяем, что текущий пользователь является владельцем транспортного средства в одной из завершённых поездок
+        trips = Trip.objects.filter(organizer=renter.user, end_date__lt=now()).select_related(
+            'content_type').prefetch_related('vehicle')
+
+        is_owner = any(trip.vehicle.owner == user for trip in trips)
+
+        if not is_owner:
+            return Response({
+                                "detail": "Вы не являетесь владельцем транспортного средства в завершённых поездках данного арендатора."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # Проверяем, что текущий пользователь еще не оставлял рейтинг этому арендатору
+        if Rating.objects.filter(user=user, renter=renter).exists():
+            return Response({"detail": "Вы уже оставляли рейтинг этому арендатору."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UpdateRatingSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Обновляем рейтинг арендатора
+            serializer.update(renter, serializer.validated_data)
+
+            # Сохраняем информацию о рейтинге
+            Rating.objects.create(user=user, renter=renter, rating=serializer.validated_data['rating'])
+
+            return Response({"average_rating": renter.get_average_rating()}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

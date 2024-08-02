@@ -144,3 +144,19 @@ class VehicleListSerializer(serializers.ModelSerializer):
         elif isinstance(instance, Ship):
             return SpecialTechnicListSerializer(instance).data
         return super().to_representation(instance)
+
+
+class UpdateRatingSerializer(serializers.Serializer):
+    rating = serializers.ChoiceField(choices=[1, 2, 3, 4, 5], required=True)
+
+    def update(self, instance, validated_data):
+        rating_value = validated_data['rating']
+        rating_field = f"{rating_value}_stars"
+
+        if rating_field in instance.rating:
+            instance.rating[rating_field] += 1
+        else:
+            instance.rating[rating_field] = 1
+
+        instance.save()
+        return instance

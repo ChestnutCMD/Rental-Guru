@@ -122,13 +122,13 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         request_end_date = request.data.get('end_date')
 
         if not vehicle_type:
-            raise DRFValidationError("Vehicle type is required.")
+            raise DRFValidationError("Требуется указать тип транспортного средства.")
         if not object_id:
-            raise DRFValidationError("Object ID is required.")
+            raise DRFValidationError("Требуется идентификатор объекта.")
         if not request_start_date:
-            raise DRFValidationError("Start date is required.")
+            raise DRFValidationError("Обязательна дата начала.")
         if not request_end_date:
-            raise DRFValidationError("End date is required.")
+            raise DRFValidationError("Обязательна дата окончания.")
 
         vehicle_type = vehicle_type.lower()  # Преобразуем к нижнему регистру для сравнения
         model_mapping = {
@@ -142,16 +142,16 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         model = model_mapping.get(vehicle_type)
 
         if not model:
-            raise DRFValidationError(f"Invalid vehicle type: {vehicle_type}")
+            raise DRFValidationError(f"Недопустимый тип транспортного средства: {vehicle_type}")
 
         try:
             vehicle_instance = model.objects.get(id=object_id)
         except model.DoesNotExist:
-            raise DRFValidationError(f"Vehicle with ID {object_id} does not exist.")
+            raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
         availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
         if not availabilities:
-            raise DRFValidationError("No availability data found for this vehicle.")
+            raise DRFValidationError("Не найдено доступных дат для этого транспорта.")
 
         # Преобразование дат в строки
         for availability in availabilities:
@@ -161,13 +161,19 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         sub_period = {'start_date': request_start_date, 'end_date': request_end_date}
 
         if not is_period_contained(availabilities, sub_period):
-            raise DRFValidationError("Requested period is not available for this vehicle.")
+            raise DRFValidationError("Запрашиваемый период недоступен для данного транспортного средства.")
 
         user_age = calculate_age(request.user.date_of_birth)
         drivers_age = vehicle_instance.drivers_age
 
         if request.user.date_of_birth is None or user_age < drivers_age:
-            raise DRFValidationError("User does not meet the age requirement for this vehicle.")
+            raise DRFValidationError("Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
+
+        if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
+            raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
+
+        if vehicle_instance.drivers_rating > request.user.renter.get_average_rating():
+            raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
         return super().create(request, *args, **kwargs)
 
