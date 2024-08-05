@@ -49,8 +49,6 @@ services:
   celery:
     image: $DOCKER_USERNAME/rental-guru:$GITHUB_REF_NAME-$GITHUB_RUN_ID
     container_name: celery
-    volumes:
-      - ./RentalGuru:/app
     env_file:
       - .env
     environment:
