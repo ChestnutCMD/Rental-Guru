@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase FCM Token Test</title>
+</head>
+<body>
+    <h1>Firebase FCM Token Test</h1>
+    <button id="get-token">Get FCM Token</button>
+    <p id="token"></p>
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <!-- Firebase Messaging -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+              apiKey: "AIzaSyBBecGpIXjG5gEdk7KbpxUd-kAZM0a_Hes",
+              authDomain: "rental-guru-6ed62.firebaseapp.com",
+              projectId: "rental-guru-6ed62",
+              storageBucket: "rental-guru-6ed62.appspot.com",
+              messagingSenderId: "120690662784",
+              appId: "1:120690662784:web:bc8ab9e83770e472aeb565",
+              measurementId: "G-7XY2SZNXZW"
+            };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Retrieve Firebase Messaging object
+        const messaging = firebase.messaging();
+
+        // Request permission to receive notifications and get token
+        document.getElementById('get-token').addEventListener('click', async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken({ vapidKey: 'YOUR_PUBLIC_VAPID_KEY' });
+                    console.log('FCM Token:', token);
+                    document.getElementById('token').innerText = 'FCM Token: ' + token;
+                } else {
+                    console.error('Notification permission not granted');
+                    document.getElementById('token').innerText = 'Notification permission not granted';
+                }
+            } catch (error) {
+                console.error('Error getting FCM token:', error);
+                document.getElementById('token').innerText = 'Error getting FCM token: ' + error;
+            }
+        });
+
+        // Handle incoming messages (optional)
+        messaging.onMessage((payload) => {
+            console.log('Message received. ', payload);
+            // Customize your notification here
+        });
+    </script>
+</body>
+</html>
