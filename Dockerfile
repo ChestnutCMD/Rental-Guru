@@ -7,6 +7,6 @@ RUN pip install -r requirements.txt
 COPY entrypoint.sh .
 COPY /RentalGuru .
 RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["bash", "entrypoint.sh"]
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "RentalGuru.asgi:application"]
 EXPOSE 8000
