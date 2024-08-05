@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from app.models import User
+from app.models import User, Renter
 
 
 @admin.register(User)
@@ -19,3 +19,8 @@ class UserAdmin(admin.ModelAdmin):
                )
     search_fields = ('first_name',)
     ordering = ('first_name',)
+
+
+@admin.register(Renter)
+class RenterAdmin(admin.ModelAdmin):
+    display = ('push_notification', 'user', 'favorite', 'verification', 'rating')
