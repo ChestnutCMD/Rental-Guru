@@ -179,7 +179,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.owner.push_notification:
             notification_title = 'Заявка на аренду'
             notification_body = f'Вам поступила завяка на аренду {vehicle_instance}'
-            send_web_push_notification(vehicle_instance.owner.id, notification_title, notification_body)
+            send_web_push_notification.delay(vehicle_instance.owner.id, notification_title, notification_body)
 
         return super().create(request, *args, **kwargs)
 
