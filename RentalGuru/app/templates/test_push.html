@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,13 +38,12 @@
             navigator.serviceWorker.register('/firebase-messaging-sw.js')
                 .then((registration) => {
                     console.log('Service Worker registered with scope:', registration.scope);
-                    messaging.useServiceWorker(registration);
 
                     document.getElementById('get-token').addEventListener('click', async () => {
                         try {
                             const permission = await Notification.requestPermission();
                             if (permission === 'granted') {
-                                const token = await messaging.getToken({ vapidKey: 'BIujop5uB3mp9ZeTSoIIcqi4oaoFJF-fIZ_RvtO0YP83vuFg5GjhWpk3LLP2fVXQl14sWWBvmuPoXyoz3nxegQc' });
+                                const token = await messaging.getToken({ vapidKey: 'BIujop5uB3mp9ZeTSoIIcqi4oaoFJF-fIZ_RvtO0YP83vuFg5GjhWpk3LLP2fVXQl14sWWBvmuPoXyoz3nxegQc', serviceWorkerRegistration: registration });
                                 if (token) {
                                     console.log('FCM Token:', token);
                                     document.getElementById('token').innerText = 'FCM Token: ' + token;
