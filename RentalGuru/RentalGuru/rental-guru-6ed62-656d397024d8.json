@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "rental-guru-6ed62",
+  "private_key_id": "656d397024d87f7d2e2e73fb183c04c01b9a5f99",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCzRQGR2/p+bDm7\nw5wh3G7qwd1XmcHB1GRkqbgTi2EnQEAfZ7nKu/ryDt7KEVwWYxVEMFZAYi9vUvgy\nFVpZ9udBSYC3D/LGysSrwg1IJ9n98HzDILZXpkIh/4dWf+bWna04oFUq7Rxqk44X\nqFnS37slZt9YsHI/X6IGVVBChmCeMxbc8h+dNpIXp8qgIsBsN7458P61OHgLSGNO\n4KugxJLE+MvzgPaDzSQsDSZp6tJy0rg4Wk8f0a9Pujs8/8tnz2rxwVQtb2eH/aVr\nH6jsAjoLelhb7Hif37Bj++MT9GqwfQruuX74cpGnuQbr0qbOiEGvydGT+gKtmaBr\nXuSKhDEvAgMBAAECggEAKpkqL1O7aVEkQubPcghkXupkQ02pCfsDRBxEPnivRFlz\nI0NNlcwnbF92N0P6wuMWiZaG2FO8e9KWYahLSPdvqkbiDB4BDZXfOAUrjMrTdREx\nRFjAm4FJU7TZnwdTfgoHwF3w/vtK9lRLvnllpsM9QDz6s6Nx8ncyFBkvsi8mRFDv\nRMEAayB6YdspvGxCJHXQ64wJipeh0nBH4g6+ZF1HlfAFIHV+ymqJKxw9ekpBKQOI\n6zmxNaoDGdMtWP6sSeIS5xRk1CC0rWbNvTVj0SnmyAEkrws3M2ogqxTDtiXGTjfO\n7/boxyqtq8tvUGvRjrVFVSTJ9dRqj9XhUWX9KU+EoQKBgQDr1fR4a9Th8hAX69xI\nlLa5u4Bxq8r06jJcZwbCgYGfiKnQaFX9eoZyXVZVrEqmrzau8wmWzM1/UQOqP85K\nRJWk+9ACDCxYPzR+9Ko/KSmHeAWPEqIotv3jgPKqxpcsBGXGELNuVnqKVsIiV+Te\ntBJYRiBYTpjYaraTy/JL6e118QKBgQDCmOmtXypDyzhTz3LTsIMVI+3HkJFK3/RF\n5KsRwb9Cricu9L5TRQ7w+IcI62U7FJ/eFxiXU3CrneJ0cthJc1eMHEGkUJzzI7Vj\ne6ayKh57FJmUy18WLtswzELj7Huh7eSm1EtkKBF+q4HQipscmyl8z9OauuTIi6Mq\nfL/7BkR5HwKBgDz3TIGs7pWSbBKjCIlC2JHfJO89x/PUbzxv7dFuhUHmpG+Z6VDj\n0cnS0zTGm23Hsc08SuhO/XjCSr5CTGPqovzJlBZTa0tM25dOTIyTaYb5wgYgfQcl\ndzDO7uyy9fWNFXpEav5FINyOXRVfv2zLBEsJpebuOpkHzTcb7AEv8hEhAoGBALdZ\nhksRMGxh7Lei7WkhldB0YtS2lP78VlcIZlq7t26nUkn+1dj1Z2eKcwjnaiEphJuo\nHUZvmuhIQZdAoiNKpwFfmkWsosTAL2cFmYGjB8cmGLLGj9gB3Ap1Ws0QA0kGMXsy\n6bn7usgj5pNMFWv1kjiERLc0Qt3mG52rnuNw+1E3AoGBAJbfx8uExVGe3vIGg5rQ\nk6SWMaT6bC5jlazoUjaQCuX81DTVUoJWdUxKpVRXPjbA9M9CRHqyNd07Qq8B43la\n6P2GsXruD0JPZSqPTmR78e+PWA1QmXdF++B3Bm/Fi7oZ7o+7kRnI7jKZ0FngPhSh\n3b/WDL76Ce1l1hajGf8ROZkv\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-hhd2t@rental-guru-6ed62.iam.gserviceaccount.com",
+  "client_id": "101870340476502235668",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-hhd2t%40rental-guru-6ed62.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
