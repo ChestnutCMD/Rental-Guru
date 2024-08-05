@@ -1,4 +1,7 @@
+import os
+
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import FileResponse
 from django.shortcuts import render
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
@@ -200,3 +203,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 def get_fcm_token(request):
     return render(request, 'test_push.html')
+
+
+def firebase_messaging_sw(request):
+    path = os.path.join('staticfiles', 'firebase-messaging-sw.js')
+    return FileResponse(open(path, 'rb'), content_type='application/javascript')

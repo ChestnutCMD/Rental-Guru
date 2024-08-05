@@ -4,6 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
 
+from app.views import firebase_messaging_sw
 
 urlpatterns = [
     path('jet/', include('jet.urls', 'jet')),
@@ -17,6 +18,8 @@ urlpatterns = [
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('', SpectacularSwaggerView.as_view(url_name='schema')),
+
+    path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase_messaging_sw'),
 ]
 
 if settings.DEBUG:
