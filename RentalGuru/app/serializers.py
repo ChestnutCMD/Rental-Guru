@@ -1,5 +1,7 @@
+from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
@@ -8,7 +10,7 @@ from vehicle.serializers.bike import BikeListSerializer
 from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
-from .models import User, Lessor, Renter, RenterDocuments
+from .models import User, Lessor, Renter, RenterDocuments, FCMToken
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -160,3 +162,18 @@ class UpdateRatingSerializer(serializers.Serializer):
 
         instance.save()
         return instance
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    fcm_token = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        fcm_token = attrs.get('fcm_token')
+        user = self.user
+
+        if fcm_token:
+            FCMToken.objects.update_or_create(user=user, token=fcm_token, defaults={'last_used_at': timezone.now()})
+
+        return data

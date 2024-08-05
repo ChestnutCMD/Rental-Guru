@@ -112,3 +112,11 @@ class Rating(models.Model):
         unique_together = ('user', 'renter')
         verbose_name = 'Рейтинг'
         verbose_name_plural = 'Рейтинги'
+
+
+class FCMToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_used_at = models.DateTimeField(auto_now=True)

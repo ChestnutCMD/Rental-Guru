@@ -10,6 +10,7 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from RentalGuru.task import send_web_push_notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
@@ -174,6 +175,11 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         if vehicle_instance.drivers_rating > request.user.renter.get_average_rating():
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
+
+        if vehicle_instance.owner.push_notification:
+            notification_title = 'Заявка на аренду'
+            notification_body = f'Вам поступила завяка на аренду {vehicle_instance}'
+            send_web_push_notification(vehicle_instance.owner.id, notification_title, notification_body)
 
         return super().create(request, *args, **kwargs)
 

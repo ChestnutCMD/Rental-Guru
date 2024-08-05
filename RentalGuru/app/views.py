@@ -8,13 +8,14 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from chat.models import Trip
 from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating
 from .permissions import IsAdminOrSelf
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
-    RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer
+    RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -190,3 +191,7 @@ class UpdateRatingView(APIView):
             return Response({"average_rating": renter.get_average_rating()}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

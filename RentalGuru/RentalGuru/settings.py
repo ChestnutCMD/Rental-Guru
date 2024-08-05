@@ -72,6 +72,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'RentalGuru.wsgi.application'
 ASGI_APPLICATION = 'RentalGuru.asgi.application'
 
+# Redis settings
 REDIS_HOST = getenv('REDIS_HOST', 'redis')
 REDIS_PORT = getenv('REDIS_PORT', '6379')
 REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
@@ -84,7 +85,16 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Database postgres
+# Celery settings 
+CELERY_BROKER_URL = REDIS_URL + '/0'
+CELERY_RESULT_BACKEND = REDIS_URL + '/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
+# Database settings
 
 DATABASES = {
     'default': {
@@ -106,6 +116,9 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+
+# Spectacular settings
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Rental-Guru',
     'DESCRIPTION': 'rental vehicles',
@@ -118,7 +131,6 @@ SPECTACULAR_SETTINGS = {
 
 CSRF_TRUSTED_ORIGINS = [
     'https://saqartvel.ru',
-    'http://example.com',
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
@@ -152,6 +164,8 @@ LOGGING = {
         },
     },
 }
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -193,6 +207,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
 }
+
+# Admin jet-reboot settings
 
 JET_THEMES = [
     {
