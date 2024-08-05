@@ -4,6 +4,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+COPY entrypoint.sh .
 COPY /RentalGuru .
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["bash", "entrypoint.sh"]
