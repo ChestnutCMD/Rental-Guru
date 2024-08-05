@@ -6,11 +6,13 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
+from pyfcm import FCMNotification
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from RentalGuru.task import send_web_push_notification
+from app.models import FCMToken
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
@@ -179,8 +181,30 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.owner.push_notification:
             notification_title = 'Заявка на аренду'
             notification_body = f'Вам поступила завяка на аренду {vehicle_instance}'
-            send_web_push_notification.delay(vehicle_instance.owner.id, notification_title, notification_body)
+            #send_web_push_notification.delay(vehicle_instance.owner.id, notification_title, notification_body)
 
+
+            tokens = FCMToken.objects.filter(user_id=vehicle_instance.owner.id).values_list('token', flat=True)
+            push_service = FCMNotification(service_account_file=os.getenv('SERVICE_ACCOUNT_FILE'),
+                                               project_id=os.getenv('PROJECT_ID'))
+
+                # notification_image = "logo.png"
+            for token in tokens:
+                result = push_service.notify(
+                        fcm_token=token,
+                        notification_title=notification_title,
+                        notification_body=notification_body
+                    )
+
+                # Обработка результата
+                if 'failure' in result and result['failure'] > 0:
+                    for result_token, result_data in zip(result['results'], tokens):
+                        if 'error' in result_data:
+                            error = result_data['error']
+                            if error in ['InvalidRegistration', 'NotRegistered']:
+                                # Удаление недействительных токенов
+                                FCMToken.objects.filter(token=result_token).delete()
+                print("Notifications sent")
         return super().create(request, *args, **kwargs)
 
     def perform_update(self, serializer):
