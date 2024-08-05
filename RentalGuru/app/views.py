@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from RentalGuru import settings
 from chat.models import Trip
 from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating
@@ -206,5 +207,5 @@ def get_fcm_token(request):
 
 
 def firebase_messaging_sw(request):
-    path = os.path.join('staticfiles', 'firebase-messaging-sw.js')
+    path = os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js')
     return FileResponse(open(path, 'rb'), content_type='application/javascript')
