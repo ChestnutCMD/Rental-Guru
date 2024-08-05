@@ -1,3 +1,0 @@
-*.sh text eol=lf
-docker-compose.yaml text eol=lf
-Dockerfile eol=lf

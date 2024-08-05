@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import render
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -195,3 +196,7 @@ class UpdateRatingView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+def get_fcm_token(request):
+    return render(request, 'test_push.html')
