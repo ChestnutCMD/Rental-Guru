@@ -1,5 +1,4 @@
 import os
-
 import redis
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q

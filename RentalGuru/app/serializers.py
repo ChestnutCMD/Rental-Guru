@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
 from vehicle.serializers.bike import BikeListSerializer
