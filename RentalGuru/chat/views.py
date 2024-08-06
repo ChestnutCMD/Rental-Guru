@@ -177,7 +177,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         # Отправка уведомлений
         content = f'Вам поступила завяка на аренду {vehicle_instance}'
-        Notification.objects.create(user=vehicle_instance.owner.id, content=content)
+        Notification.objects.create(user=vehicle_instance.owner, content=content)
 
         return super().create(request, *args, **kwargs)
 
