@@ -5,12 +5,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
-from vehicle.serializers.base import VehicleBrandSerializer, VehicleModelSerializer
 from vehicle.serializers.bike import BikeListSerializer
 from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
-from .models import User, Lessor, Renter, RenterDocuments, FCMToken
+from .models import User, Lessor, Renter, RenterDocuments
 
 
 class RegisterSerializer(serializers.ModelSerializer):

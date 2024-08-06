@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'app',
     'vehicle',
     'chat',
+    'notification',
     'drf_spectacular',
     'polymorphic',
 ]
@@ -244,3 +245,4 @@ JET_THEMES = [
 ]
 
 JET_DEFAULT_THEME = 'green'
+DEFAULT_FROM_EMAIL = getenv('DEFAULT_FROM_EMAIL')

@@ -1,8 +1,4 @@
-import os
-
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import FileResponse
-from django.shortcuts import render
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -14,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from RentalGuru import settings
 from chat.models import Trip
 from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating
@@ -200,12 +195,3 @@ class UpdateRatingView(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
-
-def get_fcm_token(request):
-    return render(request, 'test_push.html')
-
-
-def firebase_messaging_sw(request):
-    path = os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js')
-    return FileResponse(open(path, 'rb'), content_type='application/javascript')

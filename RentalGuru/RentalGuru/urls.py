@@ -4,7 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
 
-from app.views import firebase_messaging_sw
+from notification.views import firebase_messaging_sw
 
 urlpatterns = [
     path('jet/', include('jet.urls', 'jet')),
@@ -12,6 +12,7 @@ urlpatterns = [
     path('app/', include('app.urls')),
     path('vehicle/', include('vehicle.urls')),
     path('chat/', include('chat.urls')),
+    path('notification/', include('notification.urls')),
 
     path('accounts/', include('django.contrib.auth.urls')),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
