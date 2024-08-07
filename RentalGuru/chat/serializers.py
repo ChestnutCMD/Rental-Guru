@@ -162,9 +162,17 @@ class VehicleRelatedField(serializers.Field):
 
 
 class FeedbackCreateSerializer(serializers.ModelSerializer):
+    content_type = serializers.CharField()
+
     class Meta:
         model = Feedback
         fields = ['id', 'content', 'content_type', 'object_id']
+
+    def validate_content_type(self, value):
+        try:
+            return ContentType.objects.get(model=value).id
+        except ContentType.DoesNotExist:
+            raise serializers.ValidationError("Указанный тип контента не существует.")
 
 
 class FeedbackUpdateSerializer(serializers.ModelSerializer):
