@@ -176,14 +176,16 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.drivers_rating > request.user.renter.get_average_rating():
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
-        request_rent = super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request_rent = serializer.save()
 
         # Отправка уведомлений
-        url = f'{settings.HOST_URL}/chat/request_rents/{request_rent.pk}'
-        content = f'Вам поступила завяка на аренду {vehicle_instance}'
+        url = f'{settings.HOST_URL}/chat/request_rents/{request_rent.id}'
+        content = f'Вам поступила заявка на аренду {vehicle_instance}'
         Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
 
-        return request_rent
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer):
         instance = self.get_object()
