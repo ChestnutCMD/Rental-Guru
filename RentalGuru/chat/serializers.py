@@ -162,6 +162,8 @@ class VehicleRelatedField(serializers.Field):
 
 
 class FeedbackCreateSerializer(serializers.ModelSerializer):
+    content_type = serializers.CharField()
+
     class Meta:
         model = Feedback
         fields = ['id', 'content', 'content_type', 'object_id']
