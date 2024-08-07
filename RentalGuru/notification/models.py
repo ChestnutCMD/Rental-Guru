@@ -14,6 +14,7 @@ class Notification(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     content = models.CharField(max_length=255, verbose_name='Сообщение')
     read_it = models.BooleanField(default=False, verbose_name='Прочитано')
+    url = models.URLField(max_length=255, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Уведомление'
@@ -28,7 +29,7 @@ class Notification(models.Model):
         if self.user.push_notification:
             url = self.get_absolute_url()
             self.content = f'{self.content}\n{url}'
-            send_web_push_notification.delay(self.user.id, self.content)
+            send_web_push_notification.delay(self.user.id, self.content, self.url)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -49,30 +50,36 @@ class FCMToken(models.Model):
 @shared_task
 def send_email_notification(notification_id):
     notification = Notification.objects.select_related('user').get(id=notification_id)
-    notification.content = f'{notification.content}\n{notification.get_absolute_url()}'
+    message = f'{notification.content}\n{notification.url}'
     send_mail(
-        'Rental-Guru',
-        notification.content,
-        settings.DEFAULT_FROM_EMAIL,
-        [notification.user.email],
+        subject='Rental-Guru',
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[notification.user.email],
         fail_silently=False,
     )
 
 
 @shared_task
-def send_web_push_notification(user_id,  notification_body):
+def send_web_push_notification(user_id,  notification_body, notification_url):
     user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
     tokens = user.fcmtoken_set.values_list('token', flat=True)
     push_service = FCMNotification(service_account_file=os.getenv('SERVICE_ACCOUNT_FILE'), project_id=os.getenv('PROJECT_ID'))
     notification_title = 'Rental-Guru'
     notification_image = 'logo.png'
 
+    data_payload = {
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "url": notification_url
+    }
+
     for token in tokens:
         result = push_service.notify(
             fcm_token=token,
             notification_title=notification_title,
             notification_body=notification_body,
-            notification_image=notification_image
+            notification_image=notification_image,
+            data_payload=data_payload
         )
 
         # Обработка результата

@@ -6,9 +6,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
+from notification.models import Notification
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
@@ -193,6 +195,11 @@ class UpdateRatingView(APIView):
                 content_type=content_type,
                 object_id=vehicle_id
             )
+
+            # Отправка уведомлений
+            content = f'Обновлен рейтинг для {vehicle}'
+            url = f'{settings.HOST_URL}/vehicle/{content_type}s/{vehicle.id}'
+            Notification.objects.create(user=vehicle.owner, content=content, url=url)
 
             return Response({"status": "Рейтинг успешно обновлен"}, status=status.HTTP_200_OK)
 

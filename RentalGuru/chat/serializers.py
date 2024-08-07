@@ -160,10 +160,12 @@ class VehicleRelatedField(serializers.Field):
             'name': str(value)
         }
 
+
 class FeedbackCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
         fields = ['id', 'content', 'content_type', 'object_id']
+
 
 class FeedbackUpdateSerializer(serializers.ModelSerializer):
     answer = serializers.CharField(required=True)

@@ -9,6 +9,7 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from RentalGuru import settings
 from notification.models import Notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
@@ -175,11 +176,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.drivers_rating > request.user.renter.get_average_rating():
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
-        # Отправка уведомлений
-        content = f'Вам поступила завяка на аренду {vehicle_instance}'
-        Notification.objects.create(user=vehicle_instance.owner, content=content)
+        request_rent = super().create(request, *args, **kwargs)
 
-        return super().create(request, *args, **kwargs)
+        # Отправка уведомлений
+        url = f'{settings.HOST_URL}/chat/request_rents/{request_rent.id}'
+        content = f'Вам поступила завяка на аренду {vehicle_instance}'
+        Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
+
+        return request_rent
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -228,6 +232,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                     start_date=instance.start_date,
                     end_date=instance.end_date
                 )
+
+                url = f'{settings.HOST_URL}/chat/request_rents/{instance.id}'
+                content = f'Заявка на аренду {vehicle_instance} одобрена. Дата начала {instance.start_date}'
+                Notification.objects.create(user=instance.organizer, content=content, url=url)
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
@@ -355,6 +363,11 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError("Поездка еще не завершена.")
 
         serializer.save(user=self.request.user, content_type=content_type, object_id=object_id)
+
+        # Отправка уведомления
+        content = f'Добавлен отзыв для транспорта {content_type}'
+        url = f'{settings.HOST_URL}/chat/feedbacks/{object_id}'
+        Notification.objects.create(user=content_type.owner, content=content, url=url)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
