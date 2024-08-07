@@ -333,14 +333,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return FeedbackSerializer
 
     def perform_create(self, serializer):
-        content_type_str = self.request.data.get('content_type_str')
+        content_type_id = self.request.data.get('content_type')
         object_id = self.request.data.get('object_id')
 
-        if not content_type_str or not object_id:
+        if not content_type_id or not object_id:
             raise serializers.ValidationError("Необходимо указать content_type и object_id.")
 
         try:
-            content_type = ContentType.objects.get(model=content_type_str.lower())
+            content_type = ContentType.objects.get(id=content_type_id)
         except ContentType.DoesNotExist:
             raise serializers.ValidationError("Указанный тип контента не существует.")
 
