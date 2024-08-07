@@ -323,7 +323,7 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
                                              "транспорта")
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.select_related('user', 'content_type').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action in ['create']:
@@ -333,21 +333,13 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return FeedbackSerializer
 
     def perform_create(self, serializer):
-        content_type_id = self.request.data.get('content_type')
-        object_id = self.request.data.get('object_id')
-
-        if not content_type_id or not object_id:
-            raise serializers.ValidationError("Необходимо указать content_type и object_id.")
-
-        try:
-            content_type = ContentType.objects.get(id=content_type_id)
-        except ContentType.DoesNotExist:
-            raise serializers.ValidationError("Указанный тип контента не существует.")
+        content_type_id = serializer.validated_data['content_type'].id
+        object_id = serializer.validated_data['object_id']
 
         # Проверка, оставлял ли уже пользователь отзыв для данного транспортного средства
         existing_feedback = Feedback.objects.filter(
             user=self.request.user,
-            content_type=content_type,
+            content_type_id=content_type_id,
             object_id=object_id
         ).exists()
 
@@ -357,7 +349,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         try:
             trip = Trip.objects.get(
                 organizer=self.request.user,
-                content_type=content_type,
+                content_type_id=content_type_id,
                 object_id=object_id
             )
         except Trip.DoesNotExist:
@@ -368,12 +360,12 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError("Поездка еще не завершена.")
 
         # Получение экземпляра транспортного средства
-        vehicle_instance = content_type.get_object_for_this_type(id=object_id)
+        vehicle_instance = ContentType.objects.get_for_id(content_type_id).model_class().objects.get(id=object_id)
 
-        serializer.save(user=self.request.user, content_type=content_type, object_id=object_id)
+        serializer.save(user=self.request.user, content_type_id=content_type_id, object_id=object_id)
 
         # Отправка уведомлений
-        content = f'Добавлен отзыв для транспорта {content_type.model}'
+        content = f'Добавлен отзыв для транспорта {vehicle_instance}'
         url = f'{settings.HOST_URL}/chat/feedbacks/{object_id}'
         Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
 

@@ -170,9 +170,15 @@ class FeedbackCreateSerializer(serializers.ModelSerializer):
 
     def validate_content_type(self, value):
         try:
-            return ContentType.objects.get(model=value).id
+            content_type = ContentType.objects.get(model=value.lower())
         except ContentType.DoesNotExist:
             raise serializers.ValidationError("Указанный тип контента не существует.")
+        return content_type
+
+    def create(self, validated_data):
+        content_type = validated_data.pop('content_type')
+        validated_data['content_type'] = content_type
+        return super().create(validated_data)
 
 
 class FeedbackUpdateSerializer(serializers.ModelSerializer):
