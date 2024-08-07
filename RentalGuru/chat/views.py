@@ -333,24 +333,27 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return FeedbackSerializer
 
     def perform_create(self, serializer):
-        content_type_str = self.request.data.get('content_type')
+        content_type_str = self.request.data.get('content_type_str')
         object_id = self.request.data.get('object_id')
 
         if not content_type_str or not object_id:
             raise serializers.ValidationError("Необходимо указать content_type и object_id.")
 
         try:
-            content_type = ContentType.objects.get(model=content_type_str)
+            content_type = ContentType.objects.get(model=content_type_str.lower())
         except ContentType.DoesNotExist:
             raise serializers.ValidationError("Указанный тип контента не существует.")
 
         # Проверка, оставлял ли уже пользователь отзыв для данного транспортного средства
-        existing_feedback = Feedback.objects.filter(user=self.request.user,
-                                                    content_type=content_type,
-                                                    object_id=object_id).exists()
+        existing_feedback = Feedback.objects.filter(
+            user=self.request.user,
+            content_type=content_type,
+            object_id=object_id
+        ).exists()
 
         if existing_feedback:
             raise serializers.ValidationError("Вы уже оставили отзыв для данного транспортного средства.")
+
         try:
             trip = Trip.objects.get(
                 organizer=self.request.user,
@@ -364,12 +367,15 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         if trip.end_date > timezone.now().date():
             raise serializers.ValidationError("Поездка еще не завершена.")
 
+        # Получение экземпляра транспортного средства
+        vehicle_instance = content_type.get_object_for_this_type(id=object_id)
+
         serializer.save(user=self.request.user, content_type=content_type, object_id=object_id)
 
         # Отправка уведомлений
         content = f'Добавлен отзыв для транспорта {content_type.model}'
         url = f'{settings.HOST_URL}/chat/feedbacks/{object_id}'
-        Notification.objects.create(user=content_type.owner, content=content, url=url)
+        Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
