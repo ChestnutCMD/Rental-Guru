@@ -179,7 +179,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         request_rent = super().create(request, *args, **kwargs)
 
         # Отправка уведомлений
-        url = f'{settings.HOST_URL}/chat/request_rents/{request_rent.id}'
+        url = f'{settings.HOST_URL}/chat/request_rents/{request_rent.pk}'
         content = f'Вам поступила завяка на аренду {vehicle_instance}'
         Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
 
