@@ -333,14 +333,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return FeedbackSerializer
 
     def perform_create(self, serializer):
-        content_type_id = self.request.data.get('content_type')
+        content_type_str = self.request.data.get('content_type')
         object_id = self.request.data.get('object_id')
 
-        if not content_type_id or not object_id:
+        if not content_type_str or not object_id:
             raise serializers.ValidationError("Необходимо указать content_type и object_id.")
 
         try:
-            content_type = ContentType.objects.get(id=content_type_id)
+            content_type = ContentType.objects.get(model=content_type_str)
         except ContentType.DoesNotExist:
             raise serializers.ValidationError("Указанный тип контента не существует.")
 
@@ -366,8 +366,8 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 
         serializer.save(user=self.request.user, content_type=content_type, object_id=object_id)
 
-        # Отправка уведомления
-        content = f'Добавлен отзыв для транспорта {content_type}'
+        # Отправка уведомлений
+        content = f'Добавлен отзыв для транспорта {content_type.model}'
         url = f'{settings.HOST_URL}/chat/feedbacks/{object_id}'
         Notification.objects.create(user=content_type.owner, content=content, url=url)
 

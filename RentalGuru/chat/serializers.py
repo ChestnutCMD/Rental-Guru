@@ -166,6 +166,12 @@ class FeedbackCreateSerializer(serializers.ModelSerializer):
         model = Feedback
         fields = ['id', 'content', 'content_type', 'object_id']
 
+    def validate_content_type(self, value):
+        try:
+            return ContentType.objects.get(model=value).id
+        except ContentType.DoesNotExist:
+            raise serializers.ValidationError("Указанный тип контента не существует.")
+
 
 class FeedbackUpdateSerializer(serializers.ModelSerializer):
     answer = serializers.CharField(required=True)
