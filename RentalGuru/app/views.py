@@ -201,10 +201,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-@extend_schema(summary="Восстановление пароля", description="Отправляет токен на почту для смены пароля")
 class PasswordResetRequestView(APIView):
     """Запрос на восстановление пароля"""
 
+    @extend_schema(
+        request=PasswordResetRequestSerializer,
+        responses={200: 'Ссылка для восстановления пароля отправлена на ваш email.'},
+        summary="Запрос на восстановление пароля",
+        description="Отправляет ссылку для восстановления пароля на указанный email.",
+    )
     def post(self, request, *args, **kwargs):
         serializer = PasswordResetRequestSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
