@@ -228,7 +228,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         # Проверка кода в Redis
         stored_code = r.get(f"reset_code_{email}")
         if stored_code != reset_code:
-            raise serializers.ValidationError("Неверный код восстановления.")
+            raise serializers.ValidationError(f"Неверный код восстановления.{stored_code}")
 
         return data
 
