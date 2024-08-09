@@ -150,6 +150,7 @@ class Vehicle(PolymorphicModel):
 
     location = models.CharField(max_length=255, verbose_name='Местоположение')
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
+    verified = models.BooleanField(default=False, verbose_name='Верифицирован')
 
     def get_average_rating(self):
         average_ratings = {}

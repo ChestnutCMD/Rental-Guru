@@ -2,15 +2,23 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from vehicle.models import Bike, VehicleFeaturesFunctions, BikeFeaturesAdditionally
-from vehicle.serializers.base import BaseVehicleSerializer, BaseVehicleGetSerializer, \
-    VehicleFeaturesFunctionsSerializer, BaseVehicleListSerializer
+from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, BaseVehicleCreateSerializer, \
+    BaseVehicleUpdateSerializer
 
 
-class BikeSerializer(BaseVehicleSerializer):
+class BikeCreateSerializer(BaseVehicleCreateSerializer):
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all())
 
-    class Meta(BaseVehicleSerializer.Meta):
+    class Meta(BaseVehicleCreateSerializer.Meta):
+        model = Bike
+
+
+class BikeUpdateSerializer(BaseVehicleUpdateSerializer):
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all())
+
+    class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Bike
 
 

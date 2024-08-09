@@ -1,9 +1,14 @@
 from vehicle.models import SpecialTechnic
-from vehicle.serializers.base import BaseVehicleSerializer, BaseVehicleGetSerializer, BaseVehicleListSerializer
+from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer
 
 
-class SpecialTechnicSerializer(BaseVehicleSerializer):
-    class Meta(BaseVehicleSerializer.Meta):
+class SpecialTechnicCreateSerializer(BaseVehicleCreateSerializer):
+    class Meta(BaseVehicleCreateSerializer.Meta):
+        model = SpecialTechnic
+
+
+class SpecialTechnicUpdateSerializer(BaseVehicleUpdateSerializer):
+    class Meta(BaseVehicleUpdateSerializer.Meta):
         model = SpecialTechnic
 
 

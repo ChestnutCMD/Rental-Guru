@@ -1,9 +1,15 @@
 from vehicle.models import Helicopter
-from vehicle.serializers.base import BaseVehicleSerializer, BaseVehicleGetSerializer, BaseVehicleListSerializer
+from vehicle.serializers.base import BaseVehicleSerializer, BaseVehicleGetSerializer, BaseVehicleListSerializer, \
+    BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer
 
 
-class HelicopterSerializer(BaseVehicleSerializer):
-    class Meta(BaseVehicleSerializer.Meta):
+class HelicopterCreateSerializer(BaseVehicleCreateSerializer):
+    class Meta(BaseVehicleCreateSerializer.Meta):
+        model = Helicopter
+
+
+class HelicopterUpdateSerializer(BaseVehicleUpdateSerializer):
+    class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Helicopter
 
 

@@ -1,17 +1,26 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .base import BaseVehicleSerializer, BaseVehicleGetSerializer, VehicleFeaturesFunctionsSerializer, \
-    BaseVehicleListSerializer
+from .base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
+    BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer
 from ..models import FeaturesForChildren, VehicleFeaturesFunctions, AutoFeaturesAdditionally, Auto
 
 
-class AutoSerializer(BaseVehicleSerializer):
+class AutoCreateSerializer(BaseVehicleCreateSerializer):
     features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all())
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all())
 
-    class Meta(BaseVehicleSerializer.Meta):
+    class Meta(BaseVehicleCreateSerializer.Meta):
+        model = Auto
+
+
+class AutoUpdateSerializer(BaseVehicleUpdateSerializer):
+    features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all())
+
+    class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Auto
 
 
@@ -32,7 +41,7 @@ class AutoGetSerializer(BaseVehicleGetSerializer):
     features_functions = serializers.SerializerMethodField()
     features_additionally = serializers.SerializerMethodField()
 
-    class Meta(BaseVehicleSerializer.Meta):
+    class Meta(BaseVehicleGetSerializer.Meta):
         model = Auto
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))

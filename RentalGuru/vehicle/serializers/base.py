@@ -82,9 +82,60 @@ class BaseVehicleSerializer(serializers.ModelSerializer):
     rent_prices = RentPriceSerializer(many=True)
     average_ratings = serializers.SerializerMethodField()
 
+    @extend_schema_field(serializers.FloatField())
+    def get_average_ratings(self, obj):
+        return obj.get_average_rating()
+
+
+class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
     class Meta:
         fields = '__all__'
         read_only_fields = ['owner', 'ratings', 'average_ratings']
+
+    def update(self, instance, validated_data):
+        instance.verified = False
+        availabilities_data = validated_data.pop('availabilities', [])
+        documents_data = validated_data.pop('documents', [])
+        prices_data = validated_data.pop('rent_prices', [])
+        photos_data = validated_data.pop('photos', [])
+
+        instance = super().update(instance, validated_data)
+
+        if availabilities_data:
+            instance.availabilities.all().delete()
+            Availability.objects.bulk_create([
+                Availability(vehicle=instance, **availability_data)
+                for availability_data in availabilities_data
+            ])
+
+        if documents_data:
+            instance.documents.all().delete()
+            VehicleDocument.objects.bulk_create([
+                VehicleDocument(vehicle=instance, **document_data)
+                for document_data in documents_data
+            ])
+
+        if prices_data:
+            instance.rent_prices.all().delete()
+            RentPrice.objects.bulk_create([
+                RentPrice(vehicle=instance, **price_data)
+                for price_data in prices_data
+            ])
+
+        if photos_data:
+            instance.photos.all().delete()
+            VehiclePhoto.objects.bulk_create([
+                VehiclePhoto(vehicle=instance, **photo_data)
+                for photo_data in photos_data
+            ])
+
+        return instance
+
+
+class BaseVehicleCreateSerializer(BaseVehicleSerializer):
+    class Meta:
+        fields = '__all__'
+        read_only_fields = ['owner', 'ratings', 'average_ratings', 'verified']
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -115,73 +166,6 @@ class BaseVehicleSerializer(serializers.ModelSerializer):
 
         return vehicle
 
-    def update(self, instance, validated_data):
-        availabilities_data = validated_data.pop('availabilities', [])
-        documents_data = validated_data.pop('documents', [])
-        prices_data = validated_data.pop('rent_prices', [])
-        photos_data = validated_data.pop('photos', [])
-
-        if availabilities_data:
-            availabilities_data = merge_periods(availabilities_data)
-
-        instance = super().update(instance, validated_data)
-
-        # Удаление старых записей и добавление новых
-        if availabilities_data:
-            instance.availabilities.all().delete()
-            for availability_data in availabilities_data:
-                Availability.objects.create(vehicle=instance, **availability_data)
-
-        if documents_data:
-            instance.documents.all().delete()
-            for document_data in documents_data:
-                VehicleDocument.objects.create(vehicle=instance, **document_data)
-
-        if prices_data:
-            instance.rent_prices.all().delete()
-            for price_data in prices_data:
-                RentPrice.objects.create(vehicle=instance, **price_data)
-
-        if photos_data:
-            instance.photos.all().delete()
-            for photo_data in photos_data:
-                VehiclePhoto.objects.create(vehicle=instance, **photo_data)
-
-        return instance
-
-    @extend_schema_field(serializers.FloatField())
-    def get_average_ratings(self, obj):
-        return obj.get_average_rating()
-
-    def update(self, instance, validated_data):
-        availabilities_data = validated_data.pop('availabilities', [])
-        documents_data = validated_data.pop('documents', [])
-        prices_data = validated_data.pop('rent_prices', [])
-        photos_data = validated_data.pop('photos', [])
-
-        instance = super().update(instance, validated_data)
-
-        instance.availabilities.all().delete()
-        for availability_data in availabilities_data:
-            Availability.objects.create(vehicle=instance, **availability_data)
-
-        instance.documents.all().delete()
-        for document_data in documents_data:
-            VehicleDocument.objects.create(vehicle=instance, **document_data)
-
-        instance.rent_prices.all().delete()
-        for price_data in prices_data:
-            RentPrice.objects.create(vehicle=instance, **price_data)
-
-        instance.rent_prices.all().delete()
-        for price_data in prices_data:
-            RentPrice.objects.create(vehicle=instance, **price_data)
-
-        instance.rent_prices.all().delete()
-        for photo_data in photos_data:
-            VehiclePhoto.objects.create(vehicle=instance, **photo_data)
-        return instance
-
 
 class BaseVehicleGetSerializer(serializers.ModelSerializer):
     payment_method = serializers.SerializerMethodField()
@@ -195,7 +179,7 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = '__all__'
-        read_only_fields = ['owner', 'average_ratings']
+        read_only_fields = ['owner', 'average_ratings', 'verified']
 
     @extend_schema_field(serializers.FloatField())
     def get_average_ratings(self, obj):

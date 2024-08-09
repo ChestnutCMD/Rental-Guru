@@ -2,16 +2,25 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from vehicle.models import VehicleFeaturesFunctions, ShipFeaturesAdditionally, FeaturesEquipment, Ship
-from vehicle.serializers.base import BaseVehicleSerializer, BaseVehicleGetSerializer, \
-    VehicleFeaturesFunctionsSerializer, BaseVehicleListSerializer
+from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
+    BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer
 
 
-class ShipSerializer(BaseVehicleSerializer):
+class ShipCreateSerializer(BaseVehicleCreateSerializer):
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
 
-    class Meta(BaseVehicleSerializer.Meta):
+    class Meta(BaseVehicleCreateSerializer.Meta):
+        model = Ship
+
+
+class ShipUpdateSerializer(BaseVehicleUpdateSerializer):
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
+    features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
+
+    class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Ship
 
 

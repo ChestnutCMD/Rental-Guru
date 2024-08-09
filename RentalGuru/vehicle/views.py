@@ -14,13 +14,15 @@ from notification.models import Notification
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
-from .serializers.auto import AutoGetSerializer, AutoSerializer, AutoListSerializer
-from .serializers.bike import BikeSerializer, BikeGetSerializer, BikeListSerializer
+from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
+    AutoUpdateSerializer
+from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer
 from .serializers.rating import UpdateRatingSerializer
-from .serializers.ship import ShipSerializer, ShipGetSerializer, ShipListSerializer
-from .serializers.helicopter import HelicopterSerializer, HelicopterGetSerializer, HelicopterListSerializer
-from .serializers.specialtechnic import SpecialTechnicSerializer, SpecialTechnicGetSerializer, \
-    SpecialTechnicListSerializer
+from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer
+from .serializers.helicopter import HelicopterGetSerializer, HelicopterListSerializer, HelicopterCreateSerializer, \
+    HelicopterUpdateSerializer
+from .serializers.specialtechnic import SpecialTechnicGetSerializer, SpecialTechnicListSerializer, \
+    SpecialTechnicCreateSerializer, SpecialTechnicUpdateSerializer
 
 
 @extend_schema(summary="Марка транспорта", description="Марка транспорта")
@@ -49,6 +51,12 @@ class BaseViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticated, IsAdminOrOwner]
         return super().get_permissions()
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if 'verified' in serializer.validated_data and not self.request.user.role == 'admin':
+            instance.verified = False
+            instance.save()
+
 
 @extend_schema(summary="Автомобиль", description="Автомобиль")
 class AutoViewSet(BaseViewSet):
@@ -61,7 +69,9 @@ class AutoViewSet(BaseViewSet):
             return AutoGetSerializer
         elif self.action == 'list':
             return AutoListSerializer
-        return AutoSerializer
+        elif self.action == 'create':
+            return AutoCreateSerializer
+        return AutoUpdateSerializer
 
 
 @extend_schema(summary="Мотоцикл", description="Мотоцикл")
@@ -75,7 +85,9 @@ class BikeViewSet(BaseViewSet):
             return BikeGetSerializer
         elif self.action == 'list':
             return BikeListSerializer
-        return BikeSerializer
+        elif self.action == 'create':
+            return BikeCreateSerializer
+        return BikeUpdateSerializer
 
 
 @extend_schema(summary="Судно", description="Судно")
@@ -89,7 +101,9 @@ class ShipViewSet(BaseViewSet):
             return ShipGetSerializer
         elif self.action == 'list':
             return ShipListSerializer
-        return ShipSerializer
+        elif self.action == 'create':
+            return ShipCreateSerializer
+        return ShipUpdateSerializer
 
 
 @extend_schema(summary="Вертолет", description="Вертолет")
@@ -102,7 +116,9 @@ class HelicopterViewSet(BaseViewSet):
             return HelicopterGetSerializer
         elif self.action == 'list':
             return HelicopterListSerializer
-        return HelicopterSerializer
+        elif self.action == 'create':
+            return HelicopterCreateSerializer
+        return HelicopterUpdateSerializer
 
 
 @extend_schema(summary="Спецтехника", description="Спецтехника")
@@ -115,7 +131,9 @@ class SpecialTechnicViewSet(BaseViewSet):
             return SpecialTechnicGetSerializer
         elif self.action == 'list':
             return SpecialTechnicListSerializer
-        return SpecialTechnicSerializer
+        elif self.action == 'create':
+            return SpecialTechnicCreateSerializer
+        return SpecialTechnicUpdateSerializer
 
 
 @extend_schema(summary="Обновление рейтинга", description="Обновить рейтинг может пользователь, который завершил "
