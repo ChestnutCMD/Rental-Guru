@@ -6,6 +6,7 @@ from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from RentalGuru import settings
 
 from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
