@@ -220,8 +220,6 @@ class PasswordResetRequestView(APIView):
 
 @extend_schema(summary="Восстановление пароля", description="Подтверждение смены пароля с помощью токена")
 class PasswordResetConfirmView(APIView):
-    """Подтверждение сброса пароля"""
-
     def post(self, request, *args, **kwargs):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():

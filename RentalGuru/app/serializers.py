@@ -1,9 +1,7 @@
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.urls import reverse
+import random
+from django.core.cache import cache
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.encoding import force_bytes, force_str
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -16,7 +14,7 @@ from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments
-from .task import send_email_password, send_email_reset_password
+from .task import send_email_password, send_email_reset_code
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -195,49 +193,44 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+    class Meta:
+        fields = ['email']
+
     def validate_email(self, value):
-        try:
-            user = User.objects.get(email=value)
-        except User.DoesNotExist:
+        if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Пользователь с данным email не найден.")
         return value
 
     def save(self):
         email = self.validated_data['email']
-        user = User.objects.get(email=email)
-
-        token_generator = PasswordResetTokenGenerator()
-        token = token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-        # Генерация ссылки для сброса пароля
-        reset_url = f"{self.context['request'].build_absolute_uri(reverse('password-reset-confirm', args=[uid, token]))}"
-
-        # Отправка письма
-        send_email_reset_password(reset_url, user.email)
+        reset_code = random.randint(1000, 9999)
+        cache.set(f"reset_code_{email}", reset_code, timeout=900)
+        send_email_reset_code(reset_code, email)
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    uid = serializers.CharField()
-    token = serializers.CharField()
+    email = serializers.EmailField()
+    reset_code = serializers.CharField()
+    new_password = serializers.CharField()
 
-    def validate(self, attrs):
-        try:
-            uid = force_str(urlsafe_base64_decode(attrs['uid']))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            raise serializers.ValidationError('Недействительный токен')
+    def validate(self, data):
+        email = data['email']
+        reset_code = data['reset_code']
 
-        token_generator = PasswordResetTokenGenerator()
-        if not token_generator.check_token(user, attrs['token']):
-            raise serializers.ValidationError('Недействительный токен или срок действия истек')
+        # Проверка кода в Redis
+        stored_code = cache.get(f"reset_code_{email}")
+        if stored_code != reset_code:
+            raise serializers.ValidationError("Неверный код восстановления.")
 
-        return attrs
+        return data
 
-    def save(self, **kwargs):
-        uid = self.validated_data['uid']
-        user = User.objects.get(pk=force_str(urlsafe_base64_decode(uid)))
-        user.set_password(self.validated_data['new_password'])
+    def save(self):
+        email = self.validated_data['email']
+        new_password = self.validated_data['new_password']
+
+        user = User.objects.get(email=email)
+        user.set_password(new_password)
         user.save()
-        return user
+
+        # Удаление кода после успешного сброса пароля
+        cache.delete(f"reset_code_{email}")

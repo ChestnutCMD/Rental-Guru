@@ -16,11 +16,11 @@ def send_email_password(user_name, user_email, password):
 
 
 @shared_task
-def send_email_reset_password(reset_url, user_email):
+def send_email_reset_code(reset_code, user_email):
 
     send_mail(
         subject="Восстановление пароля",
-        message=f"Используйте следующую ссылку для сброса пароля: {reset_url}",
+        message=f'Ваш код для восстановления пароля: {reset_code}',
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user_email],
     )

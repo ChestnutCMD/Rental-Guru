@@ -86,6 +86,15 @@ CHANNEL_LAYERS = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 # Celery settings 
 CELERY_BROKER_URL = REDIS_URL + '/0'
 CELERY_RESULT_BACKEND = REDIS_URL + '/0'
