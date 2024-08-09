@@ -1,3 +1,4 @@
+import redis
 import random
 from django.core.cache import cache
 from django.utils import timezone
@@ -208,6 +209,9 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         send_email_reset_code(reset_code, email)
 
 
+r = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=1)
+
+
 class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     reset_code = serializers.CharField()
@@ -221,7 +225,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         reset_code = data['reset_code']
 
         # Проверка кода в Redis
-        stored_code = cache.get(f":1:reset_code_{email}")
+        stored_code = r.get(f"reset_code_{email}")
         if stored_code != reset_code:
             raise serializers.ValidationError("Неверный код восстановления.")
 
