@@ -211,7 +211,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     reset_code = serializers.CharField()
-    new_password = serializers.CharField()
+    new_password = serializers.CharField(min_length=8)
+
+    class Meta:
+        fields = ['email', 'reset_code', 'new_password']
 
     def validate(self, data):
         email = data['email']

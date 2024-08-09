@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -213,12 +213,27 @@ class PasswordResetRequestView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = PasswordResetRequestSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
+            email = serializer["email"]
             serializer.save()
-            return Response({'message': 'Ссылка для восстановления пароля отправлена на ваш email.'}, status=status.HTTP_200_OK)
+            return Response({'message': f'Мы отправили код на указанную почту {email}'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Восстановление пароля", description="Подтверждение смены пароля с помощью токена")
+@extend_schema(
+    summary="Подтверждение сброса пароля",
+    description="Подтверждение сброса пароля с помощью кода восстановления. " +
+                "Необходимые параметры: email, reset_code, new_password.",
+    request=PasswordResetConfirmSerializer,
+    responses={
+        200: OpenApiResponse(
+            response=PasswordResetConfirmSerializer,
+            description="Пароль успешно изменен."
+        ),
+        400: OpenApiResponse(
+            description="Ошибка при подтверждении сброса пароля."
+        )
+    }
+)
 class PasswordResetConfirmView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = PasswordResetConfirmSerializer(data=request.data)
