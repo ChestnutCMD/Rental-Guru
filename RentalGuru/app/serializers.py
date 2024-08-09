@@ -1,5 +1,9 @@
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -12,7 +16,7 @@ from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments
-from .task import send_email_password
+from .task import send_email_password, send_email_reset_password
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -172,11 +176,68 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-
-        fcm_token = attrs.get('fcm_token')
         user = self.user
 
+        # Проверка last_login
+        if not user.last_login:
+            data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
+        user.last_login = timezone.now()
+        user.save(update_fields=['last_login'])
+
+        # Если FCM-токен передан, то обновляем его
+        fcm_token = attrs.get('fcm_token')
         if fcm_token:
             FCMToken.objects.update_or_create(user=user, token=fcm_token, defaults={'last_used_at': timezone.now()})
 
         return data
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Пользователь с данным email не найден.")
+        return value
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # Генерация ссылки для сброса пароля
+        reset_url = f"{self.context['request'].build_absolute_uri(reverse('password-reset-confirm', args=[uid, token]))}"
+
+        # Отправка письма
+        send_email_reset_password(reset_url, user.email)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            uid = force_str(urlsafe_base64_decode(attrs['uid']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError('Недействительный токен')
+
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, attrs['token']):
+            raise serializers.ValidationError('Недействительный токен или срок действия истек')
+
+        return attrs
+
+    def save(self, **kwargs):
+        uid = self.validated_data['uid']
+        user = User.objects.get(pk=force_str(urlsafe_base64_decode(uid)))
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user

@@ -15,7 +15,8 @@ from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating
 from .permissions import IsAdminOrSelf
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
-    RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer
+    RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -193,5 +194,32 @@ class UpdateRatingView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(summary="Получение JWT токенов", description="Принимает email и password (опционально fcm_token для "
+                                                            "пуш уведомлений). При первом входе предлагает сменить "
+                                                            "пароль")
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+@extend_schema(summary="Восстановление пароля", description="Отправляет токен на почту для смены пароля")
+class PasswordResetRequestView(APIView):
+    """Запрос на восстановление пароля"""
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetRequestSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Ссылка для восстановления пароля отправлена на ваш email.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Восстановление пароля", description="Подтверждение смены пароля с помощью токена")
+class PasswordResetConfirmView(APIView):
+    """Подтверждение сброса пароля"""
+
+    def post(self, request, *args, **kwargs):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Пароль успешно изменен.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
