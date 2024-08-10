@@ -1,6 +1,6 @@
 from django.db import models
 from RentalGuru import settings
-from task import send_email_notification, send_web_push_notification
+from .task import send_email_notification, send_web_push_notification
 
 
 class Notification(models.Model):
