@@ -7,6 +7,7 @@ from polymorphic.models import PolymorphicModel
 
 from RentalGuru import settings
 from chat.models import RequestRent
+from notification.models import Notification
 from vehicle.utils import merge_periods
 
 
@@ -171,16 +172,26 @@ class Vehicle(PolymorphicModel):
         return average_ratings
 
     def save(self, *args, **kwargs):
+        previous_instance = Vehicle.objects.filter(pk=self.pk).first()
         super().save(*args, **kwargs)
-        # Получение всех текущих периодов доступности
+
+        if previous_instance and not previous_instance.verified and self.verified:
+            real_instance_class = self.get_real_instance_class()
+            model_name = real_instance_class.__name__.lower()
+            vehicle_url = f'{settings.HOST_URL}/vehicles/{model_name}/{self.pk}/'
+
+            # Отправка уведомлений
+            Notification.objects.create(
+                user=self.owner,
+                content=f'Ваше транспортное средство {self} было верифицировано!',
+                url=vehicle_url
+            )
+
+        # Логика обработки периодов доступности
         availabilities = list(self.availabilities.values('start_date', 'end_date'))
         if availabilities:
             merged_availabilities = merge_periods(availabilities)
-
-            # Удаление всех текущих записей доступности
             self.availabilities.all().delete()
-
-            # Сохранение объединенных периодов доступности
             for availability in merged_availabilities:
                 Availability.objects.create(vehicle=self, **availability)
 

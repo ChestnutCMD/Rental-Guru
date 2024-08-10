@@ -1,12 +1,9 @@
-import redis
 import random
-from django.core.cache import cache
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from RentalGuru import settings
 
 from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
@@ -17,6 +14,7 @@ from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments
 from .task import send_email_password, send_email_reset_code
+from RentalGuru.settings import redis_1
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -206,11 +204,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data['email']
         reset_code = random.randint(1000, 9999)
-        r.set(f"reset_code_{email}", reset_code, ex=900)
+        redis_1.set(f"reset_code_{email}", reset_code, ex=900)
         send_email_reset_code(reset_code, email)
-
-
-r = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=1)
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -226,7 +221,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         reset_code = data['reset_code']
 
         # Проверка кода в Redis
-        stored_code = r.get(f"reset_code_{email}")
+        stored_code = redis_1.get(f"reset_code_{email}")
         # Декодируем байтовую строку в обычную строку
         if stored_code is not None:
             stored_code = stored_code.decode('utf-8')
@@ -246,4 +241,4 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save()
 
         # Удаление кода после успешного сброса пароля
-        cache.delete(f"reset_code_{email}")
+        redis_1.delete(f"reset_code_{email}")

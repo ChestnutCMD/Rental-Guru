@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-
 from chat.models import Trip
 from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating

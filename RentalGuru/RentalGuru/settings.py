@@ -2,6 +2,8 @@ import os.path
 from datetime import timedelta
 from os import getenv
 from pathlib import Path
+
+import redis
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -89,12 +91,15 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/1',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/2',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
 }
+
+redis_1 = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=1)
+
 # Celery settings 
 CELERY_BROKER_URL = REDIS_URL + '/0'
 CELERY_RESULT_BACKEND = REDIS_URL + '/0'
