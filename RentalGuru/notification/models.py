@@ -1,13 +1,13 @@
 import os
 from datetime import timedelta
 from celery import shared_task
+from django.apps import apps
 from django.core.mail import send_mail
 from django.utils import timezone
 from pyfcm import FCMNotification
 from django.db import models
 
 from RentalGuru.settings import DEFAULT_FROM_EMAIL, AUTH_USER_MODEL
-from app.models import User
 
 
 class Notification(models.Model):
@@ -69,6 +69,7 @@ def send_email_notification(notification_id):
 
 @shared_task
 def send_web_push_notification(user_id, notification_body, notification_url):
+    User = apps.get_model(AUTH_USER_MODEL)
     user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
     tokens = user.fcmtoken_set.values_list('token', flat=True)
     push_service = FCMNotification(service_account_file=os.getenv('SERVICE_ACCOUNT_FILE'),
