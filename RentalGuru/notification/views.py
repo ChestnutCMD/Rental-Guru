@@ -9,12 +9,19 @@ from rest_framework.decorators import action
 
 from RentalGuru import settings
 from .models import Notification
+from .permissions import IsAdminOrOwner, IsAdmin
 from .serializers import NotificationSerializer
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsAdminOrOwner]
+        elif self.action in ['create', 'update', 'partial_update']:
+            self.permission_classes = [IsAuthenticated, IsAdmin]
+        return super().get_permissions()
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).select_related('user')

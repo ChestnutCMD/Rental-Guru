@@ -6,12 +6,12 @@ from django.utils import timezone
 from pyfcm import FCMNotification
 from django.db import models
 
-from RentalGuru.settings import DEFAULT_FROM_EMAIL
+from RentalGuru.settings import DEFAULT_FROM_EMAIL, AUTH_USER_MODEL
 from app.models import User
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     content = models.CharField(max_length=255, verbose_name='Сообщение')
     read_it = models.BooleanField(default=False, verbose_name='Прочитано')
     url = models.URLField(max_length=255, null=True, blank=True)
@@ -40,7 +40,7 @@ class Notification(models.Model):
 
 
 class FCMToken(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     token = models.CharField(max_length=255, unique=True, verbose_name='Токен')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлен')

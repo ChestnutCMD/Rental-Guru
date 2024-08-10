@@ -1,9 +1,4 @@
-from django.utils import timezone
 from rest_framework import permissions
-from rest_framework.exceptions import PermissionDenied
-
-from chat.models import Trip
-from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
