@@ -104,19 +104,20 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     list_filter = ('brand', 'model', 'year', 'owner')
     ordering = ('-year',)
     list_per_page = 20
-    readonly_fields = ('ratings', 'get_average_rating')
+    readonly_fields = ('get_average_rating',)
 
     inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline, FeedbackInline]
 
     def get_vehicle_type(self, obj):
         return obj.__class__.__name__
-    get_vehicle_type.short_description = 'Vehicle Type'
+
+    get_vehicle_type.short_description = 'Тип транспорта'
 
     def get_average_rating(self, obj):
         average_ratings = obj.get_average_rating()
         return ', '.join(f"{category}: {rating:.1f}" for category, rating in average_ratings.items())
 
-    get_average_rating.short_description = 'Average Rating'
+    get_average_rating.short_description = 'Рейтинг'
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -153,7 +154,7 @@ class BaseVehicleAdmin(admin.ModelAdmin):
 class AutoAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', )
+            'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'body_type', 'seats', 'transmission', 'fuel_type',
@@ -174,10 +175,6 @@ class AutoAdmin(BaseVehicleAdmin):
         }),
         ('Местоположение', {
             'fields': ('location', )
-        }),
-        ('Рейтинг', {
-            'fields': ('get_average_rating',),
-            'classes': ('collapse',)
         })
     )
 
