@@ -65,6 +65,7 @@ def send_email_notification(notification_id):
         recipient_list=[notification.user.email],
         fail_silently=False,
     )
+    return "Email notifications sent"
 
 
 @shared_task
@@ -99,7 +100,7 @@ def send_web_push_notification(user_id, notification_body, notification_url):
                     if error in ['InvalidRegistration', 'NotRegistered']:
                         # Удаление недействительных токенов
                         FCMToken.objects.filter(token=result_token).delete()
-    return "Notifications sent"
+    return "Push notifications sent"
 
 
 @shared_task

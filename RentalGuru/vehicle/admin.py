@@ -179,7 +179,6 @@ class AutoAdmin(BaseVehicleAdmin):
     )
 
 
-
 class BikeAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
@@ -203,13 +202,8 @@ class BikeAdmin(BaseVehicleAdmin):
         }),
         ('Местоположение', {
             'fields': ('location',)
-        }),
-        ('Рейтинг', {
-            'fields': ('get_average_rating',),
-            'classes': ('collapse',)
         })
     )
-
 
 
 class ShipAdmin(BaseVehicleAdmin):
@@ -237,13 +231,8 @@ class ShipAdmin(BaseVehicleAdmin):
         }),
         ('Местоположение', {
             'fields': ('location',)
-        }),
-        ('Рейтинг', {
-            'fields': ('get_average_rating',),
-            'classes': ('collapse',)
         })
     )
-
 
 
 class HelicopterAdmin(BaseVehicleAdmin):
@@ -268,13 +257,8 @@ class HelicopterAdmin(BaseVehicleAdmin):
         }),
         ('Местоположение', {
             'fields': ('location',)
-        }),
-        ('Рейтинг', {
-            'fields': ('get_average_rating',),
-            'classes': ('collapse',)
         })
     )
-
 
 
 class SpecialTechnicAdmin(BaseVehicleAdmin):
@@ -297,13 +281,8 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
         }),
         ('Местоположение', {
             'fields': ('location',)
-        }),
-        ('Рейтинг', {
-            'fields': ('get_average_rating',),
-            'classes': ('collapse',)
         })
     )
-
 
 
 admin.site.register(Auto, AutoAdmin)
