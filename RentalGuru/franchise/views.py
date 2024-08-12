@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,6 +14,7 @@ from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSer
     FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer
 
 
+@extend_schema(summary="Автопарк", description="CRUD Автопарка")
 class VehicleParkViewSet(viewsets.ModelViewSet):
     queryset = VehiclePark.objects.all()
 
@@ -42,6 +44,7 @@ class VehicleParkViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
+@extend_schema(summary="Заявки на аренду автопарка", description="Заявки на аренду автопарка")
 class RequestsByParkView(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
 
@@ -101,6 +104,7 @@ class RequestsByParkView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Чаты автопарка", description="Чаты автопарка")
 class ChatsByParkView(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
 
@@ -119,6 +123,7 @@ class ChatsByParkView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(summary="Франшиза", description="CRUD фарншизы")
 class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = Franchise.objects.all()
     permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
@@ -158,3 +163,83 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+@extend_schema(summary="Заявки на аренду франшизы", description="Заявки на аренду франшизы")
+class RequestsByFranchiseView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, franchise_id, format=None):
+        try:
+            franchise = Franchise.objects.get(id=franchise_id)
+        except Franchise.DoesNotExist:
+            return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicle_parks = franchise.vehicle_parks.all()
+        vehicles_in_parks = Vehicle.objects.filter(vehicle_park__in=vehicle_parks)
+        vehicles_direct = Vehicle.objects.filter(franchise=franchise)
+        all_vehicles = vehicles_in_parks | vehicles_direct
+        requests = RequestRent.objects.filter(object_id__in=all_vehicles.values_list('id', flat=True)).select_related('content_type')
+        serialized_requests = RequestRentSerializer(requests, many=True).data
+
+        count_dict = {
+            "auto": 0,
+            "bike": 0,
+            "ship": 0,
+            "helicopter": 0,
+            "special_technic": 0
+        }
+
+        for request in serialized_requests:
+            content_type_name = request['type']
+            if content_type_name in count_dict:
+                count_dict[content_type_name] += 1
+
+        data = {
+            "auto": [],
+            "bike": [],
+            "ship": [],
+            "helicopter": [],
+            "special_technic": []
+        }
+
+        for request in serialized_requests:
+            content_type_name = request['type']
+            if content_type_name == "auto":
+                data["auto"].append(request)
+            elif content_type_name == "bike":
+                data["bike"].append(request)
+            elif content_type_name == "ship":
+                data["ship"].append(request)
+            elif content_type_name == "helicopter":
+                data["helicopter"].append(request)
+            elif content_type_name == "special_technic":
+                data["special_technic"].append(request)
+
+        result = {
+            "counts": count_dict,
+            "data": data
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Чаты франшизы", description="Чаты франшизы")
+class ChatsByFranchiseView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, franchise_id, format=None):
+        try:
+            franchise = Franchise.objects.get(id=franchise_id)
+        except Franchise.DoesNotExist:
+            return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicle_parks = franchise.vehicle_parks.all()
+        vehicles_in_parks = Vehicle.objects.filter(vehicle_park__in=vehicle_parks)
+        vehicles_direct = Vehicle.objects.filter(franchise=franchise)
+        all_vehicles = vehicles_in_parks | vehicles_direct
+        trips = Trip.objects.filter(object_id__in=all_vehicles.values_list('id', flat=True))
+        chats = Chat.objects.filter(trip__in=trips)
+        serializer = ChatSerializer(chats, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

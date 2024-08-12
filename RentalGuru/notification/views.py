@@ -2,6 +2,7 @@ import os
 
 from django.http import FileResponse
 from django.shortcuts import render
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,6 +14,7 @@ from .permissions import IsAdminOrOwner, IsAdmin
 from .serializers import NotificationSerializer
 
 
+@extend_schema(summary="Уведомления", description="CRUD уведомлений")
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
 
@@ -35,6 +37,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema(summary="FCM токен", description="FCM токен")
 def get_fcm_token(request):
     return render(request, 'test_push.html')
 

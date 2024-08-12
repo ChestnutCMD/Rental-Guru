@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from RentalGuru import settings
 from app.models import User
+from chat.models import RequestRent
 from franchise.models import Franchise, VehiclePark, Category
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
 from vehicle.models import Vehicle
@@ -159,3 +160,20 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
 
 class FranchiseDeleteSerializer(serializers.Serializer):
     pass
+
+
+class RequestRentSerializer(serializers.ModelSerializer):
+    organizer = serializers.StringRelatedField()
+    type = serializers.SerializerMethodField()
+    object = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RequestRent
+        fields = ['id', 'organizer', 'type', 'status', 'object', 'start_date', 'end_date', 'total_cost']
+
+    def get_type(self, obj):
+        return obj.content_type.model
+
+    def get_object(self, obj):
+        vehicle = Vehicle.objects.filter(id=obj.object_id).first()
+        return str(vehicle) if vehicle else None
