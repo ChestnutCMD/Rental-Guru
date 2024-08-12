@@ -94,12 +94,7 @@ class VehicleParkListSerializer(serializers.ModelSerializer):
 class VehicleParkCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehiclePark
-        fields = ['name']  # Не указываем 'owner', так как он будет установлен автоматически
-
-    # def create(self, validated_data):
-    #     user = self.context['request'].user  # Получаем текущего пользователя из контекста
-    #     vehicle_park = VehiclePark.objects.create(owner=user, **validated_data)
-    #     return vehicle_park
+        fields = ['name']
 
 
 class VehicleTypeSerializer(serializers.Serializer):

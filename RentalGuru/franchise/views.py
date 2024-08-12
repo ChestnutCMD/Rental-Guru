@@ -1,5 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,10 +5,12 @@ from rest_framework.views import APIView
 
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
-from .models import VehiclePark
+from .models import VehiclePark, Franchise
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer
+from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSerializer, \
+    FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer
 
 
 class VehicleParkViewSet(viewsets.ModelViewSet):
@@ -116,4 +116,45 @@ class ChatsByParkView(APIView):
         chats = Chat.objects.filter(trip__in=trips)
 
         serializer = ChatSerializer(chats, many=True)
+        return Response(serializer.data)
+
+
+class FranchiseViewSet(viewsets.ModelViewSet):
+    queryset = Franchise.objects.all()
+    permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return FranchiseListSerializer
+        elif self.action == 'retrieve':
+            return FranchiseRetrieveSerializer
+        elif self.action == 'create':
+            return FranchiseCreateSerializer
+        elif self.action == 'update' or self.action == 'partial_update':
+            return FranchiseUpdateSerializer
+        elif self.action == 'destroy':
+            return FranchiseDeleteSerializer
+        return FranchiseListSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'results': serializer.data})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         return Response(serializer.data)
