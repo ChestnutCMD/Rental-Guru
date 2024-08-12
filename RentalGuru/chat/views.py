@@ -164,12 +164,13 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if not is_period_contained(availabilities, sub_period):
             raise DRFValidationError("Запрашиваемый период недоступен для данного транспортного средства.")
 
-        user_age = calculate_age(request.user.date_of_birth)
-        drivers_age = vehicle_instance.drivers_age
-
-        if request.user.date_of_birth is None or user_age < drivers_age:
-            raise DRFValidationError("Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
-
+        try:
+            user_age = calculate_age(request.user.date_of_birth)
+            drivers_age = vehicle_instance.drivers_age
+            if request.user.date_of_birth is None or user_age < drivers_age:
+                raise DRFValidationError("Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
+        except AttributeError:
+            pass
         if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
             raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 

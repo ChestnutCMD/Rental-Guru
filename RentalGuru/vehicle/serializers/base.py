@@ -45,6 +45,12 @@ class VehicleBrandSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 
+class VehicleModelGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleModel
+        fields = ['name']
+
+
 class VehicleModelSerializer(serializers.ModelSerializer):
     brand = serializers.PrimaryKeyRelatedField(
         queryset=VehicleBrand.objects.all(),
@@ -175,7 +181,7 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
     rent_prices = RentPriceSerializer(many=True)
     average_ratings = serializers.SerializerMethodField()
     brand = VehicleBrandSerializer(read_only=True)
-    model = VehicleModelSerializer(read_only=True)
+    model = VehicleModelGetSerializer(read_only=True)
 
     class Meta:
         fields = '__all__'
@@ -206,7 +212,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     rent_prices = RentPriceSerializer(many=True)
     average_ratings = serializers.SerializerMethodField()
     brand = VehicleBrandSerializer(read_only=True)
-    model = VehicleModelSerializer(read_only=True)
+    model = VehicleModelGetSerializer(read_only=True)
 
     class Meta:
         fields = ['brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos']

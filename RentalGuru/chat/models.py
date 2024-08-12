@@ -20,10 +20,46 @@ class RequestRent(models.Model):
 
     start_date = models.DateField(verbose_name='Начало аренды')
     end_date = models.DateField(verbose_name='Конец аренды')
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
 
     @property
     def owner(self):
         return self.vehicle.owner
+
+    @property
+    def rental_days(self):
+        """Подсчитывает количество дней аренды."""
+        return (self.end_date - self.start_date).days + 1
+
+    def calculate_rent_price(self):
+        from vehicle.models import RentPrice
+        """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
+        rental_days = self.rental_days
+
+        # Сначала определяем периоды аренды в порядке убывания
+        period_priorities = [
+            ('year', 365),
+            ('month', 30),
+            ('week', 7),
+            ('day', 1)
+        ]
+
+        # Ищем подходящий период
+        for period, period_days in period_priorities:
+            rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
+            if rent_price:
+                break
+        else:
+            raise ValueError("Не найдено подходящей цены аренды для транспортного средства.")
+
+        # Подсчитываем итоговую стоимость
+        total_cost = (rental_days / period_days) * float(rent_price.total)
+        return total_cost
+
+    def save(self, *args, **kwargs):
+        """Переопределяем метод save для автоматического подсчета и сохранения total_cost."""
+        self.total_cost = self.calculate_rent_price()
+        super(RequestRent, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'request rent id-{self.pk}'

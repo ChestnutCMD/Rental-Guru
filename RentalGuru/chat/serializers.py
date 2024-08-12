@@ -21,7 +21,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RequestRent
-        exclude = ['content_type', 'object_id']  # Исключаем content_type и object_id
+        exclude = ['content_type', 'object_id']
         read_only_fields = ['organizer']
 
     def create(self, validated_data):

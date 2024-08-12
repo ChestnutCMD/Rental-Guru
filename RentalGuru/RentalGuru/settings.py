@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'vehicle',
     'chat',
     'notification',
+    'franchise',
     'drf_spectacular',
     'polymorphic',
 ]
@@ -164,12 +165,12 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'DEBUG',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
         'chat': {

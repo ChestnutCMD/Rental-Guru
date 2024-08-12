@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from app.models import User, Renter
+from app.models import User, Renter, Lessor
 
 
 @admin.register(User)
@@ -24,3 +24,8 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Renter)
 class RenterAdmin(admin.ModelAdmin):
     display = ('push_notification', 'user', 'favorite', 'verification', 'rating')
+
+
+@admin.register(Lessor)
+class RenterAdmin(admin.ModelAdmin):
+    display = ('super_host', 'count_trip', 'average_response_time')

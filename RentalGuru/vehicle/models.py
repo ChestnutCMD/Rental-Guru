@@ -2,11 +2,14 @@ from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKe
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from polymorphic.models import PolymorphicModel
 
 from RentalGuru import settings
 from chat.models import RequestRent
+from franchise.models import Franchise, VehiclePark
 from notification.models import Notification
 from vehicle.utils import merge_periods
 
@@ -152,6 +155,12 @@ class Vehicle(PolymorphicModel):
     location = models.CharField(max_length=255, verbose_name='Местоположение')
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
+    franchise = models.ForeignKey(Franchise, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicle', verbose_name='Франшиза')
+    vehicle_park = models.ForeignKey(VehiclePark, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicles', verbose_name='Автопарк')
+
+    @receiver(post_delete, sender=Franchise)
+    def delete_related_vehicles(sender, instance, **kwargs):
+        Vehicle.objects.filter(franchise=instance).delete()
 
     def get_average_rating(self):
         average_ratings = {}
@@ -218,7 +227,7 @@ class RentPrice(models.Model):
         super(RentPrice, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return f'Стоимость аренды на {self.name} - {self.total}'
 
     class Meta:
         verbose_name = 'Период'
