@@ -1,11 +1,11 @@
 from django.contrib import admin
-
-from .forms import LessorForm
 from .models import User, Lessor, Renter
+
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'first_name', 'last_name', 'role', 'date_of_birth', 'telephone', 'currency', 'avatar')
     list_filter = ('role',)
+
 
 class LessorAdmin(admin.ModelAdmin):
     list_display = ('user', 'super_host', 'count_trip', 'average_response_time')
