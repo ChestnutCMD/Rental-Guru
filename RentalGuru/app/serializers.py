@@ -18,17 +18,21 @@ from RentalGuru.settings import redis_1
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True, required=True)
     member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type']
+        fields = ['email', 'first_name', 'last_name', 'password', 'password2', 'member_type']
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        return attrs
 
     def create(self, validated_data):
-        role = validated_data.pop('member_type')
-
-        # Генерация случайного пароля
-        password = get_random_string(length=8)
+        member_type = validated_data.pop('member_type')
 
         user = User.objects.create(
             email=validated_data['email'],
@@ -37,19 +41,48 @@ class RegisterSerializer(serializers.ModelSerializer):
             date_of_birth=validated_data.get('date_of_birth', None),
             role='member'
         )
-        user.set_password(password)
+        user.set_password(validated_data['password'])
         user.save()
-
-        # Создание арендатора или арендодателя
-        if role == 'lessor':
+        if member_type == 'lessor':
             Lessor.objects.create(user=user)
         else:
             Renter.objects.create(user=user)
-
-        # Отправка email с паролем
-        send_email_password(user.first_name, user.email, password)
-
         return user
+
+
+# class RegisterSerializer(serializers.ModelSerializer):
+#     member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True, required=True)
+#
+#     class Meta:
+#         model = User
+#         fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type']
+#
+#     def create(self, validated_data):
+#         role = validated_data.pop('member_type')
+#
+#         # Генерация случайного пароля
+#         password = get_random_string(length=8)
+#
+#         user = User.objects.create(
+#             email=validated_data['email'],
+#             first_name=validated_data.get('first_name', None),
+#             last_name=validated_data.get('last_name', None),
+#             date_of_birth=validated_data.get('date_of_birth', None),
+#             role='member'
+#         )
+#         user.set_password(password)
+#         user.save()
+#
+#         # Создание арендатора или арендодателя
+#         if role == 'lessor':
+#             Lessor.objects.create(user=user)
+#         else:
+#             Renter.objects.create(user=user)
+#
+#         # Отправка email с паролем
+#         send_email_password(user.first_name, user.email, password)
+#
+#         return user
 
 
 class ChangePasswordSerializer(serializers.Serializer):
