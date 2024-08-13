@@ -236,7 +236,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
     def save(self):
         email = self.validated_data['email']
-        reset_code = random.randint(1000, 9999)
+        reset_code = random.randint(100000, 999999)
         redis_1.set(f"reset_code_{email}", reset_code, ex=900)
         send_email_reset_code(reset_code, email)
 
