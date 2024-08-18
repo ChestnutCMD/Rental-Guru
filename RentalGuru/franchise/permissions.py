@@ -13,4 +13,24 @@ class IsOwnerOrAdmin(BasePermission):
 
 class IsOwnerOrAdminForGet(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return request.user == obj.owner or request.user.role == 'admin'
+        if request.method not in ['GET']:
+            return request.user == obj.owner or request.user.role == 'admin' or request.user.role == 'manager'
+
+        if request.user.role == 'admin':
+            return True
+
+        if hasattr(obj, 'franchise'):
+            if obj.franchise and request.user == obj.franchise.director:
+                return True
+
+        return request.user == obj.owner
+
+    def has_permission(self, request, view):
+        if request.user.role == 'admin':
+            return True
+        return super().has_permission(request, view)
+
+
+class IsDirectorOrAdminForGet(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.director or request.user.role == 'admin'

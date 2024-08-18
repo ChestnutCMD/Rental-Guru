@@ -1,8 +1,13 @@
+from decimal import Decimal
+
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q, Sum
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
 from RentalGuru import settings
+from chat.models import Trip
 
 
 class Category(models.Model):
@@ -30,16 +35,71 @@ class Franchise(models.Model):
     total_vehicles = models.PositiveIntegerField(default=0, verbose_name='Общее количество транспортных средств')
     categories = models.ManyToManyField(Category, related_name='franchises', verbose_name='Категории')
 
-    def update_total_vehicles(self):
-        from vehicle.models import Vehicle
-        vehicles_in_parks = sum(park.vehicles.count() for park in self.vehicle_parks.all())
-        unassigned_vehicles_count = Vehicle.objects.filter(franchise=self, vehicle_park__isnull=True).count()
-        self.total_vehicles = vehicles_in_parks + unassigned_vehicles_count
+    def save_total_vehicles(self):
+        self.total_vehicles = self.get_total_vehicles()
+        self.save(update_fields=['total_vehicles'])
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.update_total_vehicles()
-        super().save(update_fields=['total_vehicles'])
+    def get_vehicles(self):
+        from vehicle.models import Vehicle
+        return Vehicle.objects.filter(
+            Q(owner__lessor__franchise=self) | Q(owner=self.director)
+        )
+
+    def get_total_vehicles(self):
+        return self.get_vehicles().count()
+
+    def get_total_revenue(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='finished'
+        ).aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or 0.00
+
+    def get_total_margin(self):
+        revenue = self.get_total_revenue()
+        commission_decimal = Decimal(self.commission) / 100
+        return revenue * (1 - commission_decimal)
+
+    def get_total_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id')
+        ).count()
+
+    def get_total_completed_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='finished'
+        ).count()
+
+    def get_total_cancelled_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='canceled'
+        ).count()
+
+    def get_active_users_count(self):
+        from app.models import User
+        return User.objects.filter(
+            lessor__franchise=self
+        ).count()
+
+    def get_statistics(self):
+        return {
+            'total_vehicles': self.get_total_vehicles(),
+            'total_revenue': self.get_total_revenue(),
+            'total_margin': self.get_total_margin(),
+            'total_orders': self.get_total_orders(),
+            'total_completed_orders': self.get_total_completed_orders(),
+            'total_cancelled_orders': self.get_total_cancelled_orders(),
+            'active_users_count': self.get_active_users_count(),
+        }
 
     def __str__(self):
         return f"{self.name} ({self.country}, {self.city})"
@@ -54,6 +114,10 @@ class VehiclePark(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vehicle_parks', verbose_name='Автопарк')
     franchise = models.ForeignKey(Franchise, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicle_parks', verbose_name='Франшиза')
 
+    class Meta:
+        verbose_name = 'Автопарк'
+        verbose_name_plural = 'Автопарки'
+
     def __str__(self):
         return str(self.name)
 
@@ -61,9 +125,53 @@ class VehiclePark(models.Model):
     def delete_related_vehicles(sender, instance, **kwargs):
         VehiclePark.objects.filter(franchise=instance).delete()
 
-    class Meta:
-        verbose_name = 'Автопарк'
-        verbose_name_plural = 'Автопарки'
+    def get_vehicles(self):
+        """Метод для получения всех транспортных средств, связанных с данным автопарком."""
+        from vehicle.models import Vehicle
+        return Vehicle.objects.filter(vehicle_park=self)
+
+    def get_total_vehicles(self):
+        return self.get_vehicles().count()
+
+    def get_total_revenue(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='finished'
+        ).aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or 0.00
+
+    def get_total_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id')
+        ).count()
+
+    def get_total_completed_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='finished'
+        ).count()
+
+    def get_total_cancelled_orders(self):
+        return Trip.objects.filter(
+            content_type__in=ContentType.objects.filter(
+                model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
+            object_id__in=self.get_vehicles().values('id'),
+            status='canceled'
+        ).count()
+
+    def get_statistics(self):
+        return {
+            'total_vehicles': self.get_total_vehicles(),
+            'total_revenue': self.get_total_revenue(),
+            'total_orders': self.get_total_orders(),
+            'total_completed_orders': self.get_total_completed_orders(),
+            'total_cancelled_orders': self.get_total_cancelled_orders(),
+        }
 
 
 class RequestFranchise(models.Model):

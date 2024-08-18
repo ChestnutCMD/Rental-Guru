@@ -32,7 +32,6 @@ class RequestRent(models.Model):
         return (self.end_date - self.start_date).days + 1
 
     def calculate_rent_price(self):
-        from vehicle.models import RentPrice
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
         rental_days = self.rental_days
 
@@ -46,6 +45,7 @@ class RequestRent(models.Model):
 
         # Ищем подходящий период
         for period, period_days in period_priorities:
+            from vehicle.models import RentPrice
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
             if rent_price:
                 break
@@ -57,9 +57,31 @@ class RequestRent(models.Model):
         return total_cost
 
     def save(self, *args, **kwargs):
-        """Переопределяем метод save для автоматического подсчета и сохранения total_cost."""
-        self.total_cost = self.calculate_rent_price()
-        super(RequestRent, self).save(*args, **kwargs)
+        """Переопределяем метод save для автоматического подсчета и сохранения total_cost и создания Trip при изменении статуса на 'accept'."""
+        # Проверяем, изменился ли статус на 'accept'
+        if self.pk:
+            original = RequestRent.objects.get(pk=self.pk)
+            if original.status != 'accept' and self.status == 'accept':
+                # Если статус меняется на 'accept', создаем Trip
+                self.total_cost = self.calculate_rent_price()
+                super(RequestRent, self).save(*args, **kwargs)
+
+                Trip.objects.create(
+                    organizer=self.organizer,
+                    content_type=self.content_type,
+                    object_id=self.object_id,
+                    start_date=self.start_date,
+                    end_date=self.end_date,
+                    total_cost=self.total_cost
+                )
+                # Отправка уведомлений или другая логика
+            else:
+                self.total_cost = self.calculate_rent_price()
+                super(RequestRent, self).save(*args, **kwargs)
+        else:
+            # Создание нового объекта
+            self.total_cost = self.calculate_rent_price()
+            super(RequestRent, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'request rent id-{self.pk}'
@@ -70,6 +92,12 @@ class RequestRent(models.Model):
 
 
 class Trip(models.Model):
+    STATUS_CHOICES = (
+        ('current', 'Текущая поездка'),
+        ('finished', 'Завершить'),
+        ('canceled', 'Отменить')
+    )
+    status = models.CharField(max_length=8, default='current', choices=STATUS_CHOICES, verbose_name='Статус')
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips', verbose_name='Организатор')
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
@@ -78,10 +106,25 @@ class Trip(models.Model):
 
     start_date = models.DateField(verbose_name='Начало поездки')
     end_date = models.DateField(verbose_name='Конец поездки')
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Стоимость аренды', default=0.00)
 
     @property
     def owner(self):
         return self.vehicle.owner
+
+    def save(self, *args, **kwargs):
+        # Получаем старую версию объекта для сравнения
+        if self.pk:
+            previous_trip = Trip.objects.get(pk=self.pk)
+        else:
+            previous_trip = None
+
+        super(Trip, self).save(*args, **kwargs)
+
+        # Увеличиваем счетчик поездок при изменении статуса на "finished"
+        if previous_trip and previous_trip.status != 'finished' and self.status == 'finished':
+            self.owner.lessor.count_trip += 1
+            self.owner.lessor.save(update_fields=['count_trip'])
 
     def __str__(self):
         return f'Поездка id-{self.pk}'

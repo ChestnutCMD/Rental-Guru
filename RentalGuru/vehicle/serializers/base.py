@@ -215,7 +215,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     model = VehicleModelGetSerializer(read_only=True)
 
     class Meta:
-        fields = ['brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos']
+        fields = ['id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos']
         read_only_fields = ['average_ratings']
 
     @extend_schema_field(serializers.FloatField())

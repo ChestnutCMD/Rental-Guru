@@ -1,7 +1,7 @@
+from django.db import models
 from rest_framework import serializers
 
-from RentalGuru import settings
-from app.models import User
+from app.models import User, Lessor
 from chat.models import RequestRent
 from franchise.models import Franchise, VehiclePark, Category
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
@@ -37,8 +37,8 @@ class FranchiseListSerializer(serializers.ModelSerializer):
 
 
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
-    vehicle_parks = VehicleParkRetrieveSerializer(many=True, read_only=True)
-    vehicles = VehicleSerializer(many=True, read_only=True)
+    vehicle_parks = serializers.SerializerMethodField()
+    vehicles = serializers.SerializerMethodField()
 
     class Meta:
         model = Franchise
@@ -51,34 +51,19 @@ class FranchiseRetrieveSerializer(serializers.ModelSerializer):
             'total_vehicles'
         ]
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
+    def get_vehicle_parks(self, obj):
+        # Получаем парки у арендодателей, связанных с франшизой, или владельцем которых является директор франшизы
+        vehicle_parks = VehiclePark.objects.filter(
+            models.Q(owner__franchise=obj) | models.Q(owner=obj.director)
+        )
+        return VehicleParkRetrieveSerializer(vehicle_parks, many=True).data
 
-        # Форматирование данных автопарков
-        vehicle_parks = representation.pop('vehicle_parks', [])
-        formatted_vehicle_parks = []
-        for park in vehicle_parks:
-            park_data = VehicleParkRetrieveSerializer(instance=park).data
-            formatted_vehicle_parks.append(park_data)
-
-        # Форматирование данных транспортных средств
-        vehicles = representation.pop('vehicles', [])
-        formatted_vehicles = []
-        for vehicle in vehicles:
-            vehicle_data = VehicleSerializer(instance=vehicle).data
-            formatted_vehicles.append(vehicle_data)
-
-        # Объединение данных в один результат
-        result = {
-            'telephone': representation.get('telephone'),
-            'country': representation.get('country'),
-            'city': representation.get('city'),
-            'vehicle_parks': formatted_vehicle_parks,
-            'vehicles': formatted_vehicles,
-            'total_vehicles': representation.get('total_vehicles')
-        }
-
-        return result
+    def get_vehicles(self, obj):
+        # Получаем транспорт у арендодателей, связанных с франшизой, или владельцем которого является директор франшизы
+        vehicles = Vehicle.objects.filter(
+            models.Q(owner__lessor__franchise=obj) | models.Q(owner=obj.director)
+        )
+        return VehicleSerializer(vehicles, many=True).data
 
 
 class FranchiseCreateSerializer(serializers.ModelSerializer):
@@ -126,6 +111,18 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
             'vehicles'
         ]
 
+    def get_vehicle_parks(self, obj):
+        vehicle_parks = VehiclePark.objects.filter(
+            models.Q(lessor__franchise=obj) | models.Q(owner=obj.director)
+        )
+        return VehicleParkRetrieveSerializer(vehicle_parks, many=True).data
+
+    def get_vehicles(self, obj):
+        vehicles = Vehicle.objects.filter(
+            models.Q(owner__lessor__franchise=obj) | models.Q(owner=obj.director)
+        )
+        return VehicleSerializer(vehicles, many=True).data
+
     def update(self, instance, validated_data):
         # Обновляем простые поля
         instance.name = validated_data.get('name', instance.name)
@@ -134,25 +131,6 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
         instance.telephone = validated_data.get('telephone', instance.telephone)
         instance.country = validated_data.get('country', instance.country)
         instance.city = validated_data.get('city', instance.city)
-
-        # Обработка связанных автопарков (VehiclePark)
-        vehicle_parks_data = validated_data.get('vehicle_parks', [])
-        new_vehicle_park_ids = [park.get('id') for park in vehicle_parks_data if park.get('id') is not None]
-
-        # Получаем новые автопарки для добавления
-        new_vehicle_parks = VehiclePark.objects.filter(id__in=new_vehicle_park_ids)
-
-        # Добавляем новые автопарки к франшизе
-        instance.vehicle_parks.add(*new_vehicle_parks)
-
-        # Обработка связанных транспортных средств (Vehicles)
-        vehicles_data = validated_data.get('vehicles', [])
-        vehicle_ids = [vehicle.get('id') for vehicle in vehicles_data if vehicle.get('id') is not None]
-
-        vehicles = Vehicle.objects.filter(id__in=vehicle_ids)
-        for vehicle in vehicles:
-            vehicle.franchise = instance
-            vehicle.save()
 
         instance.save()
         return instance
@@ -177,3 +155,34 @@ class RequestRentSerializer(serializers.ModelSerializer):
     def get_object(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return str(vehicle) if vehicle else None
+
+    def get_queryset(self):
+        franchise = self.context['franchise']
+        return RequestRent.objects.filter(
+            models.Q(vehicle__owner__lessor__franchise=franchise) | models.Q(vehicle__owner=franchise.director)
+        )
+
+
+class LessorSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = Lessor
+        fields = [
+            'id',
+            'user',
+            'super_host',
+            'count_trip',
+            'average_response_time',
+            'franchise'
+        ]
+
+
+class FranchiseStatisticsSerializer(serializers.Serializer):
+    total_vehicles = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_margin = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_orders = serializers.IntegerField()
+    total_completed_orders = serializers.IntegerField()
+    total_cancelled_orders = serializers.IntegerField()
+    active_users_count = serializers.IntegerField()

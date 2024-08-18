@@ -11,16 +11,20 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 
-class VehicleInline(admin.TabularInline):
-    model = Vehicle
-    extra = 1
-    readonly_fields = ('brand', 'model', 'year', 'location')
+class VehicleAdmin(admin.ModelAdmin):
+    list_display = (
+        'brand', 'model', 'year', 'owner'
+    )
+    search_fields = ('brand', 'model', 'owner__email')
+    list_filter = ('owner',)
+
 
 # Inline class for VehiclePark
 class VehicleParkInline(admin.TabularInline):
     model = VehiclePark
     extra = 1
     readonly_fields = ('name',)
+
 
 # Admin class for Franchise
 class FranchiseAdmin(admin.ModelAdmin):
@@ -32,7 +36,7 @@ class FranchiseAdmin(admin.ModelAdmin):
     search_fields = ('name', 'unn', 'email', 'telephone', 'country', 'city', 'director__email')
     readonly_fields = ('total_vehicles', 'date_register')
 
-    inlines = [VehicleParkInline, VehicleInline]
+    inlines = [VehicleParkInline]  # Удалили VehicleInline, так как связи нет
 
     def save_model(self, request, obj, form, change):
         if change:
@@ -41,13 +45,14 @@ class FranchiseAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.prefetch_related('vehicle_parks__vehicles')
+        return qs.prefetch_related('vehicle_parks', 'lessors')  # Предзагрузка только доступных связанных объектов
 
     def get_vehicles(self, obj):
+        # Здесь нужно использовать правильную логику получения транспортных средств
         vehicles = Vehicle.objects.filter(
-            franchise=obj
+            Q(owner__lessor__franchise=obj) | Q(owner=obj.director)
         )
-        return ", ".join([f'{v.brand.name} {v.model.name} ({v.year})' for v in vehicles])
+        return ", ".join([f'{v.brand} {v.model} ({v.year})' for v in vehicles])
     get_vehicles.short_description = 'Транспортные средства'
 
     def get_fieldsets(self, request, obj=None):
@@ -74,5 +79,6 @@ class RequestFranchiseAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Franchise, FranchiseAdmin)
+admin.site.register(Vehicle, VehicleAdmin)  # Зарегистрируйте VehicleAdmin
 admin.site.register(VehiclePark, VehicleParkAdmin)
 admin.site.register(RequestFranchise, RequestFranchiseAdmin)

@@ -72,11 +72,12 @@ class VehicleSerializer(serializers.ModelSerializer):
 
 
 class VehicleParkRetrieveSerializer(serializers.ModelSerializer):
+    creator = serializers.StringRelatedField()
     vehicles = VehicleSerializer(many=True, read_only=True)
 
     class Meta:
         model = VehiclePark
-        fields = ['id', 'name', 'vehicles']
+        fields = ['id', 'creator', 'name', 'vehicles']
 
 
 class VehicleParkListSerializer(serializers.ModelSerializer):
@@ -124,18 +125,20 @@ class VehicleParkUpdateSerializer(serializers.ModelSerializer):
 
             vehicle = Vehicle.objects.filter(id=vehicle_id).first()
             if vehicle is None:
-                raise serializers.ValidationError(f"Vehicle with ID {vehicle_id} does not exist.")
+                raise serializers.ValidationError(f"Транспортное средство с идентификатором {vehicle_id} не существует.")
 
-            # Проверка на принадлежность транспортного средства владельцу автопарка
-            if vehicle.owner != instance.owner:
+            franchise_director = instance.franchise.director if instance.franchise else None
+
+            # Проверка на принадлежность транспортного средства владельцу автопарка или директору франшизы
+            if vehicle.owner != instance.owner or vehicle.owner != franchise_director:
                 raise serializers.ValidationError(
-                    f"Vehicle with ID {vehicle_id} does not belong to the owner of this vehicle park."
+                    f"Транспортное средство с идентификатором {vehicle_id} не принадлежит владельцу этого парка транспортных средств."
                 )
 
             # Проверяем, что транспорт не принадлежит другому автопарку
             if vehicle.vehicle_park and vehicle.vehicle_park != instance:
                 raise serializers.ValidationError(
-                    f"Vehicle with ID {vehicle_id} is already assigned to another vehicle park."
+                    f"Транспортное средство с идентификатором {vehicle_id} уже приписано к другому парку транспортных средств."
                 )
 
             # Устанавливаем автопарк для транспорта
@@ -169,3 +172,11 @@ class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
         fields = ['id', 'participants']
+
+
+class VehicleParkStatisticsSerializer(serializers.Serializer):
+    total_vehicles = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_orders = serializers.IntegerField()
+    total_completed_orders = serializers.IntegerField()
+    total_cancelled_orders = serializers.IntegerField()

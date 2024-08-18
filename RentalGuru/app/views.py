@@ -12,7 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from chat.models import Trip
 from vehicle.models import Vehicle
 from .models import User, RenterDocuments, Renter, Rating
-from .permissions import IsAdminOrSelf
+from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer
@@ -43,8 +43,10 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserDetailSerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy', 'get']:
             self.permission_classes = [IsAdminOrSelf]
+        elif self.action == 'list':
+            self.permission_classes = [IsAdmin]
         return super().get_permissions()
 
     def perform_update(self, serializer):

@@ -1,10 +1,14 @@
 import random
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from franchise.models import Franchise
 from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
@@ -31,22 +35,37 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
+        request = self.context.get('request')
+        current_user = request.user if request else None
         member_type = validated_data.pop('member_type')
 
+        # Создание нового пользователя
         user = User.objects.create(
             email=validated_data['email'],
             first_name=validated_data.get('first_name', None),
             last_name=validated_data.get('last_name', None),
-            date_of_birth=validated_data.get('date_of_birth', None),
             role='member'
         )
         user.set_password(validated_data['password'])
         user.save()
-        if member_type == 'lessor':
-            Lessor.objects.create(user=user)
+
+        # Если текущий пользователь является директором франшизы, связываем нового пользователя с франшизой
+        if current_user and Franchise.objects.filter(director=current_user).exists():
+            franchise = Franchise.objects.get(director=current_user)
+            if member_type == 'lessor':
+                Lessor.objects.create(user=user, franchise=franchise)
+            else:
+                raise ValidationError(
+                    "Новый пользователь может быть связан с франшизой только как арендодатель (lessor).")
         else:
-            Renter.objects.create(user=user)
+            # Если текущий пользователь не директор или тип пользователя 'renter'
+            if member_type == 'lessor':
+                Lessor.objects.create(user=user)
+            else:
+                Renter.objects.create(user=user)
+
         return user
 
 

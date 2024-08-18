@@ -72,16 +72,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         return Message.objects.filter(chat__participants=user)
 
 
-def check_redis(request):
-    """ Проверка redis """
-    try:
-        r = redis.Redis(host=os.getenv('REDIS_HOST'), port=6379, db=0)
-        r.ping()
-        return JsonResponse({'status': 'ok'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
-
-
 @extend_schema(summary="Заявка на аренду", description="Заявка на аренду. Создать может только пользователь renter.\
                                                 После создания пользователь, который является владельцем транспорта,\
                                                 может обновить статус заявки - принять или отклонить (accept|denied).\
@@ -194,18 +184,18 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             new_status = self.request.data['status']
             if new_status == 'accept':
                 if instance.owner != self.request.user:
-                    raise DRFValidationError("Only the vehicle owner can accept the request.")
+                    raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
 
                 model = instance.content_type.model_class()
                 object_id = instance.object_id
                 try:
                     vehicle_instance = model.objects.get(id=object_id)
                 except model.DoesNotExist:
-                    raise DRFValidationError(f"Vehicle with ID {object_id} does not exist.")
+                    raise DRFValidationError(f"Транспорт с ID {object_id} не найден.")
 
                 availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
                 if not availabilities:
-                    raise DRFValidationError("No availability data found for this vehicle.")
+                    raise DRFValidationError("Данных о наличии свободных периодов аренды для этого транспорта не найдено.")
 
                 # Преобразование дат в строки
                 for availability in availabilities:
@@ -228,18 +218,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                         end_date=availability['end_date']
                     )
 
-                Trip.objects.create(
-                    organizer=instance.organizer,
-                    content_type=instance.content_type,
-                    object_id=instance.object_id,
-                    start_date=instance.start_date,
-                    end_date=instance.end_date
-                )
+                # Здесь Trip будет создан в модели RequestRent
+                serializer.save(user=self.request.user)
 
                 url = f'{settings.HOST_URL}/chat/request_rents/{instance.id}'
                 content = f'Заявка на аренду {vehicle_instance} одобрена. Дата начала {instance.start_date}'
                 Notification.objects.create(user=instance.organizer, content=content, url=url)
-        serializer.save(user=self.request.user)
+        else:
+            serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
         self.check_permissions(request)
@@ -248,7 +234,6 @@ class RequestRentViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         self.check_permissions(request)
         return super().update(request, *args, **kwargs)
-
 
 # Чат с техподдержкой
 
@@ -357,8 +342,8 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом.")
 
-        if trip.end_date > timezone.now().date():
-            raise serializers.ValidationError("Поездка еще не завершена.")
+        if trip.status != 'finished':
+            raise serializers.ValidationError("Поездка не была завершена.")
 
         # Получение экземпляра транспортного средства
         vehicle_instance = ContentType.objects.get_for_id(content_type_id).model_class().objects.get(id=object_id)

@@ -185,7 +185,7 @@ class UpdateRatingView(APIView):
                 return Response({"error": "Не найдено соответствующей поездки"}, status=status.HTTP_404_NOT_FOUND)
 
             # Проверка завершения поездки
-            if trip.end_date > timezone.now().date():
+            if trip.status != 'finished':
                 return Response({"error": "Поездка еще не завершилась"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Обновляем рейтинги

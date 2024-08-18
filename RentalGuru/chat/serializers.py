@@ -6,8 +6,8 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = '__all__'
-        read_only_fields = ['organizer']
+        fields = ['id', 'status', 'organizer', 'content_type', 'object_id', 'start_date', 'end_date', 'total_cost']
+        read_only_fields = ['id', 'organizer', 'content_type', 'object_id', 'start_date', 'end_date', 'total_cost']
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -22,7 +22,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestRent
         exclude = ['content_type', 'object_id']
-        read_only_fields = ['organizer']
+        read_only_fields = ['organizer', 'total_cost']
 
     def create(self, validated_data):
         vehicle_type = validated_data.pop('vehicle_type')
