@@ -49,7 +49,7 @@ class VehicleParkViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-@extend_schema(summary="Заявки на аренду автопарка", description="Заявки на аренду автопарка")
+@extend_schema(summary="Все заявки на аренду автопарка", description="Заявки на аренду автопарка")
 class RequestsByParkView(APIView):
     permission_classes = [IsOwnerOrAdminForGet]
 
@@ -62,7 +62,6 @@ class RequestsByParkView(APIView):
         requests = (RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True))
                     .select_related('content_type'))
 
-        # Используем обновленный сериализатор
         serialized_requests = RequestRentSerializer(requests, many=True).data
 
         count_dict = {
@@ -73,7 +72,6 @@ class RequestsByParkView(APIView):
             "special_technic": 0
         }
 
-        # Заполняем словарь с подсчетом
         for request in serialized_requests:
             content_type_name = request['type']
             if content_type_name in count_dict:
@@ -87,7 +85,6 @@ class RequestsByParkView(APIView):
             "special_technic": []
         }
 
-        # Заполняем данные
         for request in serialized_requests:
             content_type_name = request['type']
             if content_type_name == "auto":
@@ -109,7 +106,7 @@ class RequestsByParkView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Чаты автопарка", description="Чаты автопарка")
+@extend_schema(summary="Все чаты автопарка", description="Чаты автопарка")
 class ChatsByParkView(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
 
@@ -170,7 +167,7 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(summary="Заявки на аренду франшизы", description="Заявки на аренду франшизы")
+@extend_schema(summary="Все заявки на аренду франшизы", description="Заявки на аренду франшизы")
 class RequestsByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -225,7 +222,7 @@ class RequestsByFranchiseView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Чаты франшизы", description="Чаты франшизы")
+@extend_schema(summary="Все чаты франшизы", description="Чаты франшизы")
 class ChatsByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -250,6 +247,7 @@ class ChatsByFranchiseView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Арендодатели франшизы", description="Арендодатели франшизы")
 class LessorsByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -266,6 +264,7 @@ class LessorsByFranchiseView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Весь транспорт франшизы", description="Хуй знает зачем это надо, ведь есть /frinchize/{id}")
 class VehiclesByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -284,6 +283,7 @@ class VehiclesByFranchiseView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Статистика франшизы", description="Статистика франшизы")
 @api_view(['GET'])
 def franchise_statistics(request, franchise_id):
     try:
@@ -297,6 +297,7 @@ def franchise_statistics(request, franchise_id):
     return Response(serializer.data)
 
 
+@extend_schema(summary="Статистика автопарка", description="Статистика автопарка")
 @api_view(['GET'])
 def vehicle_park_statistics(request, vehicle_park_id):
     try:
