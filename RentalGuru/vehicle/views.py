@@ -61,7 +61,10 @@ class BaseViewSet(viewsets.ModelViewSet):
             instance.save()
 
 
-@extend_schema(summary="Автомобиль", description="Автомобиль CRUD")
+@extend_schema(summary="Автомобиль CRUD", description="""Сортировка по цене от меньшего к большему:\n
+                                                  URL: ?ordering=rent_prices__price
+                                                  \nСортировка по цене от большего к меньшему:\n
+                                                  URL: ?ordering=-rent_prices__price""")
 class AutoViewSet(BaseViewSet):
     queryset = (Auto.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
