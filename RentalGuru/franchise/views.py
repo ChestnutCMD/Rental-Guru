@@ -1,6 +1,6 @@
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,17 +9,17 @@ from rest_framework.views import APIView
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
-from .models import VehiclePark, Franchise
-from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet
+from .models import VehiclePark, Franchise, RequestFranchise
+from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
 from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSerializer, \
     FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer, LessorSerializer, \
-    FranchiseStatisticsSerializer
+    FranchiseStatisticsSerializer, RequestFranchiseSerializer
 
 
-@extend_schema(summary="Автопарк", description="CRUD Автопарка")
+@extend_schema(summary="Автопарк CRUD", description="CRUD Автопарка")
 class VehicleParkViewSet(viewsets.ModelViewSet):
     queryset = VehiclePark.objects.all()
 
@@ -125,7 +125,7 @@ class ChatsByParkView(APIView):
         return Response(serializer.data)
 
 
-@extend_schema(summary="Франшиза", description="CRUD фарншизы")
+@extend_schema(summary="Франшиза CRUD", description="CRUD фарншизы")
 class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = Franchise.objects.all()
     permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
@@ -309,3 +309,23 @@ def vehicle_park_statistics(request, vehicle_park_id):
     serializer = VehicleParkStatisticsSerializer(statistics)
 
     return Response(serializer.data)
+
+
+@extend_schema(summary="Заявка на создание франшизы", description="Заявку может отправить любой пользователь")
+class RequestFranchiseCreateView(generics.CreateAPIView):
+    queryset = RequestFranchise.objects.all()
+    serializer_class = RequestFranchiseSerializer
+
+
+@extend_schema(summary="Получение списка заявок на создание франшизы", description="Получение списка заявок на создание франшизы")
+class RequestFranchiseListView(generics.ListAPIView):
+    queryset = RequestFranchise.objects.all()
+    serializer_class = RequestFranchiseSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrManager]
+
+
+@extend_schema(summary="Удаление заявки на создание франшизы", description="Удаление заявки на создание франшизы")
+class RequestFranchiseDeleteView(generics.DestroyAPIView):
+    queryset = RequestFranchise.objects.all()
+    serializer_class = RequestFranchiseSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrManager]
