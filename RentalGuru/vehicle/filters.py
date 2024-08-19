@@ -1,0 +1,100 @@
+from django_filters import rest_framework as filters
+
+from vehicle.models import AutoFeaturesAdditionally, Auto, BikeFeaturesAdditionally, Bike, ShipFeaturesAdditionally, \
+    Ship, Helicopter, SpecialTechnic
+
+
+class BaseFilter(filters.FilterSet):
+    super_host = filters.BooleanFilter(field_name='owner__lessor__super_host', label='Суперхост')
+    day_price = filters.RangeFilter(field_name='rent_prices__price', label='Дневная цена')
+    verified_only = filters.BooleanFilter(field_name='drivers_only_verified',
+                                          label='Сдается только верифицированным пользователям')
+    brand = filters.CharFilter(field_name='brand__name', label='Марка')
+    year = filters.RangeFilter(field_name='year', label='Год выпуска')
+    rental_date = filters.DateFromToRangeFilter(field_name='availabilities__start_date', label='Выбор даты аренды')
+
+    class Meta:
+        abstract = True
+
+    def filter_by_rental_date(self, queryset, name, value):
+        return queryset.filter(availabilities__start_date__lte=value, availabilities__end_date__gte=value)
+
+
+class AutoFilter(BaseFilter):
+
+    mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    features = filters.ModelMultipleChoiceFilter(queryset=AutoFeaturesAdditionally.objects.all(), label='Выбор особенностей')
+    fuel_type = filters.CharFilter(field_name='fuel_type', label='Тип топлива')
+    seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
+    transmission = filters.CharFilter(field_name='transmission', label='Трансмиссия')
+
+    class Meta:
+        model = Auto
+        fields = [
+            'day_price', 'verified_only', 'mileage_per_day', 'rental_date',
+            'vehicle_class', 'features', 'fuel_type', 'brand', 'seat_count', 'transmission', 'year', 'super_host'
+        ]
+
+
+class BikeFilter(BaseFilter):
+    mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    features = filters.ModelMultipleChoiceFilter(queryset=BikeFeaturesAdditionally.objects.all(), label='Выбор особенностей')
+    engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
+    seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
+    transmission = filters.CharFilter(field_name='transmission', label='Трансмиссия')
+
+    class Meta:
+        model = Bike
+        fields = [
+            'day_price', 'super_host', 'mileage_per_day', 'rental_date',
+            'vehicle_class', 'features', 'engine_capacity', 'brand',
+            'year', 'seat_count', 'transmission'
+        ]
+
+
+class ShipFilter(BaseFilter):
+    mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    features = filters.ModelMultipleChoiceFilter(queryset=ShipFeaturesAdditionally.objects.all(), label='Выбор особенностей')
+    engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
+    type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
+    grot = filters.CharFilter(field_name='grot', label='Грот')
+
+    class Meta:
+        model = Ship
+        fields = [
+            'day_price', 'super_host', 'mileage_per_day', 'rental_date',
+            'vehicle_class', 'features', 'engine_capacity', 'brand', 'year', 'type_ship', 'grot']
+
+
+class HelicopterFilter(BaseFilter):
+    mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
+    rental_date = filters.DateFromToRangeFilter(field_name='availabilities__start_date', label='Выбор даты аренды')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
+    max_speed = filters.RangeFilter(field_name='max_speed', label='Максимальная скорость, км/ч')
+    full_take_weight = filters.RangeFilter(field_name='full_take_weight', label='Полный взлетный вес, кг')
+
+    class Meta:
+        model = Helicopter
+        fields = [
+            'day_price', 'super_host', 'mileage_per_day', 'rental_date', 'vehicle_class', 'engine_capacity', 'brand',
+            'year', 'max_speed', 'full_take_weight']
+
+
+class SpecialTechnicFilter(BaseFilter):
+    type_technic = filters.RangeFilter(field_name='type_technic', label='Тип техники')
+    engine_power = filters.RangeFilter(field_name='engine_power', label='Мощность двигателя, л.с.')
+    operating_weight = filters.RangeFilter(field_name='operating_weight', label='Эксплутационная масса, кг')
+
+    class Meta:
+        model = SpecialTechnic
+        fields = [
+            'day_price', 'super_host', 'rental_date', 'brand',
+            'year', 'type_technic', 'engine_power', 'operating_weight']
+
+"""
+
+"""

@@ -1,7 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +13,7 @@ from app.models import Lessor
 from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
 from notification.models import Notification
+from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
@@ -58,11 +61,14 @@ class BaseViewSet(viewsets.ModelViewSet):
             instance.save()
 
 
-@extend_schema(summary="Автомобиль", description="Автомобиль")
+@extend_schema(summary="Автомобиль", description="Автомобиль CRUD")
 class AutoViewSet(BaseViewSet):
     queryset = (Auto.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
                                  'features_additionally', 'availabilities', 'documents', 'rent_prices'))
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = AutoFilter
+    ordering_fields = ['rent_prices__price']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -79,6 +85,9 @@ class BikeViewSet(BaseViewSet):
     queryset = (Bike.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
                                  'documents', 'rent_prices', 'photos'))
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = BikeFilter
+    ordering_fields = ['rent_prices__price']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -95,6 +104,9 @@ class ShipViewSet(BaseViewSet):
     queryset = (Ship.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'features_functions', 'features_additionally', 'features_equipment',
                                  'availabilities', 'documents', 'rent_prices', 'photos'))
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = ShipFilter
+    ordering_fields = ['rent_prices__price']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -110,6 +122,9 @@ class ShipViewSet(BaseViewSet):
 class HelicopterViewSet(BaseViewSet):
     queryset = (Helicopter.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = HelicopterFilter
+    ordering_fields = ['rent_prices__price']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -125,6 +140,9 @@ class HelicopterViewSet(BaseViewSet):
 class SpecialTechnicViewSet(BaseViewSet):
     queryset = (SpecialTechnic.objects.all().select_related('owner', 'brand', 'model').
                 prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = SpecialTechnicFilter
+    ordering_fields = ['rent_prices__price']
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
