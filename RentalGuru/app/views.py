@@ -31,7 +31,10 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Пользователи CRUD", description="Регистрация, получение списка пользователей, получение пользователя по ID, обновление, удаление")
+@extend_schema(summary="Пользователи CRUD", description="""\nРегистрация, получение списка пользователей, 
+                                                            получение пользователя по ID, обновление, удаление.
+                                                            Метод пост может принимать параметры:\n
+                            /?ref=<referral_code>&code=<link_code>""")
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
