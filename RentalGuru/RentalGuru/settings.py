@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'chat',
     'notification',
     'franchise',
+    'influencer',
     'drf_spectacular',
     'polymorphic',
 ]

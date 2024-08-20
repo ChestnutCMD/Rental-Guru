@@ -1,14 +1,13 @@
 import random
-
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from franchise.models import Franchise
+from influencer.models import Influencer, ReferralLink
 from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
@@ -17,7 +16,7 @@ from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments
-from .task import send_email_password, send_email_reset_code
+from .task import send_email_reset_code
 from RentalGuru.settings import redis_1
 
 
@@ -32,14 +31,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError({"password": "Пароли не совпадают"})
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         request = self.context.get('request')
-        current_user = request.user if request else None
+        current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
+        ref = request.query_params.get('ref', None)
+        code = request.query_params.get('code', None)
 
         # Создание нового пользователя
         user = User.objects.create(
@@ -60,48 +61,24 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     "Новый пользователь может быть связан с франшизой только как арендодатель (lessor).")
         else:
+            influencer = None
+            # Проверяем реферальную ссылку
+            if ref and code:
+                try:
+                    referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=code)
+                    referral_link.count += 1
+                    referral_link.save()
+                    influencer = referral_link.influencer
+                except Influencer.DoesNotExist:
+                    raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
+
             # Если текущий пользователь не директор или тип пользователя 'renter'
             if member_type == 'lessor':
                 Lessor.objects.create(user=user)
             else:
-                Renter.objects.create(user=user)
+                Renter.objects.create(user=user, influencer=influencer)
 
         return user
-
-
-# class RegisterSerializer(serializers.ModelSerializer):
-#     member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True, required=True)
-#
-#     class Meta:
-#         model = User
-#         fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type']
-#
-#     def create(self, validated_data):
-#         role = validated_data.pop('member_type')
-#
-#         # Генерация случайного пароля
-#         password = get_random_string(length=8)
-#
-#         user = User.objects.create(
-#             email=validated_data['email'],
-#             first_name=validated_data.get('first_name', None),
-#             last_name=validated_data.get('last_name', None),
-#             date_of_birth=validated_data.get('date_of_birth', None),
-#             role='member'
-#         )
-#         user.set_password(password)
-#         user.save()
-#
-#         # Создание арендатора или арендодателя
-#         if role == 'lessor':
-#             Lessor.objects.create(user=user)
-#         else:
-#             Renter.objects.create(user=user)
-#
-#         # Отправка email с паролем
-#         send_email_password(user.first_name, user.email, password)
-#
-#         return user
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -111,7 +88,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate_old_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
-            raise serializers.ValidationError("Old password is not correct")
+            raise serializers.ValidationError("Старый пароль введен неверно")
         return value
 
     def save(self, **kwargs):

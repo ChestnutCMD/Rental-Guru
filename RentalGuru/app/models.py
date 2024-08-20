@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from RentalGuru import settings
 from app.manager import UserManager
 from franchise.models import Franchise
+from influencer.models import Influencer
 from vehicle.models import Vehicle
 
 
@@ -70,6 +71,8 @@ class Renter(models.Model):
     favorite = models.ManyToManyField(Vehicle, blank=True, verbose_name='Избранное')
     verification = models.BooleanField(default=False, verbose_name='Верифированный пользователь')
     rating = models.JSONField(default=default_rating, verbose_name='Рейтинг')
+    influencer = models.ForeignKey(Influencer, null=True, blank=True, on_delete=models.SET_NULL, related_name='renters',
+                                   verbose_name='Инфлюенсер')
 
     def get_average_rating(self):
         total_ratings = sum(self.rating.values())
