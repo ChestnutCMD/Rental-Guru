@@ -98,7 +98,7 @@ class Trip(models.Model):
         ('canceled', 'Отменить')
     )
     status = models.CharField(max_length=8, default='current', choices=STATUS_CHOICES, verbose_name='Статус')
-    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips', verbose_name='Организатор')
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips', verbose_name='Арендатор')
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')

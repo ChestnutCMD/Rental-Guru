@@ -10,14 +10,6 @@ class RequestRentAdmin(admin.ModelAdmin):
     list_display_links = ('organizer', 'vehicle')
 
 
-@admin.register(Trip)
-class TripAdmin(admin.ModelAdmin):
-    list_display = ('id', 'organizer', 'start_date', 'end_date', 'vehicle')
-    search_fields = ('organizer__first_name',)
-    list_filter = ('start_date', 'end_date')
-    list_display_links = ('organizer', 'vehicle')
-
-
 class MessageInline(admin.TabularInline):
     model = Message
     extra = 0

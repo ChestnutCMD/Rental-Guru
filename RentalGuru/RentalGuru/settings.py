@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'notification',
     'franchise',
     'influencer',
+    'journal',
     'drf_spectacular',
     'polymorphic',
 ]
