@@ -30,6 +30,9 @@ jobs:
       CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
       EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
       EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+      TINYPAY_TERMINAL_KEY: ${{ secrets.TINYPAY_TERMINAL_KEY }}
+      TINYPAY_PASSWORD: ${{ secrets.TINYPAY_PASSWORD }}
+      TINYPAY_API_URL: ${{ secrets.TINYPAY_API_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

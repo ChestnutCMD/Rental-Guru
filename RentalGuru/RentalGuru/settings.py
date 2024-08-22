@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'franchise',
     'influencer',
     'journal',
+    'payment',
     'drf_spectacular',
     'polymorphic',
 ]
@@ -272,4 +273,9 @@ EMAIL_HOST_USER = getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = getenv('EMAIL_HOST_USER')
 
-HOST_URL = 'https://saqartvel.ru'
+HOST_URL = 'https://rentalguru.ru'
+
+# Payments
+TINYPAY_TERMINAL_KEY = getenv('TINYPAY_TERMINAL_KEY')
+TINYPAY_PASSWORD = getenv('TINYPAY_PASSWORD')
+TINYPAY_API_URL = getenv('TINYPAY_API_URL')
