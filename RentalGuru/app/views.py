@@ -17,7 +17,7 @@ from .models import User, RenterDocuments, Renter, Rating
 from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
-    PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer, SocialAuthSerializer
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -276,3 +276,8 @@ class SocialLoginView(APIView):
 
         token, _ = Token.objects.get_or_create(user=registered_user)
         return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+
+
+from django.shortcuts import render
+def index (request):
+    return render(request, 'app/receiver.html')
