@@ -19,12 +19,10 @@ SECRET_KEY = getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = getenv('DEBUG')
-
 ALLOWED_HOSTS = [getenv('ALLOWED_HOSTS')]
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'jet',
     'django.contrib.admin',
@@ -33,7 +31,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'django_filters',
     'channels',
@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'RentalGuru.urls'
@@ -115,7 +116,6 @@ CELERY_TIMEZONE = 'UTC'
 
 
 # Database settings
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -138,7 +138,6 @@ REST_FRAMEWORK = {
 
 
 # Spectacular settings
-
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Rental-Guru',
     'DESCRIPTION': 'rental vehicles',
@@ -148,7 +147,6 @@ SPECTACULAR_SETTINGS = {
 # CSRF_TRUSTED_ORIGINS = ['https://']
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
 CSRF_TRUSTED_ORIGINS = [
     'https://saqartvel.ru',
 ]
@@ -157,8 +155,6 @@ CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
 
 # Logging into 'info.log'
-
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -204,32 +200,24 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
-
 LANGUAGE_CODE = 'ru'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
 }
 
 # Admin jet-reboot settings
-
 JET_THEMES = [
     {
         'theme': 'default',
@@ -265,6 +253,7 @@ JET_THEMES = [
 
 JET_DEFAULT_THEME = 'green'
 
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'
 EMAIL_PORT = 465
@@ -273,9 +262,30 @@ EMAIL_HOST_USER = getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = getenv('EMAIL_HOST_USER')
 
+# Host name
 HOST_URL = 'https://rentalguru.ru'
 
 # Payments
 TINYPAY_TERMINAL_KEY = getenv('TINYPAY_TERMINAL_KEY')
 TINYPAY_PASSWORD = getenv('TINYPAY_PASSWORD')
 TINYPAY_API_URL = getenv('TINYPAY_API_URL')
+
+# OAuth 2.0
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.vk.VKOAuth2',
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.mailru.MailruOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '<Your-Google-Client-ID>'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '<Your-Google-Client-Secret>'
+
+SOCIAL_AUTH_VK_OAUTH2_KEY = '<Your-VK-Client-ID>'
+SOCIAL_AUTH_VK_OAUTH2_SECRET = '<Your-VK-Client-Secret>'
+
+SOCIAL_AUTH_MAILRU_OAUTH2_KEY = '<Your-Mailru-Client-ID>'
+SOCIAL_AUTH_MAILRU_OAUTH2_SECRET = '<Your-Mailru-Client-Secret>'

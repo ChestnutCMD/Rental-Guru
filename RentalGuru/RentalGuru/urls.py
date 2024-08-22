@@ -1,5 +1,6 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -20,7 +21,7 @@ urlpatterns = [
     path('journal/', include('journal.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('', SpectacularSwaggerView.as_view(url_name='schema')),
-
+    re_path(r'^receiver\.html$', TemplateView.as_view(template_name='rentalguru/receiver.html'), name='receiver'),
     path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase_messaging_sw'),
 ]
 

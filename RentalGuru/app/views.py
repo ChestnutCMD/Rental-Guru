@@ -1,7 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 
@@ -245,3 +247,32 @@ class PasswordResetConfirmView(APIView):
             serializer.save()
             return Response({'message': 'Пароль успешно изменен.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SocialLoginView(APIView):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        social_serializer = SocialAuthSerializer(data=request.data)
+        social_serializer.is_valid(raise_exception=True)
+        user = social_serializer.validated_data['user']
+
+        # Если пользователь уже существует, просто возвращаем токен
+        if not user.is_new:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key}, status=status.HTTP_200_OK)
+
+        # Если это новый пользователь, создаем профиль через RegisterSerializer
+        register_data = {
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'password': None,
+            'password2': None,
+            'member_type': request.data.get('member_type', 'renter')
+        }
+        register_serializer = RegisterSerializer(data=register_data, context={'request': request})
+        register_serializer.is_valid(raise_exception=True)
+        registered_user = register_serializer.save()
+
+        token, _ = Token.objects.get_or_create(user=registered_user)
+        return Response({'token': token.key}, status=status.HTTP_201_CREATED)

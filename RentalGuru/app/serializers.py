@@ -5,6 +5,8 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
+from social_django.utils import load_strategy, load_backend
 
 from franchise.models import Franchise
 from influencer.models import Influencer, ReferralLink
@@ -271,3 +273,30 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         # Удаление кода после успешного сброса пароля
         redis_1.delete(f"reset_code_{email}")
+
+
+class SocialAuthSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=[('google-oauth2', 'Google'), ('vk-oauth2', 'VK'), ('mailru-oauth2', 'Mail.ru')])
+    access_token = serializers.CharField(write_only=True)
+    member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True)
+
+    def validate(self, attrs):
+        provider = attrs.get('provider')
+        access_token = attrs.get('access_token')
+
+        strategy = load_strategy(self.context['request'])
+        try:
+            backend = load_backend(strategy=strategy, name=provider, redirect_uri=None)
+        except MissingBackend:
+            raise serializers.ValidationError({"provider": "Invalid provider."})
+
+        try:
+            user = backend.do_auth(access_token)
+        except (AuthTokenError, AuthForbidden) as e:
+            raise serializers.ValidationError({"access_token": str(e)})
+
+        if not user:
+            raise serializers.ValidationError({"non_field_errors": "Authentication failed."})
+
+        attrs['user'] = user
+        return attrs
