@@ -251,11 +251,13 @@ class PasswordResetConfirmView(APIView):
 
 @extend_schema(summary="Вход через социальные сети", description="Вход и регистрация")
 class SocialLoginView(APIView):
+    serializer_class = SocialAuthSerializer
+
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        social_serializer = SocialAuthSerializer(data=request.data)
-        social_serializer.is_valid(raise_exception=True)
-        user = social_serializer.validated_data['user']
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
 
         # Если пользователь уже существует, просто возвращаем токен
         if not user.is_new:
@@ -269,7 +271,7 @@ class SocialLoginView(APIView):
             'last_name': user.last_name,
             'password': None,
             'password2': None,
-            'member_type': request.data.get('member_type', 'renter')
+            'member_type': serializer.validated_data.get('member_type', 'renter')  # По умолчанию 'renter'
         }
         register_serializer = RegisterSerializer(data=register_data, context={'request': request})
         register_serializer.is_valid(raise_exception=True)
