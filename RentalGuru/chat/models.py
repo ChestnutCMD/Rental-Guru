@@ -21,6 +21,8 @@ class RequestRent(models.Model):
     start_date = models.DateField(verbose_name='Начало аренды')
     end_date = models.DateField(verbose_name='Конец аренды')
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
+    deposit_paid = models.BooleanField(default=False)
+    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     @property
     def owner(self):
@@ -152,6 +154,7 @@ class Message(models.Model):
     content = models.TextField(verbose_name='Сообщение')
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
     file = models.FileField(upload_to='media/chat_files/', blank=True, null=True, verbose_name='Файл')
+    deleted = models.BooleanField(default=False, verbose_name='Удалено')
 
     class Meta:
         verbose_name = 'Сообщение'

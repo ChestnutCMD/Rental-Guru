@@ -1,6 +1,8 @@
 import os
 import django
 
+import vehicle.routing
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'RentalGuru.settings')
 django.setup()
 
@@ -25,6 +27,7 @@ console_handler.setFormatter(formatter)
 # Добавление обработчика к логгеру
 logger.addHandler(console_handler)
 
+chat.routing.websocket_urlpatterns.extend(vehicle.routing.websocket_urlpatterns)
 
 application = ProtocolTypeRouter({
     'http': get_asgi_application(),

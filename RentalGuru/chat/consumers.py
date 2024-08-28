@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 import json
 from chat.models import MessageSupport, ChatSupport, Message, Chat
+from .tasks import translate_message
 
 translator = Translator()
 
@@ -107,22 +108,31 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_previous_messages(self):
         chat = self.get_chat_instance()
-        messages = self.get_messages_queryset(chat)
-        translated_messages = []
+        user = self.scope['user']
+
+        show_all_messages = (
+                user.role in ['admin', 'manager'] or
+                (hasattr(chat.trip.vehicle, 'owner') and
+                 chat.trip.vehicle.owner.lessor.franchise and
+                 chat.trip.vehicle.owner.lessor.franchise.director == user)
+        )
+
+        if show_all_messages:
+            messages = self.get_messages_queryset(chat)
+        else:
+            messages = self.get_messages_queryset(chat).filter(deleted=False)
+
+        message_data_list = []
 
         for message in messages:
-            try:
-                # Translate message content
-                translated_content = translator.translate(message.content, dest=self.language).text
-            except Exception as e:
-                print(f"Error during translation: {e}")
-                translated_content = message.content
-
             message_data = self.format_message(message, message.sender)
-            message_data['content'] = translated_content
-            translated_messages.append(message_data)
+            message_data_list.append(message_data)
 
-        return translated_messages
+            # Запускаем задачу перевода асинхронно
+            translate_message.delay(message.id, message.content, self.language, self.channel_name)
+
+        return message_data_list
+
     async def send_previous_messages(self):
         previous_messages = await self.get_previous_messages()
         await self.send(text_data=json.dumps({
@@ -164,7 +174,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
 
 class ChatConsumer(BaseChatConsumer):
-    # Сохраняем время подключения пользователя
     async def connect(self):
         self.connected_at = timezone.now()
         await super().connect()
@@ -208,14 +217,41 @@ class ChatConsumer(BaseChatConsumer):
         return chat.messages.order_by('timestamp').select_related(
             'sender'
         ).only(
-            'id', 'chat_id', 'sender_id', 'content', 'timestamp', 'file', 'sender__id', 'sender__first_name', 'sender__avatar'
+            'id', 'chat_id', 'sender_id', 'content', 'timestamp', 'file',
+            'sender__id', 'sender__first_name', 'sender__avatar', 'deleted'
         )
 
     def check_user_access(self, user, chat):
-        if user.role == 'admin':
+        if user.role in ['admin', 'manager']:
             return True
-        return user in chat.participants.all() or user == chat.trip.organizer or user == chat.trip.vehicle.owner
 
+        is_franchise_director = (
+                hasattr(chat.trip.vehicle, 'owner') and
+                chat.trip.vehicle.owner.lessor.franchise and
+                chat.trip.vehicle.owner.lessor.franchise.director == user
+        )
+
+        return (
+                user in chat.participants.all() or
+                user == chat.trip.organizer or
+                user == chat.trip.vehicle.owner or
+                is_franchise_director
+        )
+
+    async def chat_message_translated(self, event):
+        """
+        Обработчик для переведенных сообщений
+        """
+        message_id = event['message_id']
+        translated_content = event['translated_content']
+
+        # Отправляем обновленное сообщение клиенту
+        await self.send(text_data=json.dumps({
+            'type': 'message_translated',
+            'message_id': message_id,
+            'translated_content': translated_content
+        }))
+        
 
 class ChatSupportConsumer(BaseChatConsumer):
     def get_chat_instance(self):

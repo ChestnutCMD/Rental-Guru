@@ -1,23 +1,26 @@
-import os
-import redis
+from datetime import datetime, time
+from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.http import JsonResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions, status, serializers
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from RentalGuru import settings
+from app.models import User
 from notification.models import Notification
+from payment.models import Transaction, PaymentSetting
+from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, FeedbackUpdateSerializer, \
     FeedbackSerializer, FeedbackCreateSerializer
-from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied, ValidationError
 from .utils import is_period_contained, subtract_periods, calculate_age
 
 
@@ -45,6 +48,136 @@ class TripViewSet(viewsets.ModelViewSet):
                                      object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
                                    Q(content_type=special_technic_content_type,
                                      object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
+
+    # @action(detail=True, methods=['post'])
+    # def pay_remaining(self, request, pk=None):
+    #     trip = self.get_object()
+    #     if trip.status != 'current':
+    #         return Response({"error": "Оплата возможна только для текущих поездок"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     tinkoff_service = TinkoffPaymentService()
+    #     remaining_amount = trip.total_cost * Decimal('0.7')  # 70% от общей стоимости
+    #
+    #     payment = tinkoff_service.init_payment(
+    #         amount=remaining_amount,
+    #         order_id=f"trip-{trip.id}",
+    #         description=f"Оплата за аренду {trip.vehicle}"
+    #     )
+    #
+    #     if payment.get('Success'):
+    #         Transaction.objects.create(
+    #             user=request.user,
+    #             amount=remaining_amount,
+    #             transaction_type='full_payment',
+    #             trip=trip,
+    #             tinkoff_payment_id=payment['PaymentId'],
+    #             status='pending'
+    #         )
+    #         return Response({"payment_url": payment['PaymentURL']})
+    #     else:
+    #         return Response({"error": "Не удалось инициировать платеж"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # @action(detail=True, methods=['post'])
+    # def confirm_payment(self, request, pk=None):
+    #     trip = self.get_object()
+    #     transaction = Transaction.objects.filter(trip=trip, transaction_type='full_payment').last()
+    #
+    #     if not transaction:
+    #         return Response({"error": "Транзакция не найдена"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     tinkoff_service = TinkoffPaymentService()
+    #     payment_status = tinkoff_service.check_payment_status(transaction.tinkoff_payment_id)
+    #
+    #     if payment_status.get('Status') == 'CONFIRMED':
+    #         transaction.status = 'completed'
+    #         transaction.save()
+    #         trip.status = 'finished'
+    #         trip.save()
+    #         self.distribute_funds(trip, transaction.amount)
+    #         return Response({"message": "Оплата успешно завершена"})
+    #     else:
+    #         return Response({"error": "Платеж не подтвержден"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # @staticmethod
+    # def distribute_funds(trip, amount):
+    #     settings = PaymentSetting.objects.first()
+    #     owner = trip.owner
+    #
+    #     if owner.lessor.franchise:
+    #         franchise_amount = amount * (settings.FRANCHISE_COMMISSION_PERCENTAGE / 100)
+    #         owner_amount = amount - franchise_amount
+    #         platform_amount = franchise_amount * (settings.RENT_COMMISSION_PERCENTAGE / 100)
+    #         franchise_amount -= platform_amount
+    #     else:
+    #         owner_amount = amount
+    #         platform_amount = amount * (settings.RENT_COMMISSION_PERCENTAGE / 100)
+    #         owner_amount -= platform_amount
+    #         franchise_amount = 0
+    #
+    #     # Создаем транзакции для каждого участника
+    #     Transaction.objects.create(
+    #         user=owner.user,
+    #         amount=owner_amount,
+    #         transaction_type='income',
+    #         trip=trip,
+    #         status='completed'
+    #     )
+    #
+    #     if franchise_amount > 0:
+    #         Transaction.objects.create(
+    #             user=owner.lessor.franchise.director,
+    #             amount=franchise_amount,
+    #             transaction_type='franchise_income',
+    #             trip=trip,
+    #             status='completed'
+    #         )
+    #
+    #     platform_user = User.objects.filter(role='admin').first()
+    #     Transaction.objects.create(
+    #         user=platform_user,
+    #         amount=platform_amount,
+    #         transaction_type='platform_income',
+    #         trip=trip,
+    #         status='completed'
+    #     )
+    #
+    #     # Расчет для инфлюенсера
+    #     if trip.organizer.renter.influencer:
+    #         influencer_amount = platform_amount * (settings.INFLUENCER_COMMISSION_PERCENTAGE / 100)
+    #         Transaction.objects.create(
+    #             user=trip.organizer.renter.influencer.user,
+    #             amount=influencer_amount,
+    #             transaction_type='influencer_income',
+    #             trip=trip,
+    #             status='completed'
+    #         )
+    #
+    # @action(detail=True, methods=['post'])
+    # def cancel(self, request, pk=None):
+    #     trip = self.get_object()
+    #     if trip.status != 'current':
+    #         return Response({"error": "Отмена возможна только для текущих поездок"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     now = timezone.now()
+    #     start_date = timezone.make_aware(datetime.combine(trip.start_date, time.min))
+    #     if (start_date - now).days < 2:
+    #         return Response({"error": "Отмена невозможна менее чем за 48 часов до начала поездки"},
+    #                         status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     deposit_transaction = Transaction.objects.filter(request_rent__trips=trip, transaction_type='deposit').first()
+    #     if deposit_transaction:
+    #         tinkoff_service = TinkoffPaymentService()
+    #         refund = tinkoff_service.refund(deposit_transaction.tinkoff_payment_id, deposit_transaction.amount)
+    #         if refund.get('Success'):
+    #             deposit_transaction.status = 'refunded'
+    #             deposit_transaction.save()
+    #             trip.status = 'canceled'
+    #             trip.save()
+    #             return Response({"message": "Поездка отменена, депозит возвращен"})
+    #         else:
+    #             return Response({"error": "Не удалось вернуть депозит"}, status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         return Response({"error": "Транзакция депозита не найдена"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(summary="Чат между арендатором и арендодателем", description="""\nЧат между арендатором и арендодателем. 
@@ -177,6 +310,56 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    # @action(detail=True, methods=['post'])
+    # def pay_deposit(self, request, pk=None):
+    #     request_rent = self.get_object()
+    #     if request_rent.deposit_paid:
+    #         return Response({"error": "Депозит уже оплачен"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     tinkoff_service = TinkoffPaymentService()
+    #     deposit_amount = request_rent.total_cost * Decimal('0.3')  # 30% от общей стоимости
+    #     if request_rent.delivery_cost:
+    #         deposit_amount += request_rent.delivery_cost
+    #
+    #     payment = tinkoff_service.init_payment(
+    #         amount=deposit_amount,
+    #         order_id=f"deposit-{request_rent.id}",
+    #         description=f"Депозит за аренду {request_rent.vehicle}"
+    #     )
+    #
+    #     if payment.get('Success'):
+    #         Transaction.objects.create(
+    #             user=request.user,
+    #             amount=deposit_amount,
+    #             transaction_type='deposit',
+    #             request_rent=request_rent,
+    #             tinkoff_payment_id=payment['PaymentId'],
+    #             status='pending'
+    #         )
+    #         return Response({"payment_url": payment['PaymentURL']})
+    #     else:
+    #         return Response({"error": "Не удалось инициировать платеж"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    # @action(detail=True, methods=['post'])
+    # def confirm_deposit(self, request, pk=None):
+    #     request_rent = self.get_object()
+    #     transaction = Transaction.objects.filter(request_rent=request_rent, transaction_type='deposit').last()
+    #
+    #     if not transaction:
+    #         return Response({"error": "Транзакция не найдена"}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     tinkoff_service = TinkoffPaymentService()
+    #     payment_status = tinkoff_service.check_payment_status(transaction.tinkoff_payment_id)
+    #
+    #     if payment_status.get('Status') == 'CONFIRMED':
+    #         transaction.status = 'completed'
+    #         transaction.save()
+    #         request_rent.deposit_paid = True
+    #         request_rent.save()
+    #         return Response({"message": "Депозит успешно оплачен"})
+    #     else:
+    #         return Response({"error": "Платеж не подтвержден"}, status=status.HTTP_400_BAD_REQUEST)
+
     def perform_update(self, serializer):
         instance = self.get_object()
         if 'status' in self.request.data:
@@ -184,6 +367,8 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             if new_status == 'accept':
                 if instance.owner != self.request.user:
                     raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
+                if not instance.deposit_paid:
+                    raise ValidationError("Депозит должен быть оплачен перед принятием заявки.")
 
                 model = instance.content_type.model_class()
                 object_id = instance.object_id

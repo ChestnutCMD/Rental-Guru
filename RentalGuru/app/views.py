@@ -249,6 +249,7 @@ class PasswordResetConfirmView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(summary="Вход через социальные сети", description="Вход и регистрация")
 class SocialLoginView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -276,8 +277,3 @@ class SocialLoginView(APIView):
 
         token, _ = Token.objects.get_or_create(user=registered_user)
         return Response({'token': token.key}, status=status.HTTP_201_CREATED)
-
-
-from django.shortcuts import render
-def index (request):
-    return render(request, 'app/receiver.html')

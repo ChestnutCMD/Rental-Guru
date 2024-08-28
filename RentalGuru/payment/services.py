@@ -3,43 +3,38 @@ from django.conf import settings
 import hashlib
 
 
-class TinkoffAPI:
+class TinkoffPaymentService:
     def __init__(self):
-        self.terminal_key = settings.TINYPAY_TERMINAL_KEY
-        self.password = settings.TINYPAY_PASSWORD
-        self.api_url = settings.TINYPAY_API_URL
-
-    def generate_token(self, params):
-        token_str = ''.join(str(params[key]) for key in sorted(params.keys()) if key != 'Token')
-        token_str += self.password
-        return hashlib.sha256(token_str.encode('utf-8')).hexdigest()
+        self.base_url = "https://securepay.tinkoff.ru/v2/"
+        self.terminal_key = settings.TINKOFF_TERMINAL_KEY
+        self.secret_key = settings.TINKOFF_SECRET_KEY
 
     def init_payment(self, amount, order_id, description):
-        params = {
-            'TerminalKey': self.terminal_key,
-            'Amount': amount,
-            'OrderId': order_id,
-            'Description': description,
-            'Password': self.password
+        url = f"{self.base_url}Init"
+        data = {
+            "TerminalKey": self.terminal_key,
+            "Amount": amount * 100,  # сумма в копейках
+            "OrderId": order_id,
+            "Description": description,
         }
-        params['Token'] = self.generate_token(params)
-        response = requests.post(f'{self.api_url}Init', json=params)
+        response = requests.post(url, json=data)
         return response.json()
 
-    def confirm_payment(self, payment_id):
-        params = {
-            'TerminalKey': self.terminal_key,
-            'PaymentId': payment_id,
+    def check_payment_status(self, payment_id):
+        url = f"{self.base_url}GetState"
+        data = {
+            "TerminalKey": self.terminal_key,
+            "PaymentId": payment_id,
         }
-        params['Token'] = self.generate_token(params)
-        response = requests.post(f'{self.api_url}Confirm', json=params)
+        response = requests.post(url, json=data)
         return response.json()
 
-    def cancel_payment(self, payment_id):
-        params = {
-            'TerminalKey': self.terminal_key,
-            'PaymentId': payment_id,
+    def refund(self, payment_id, amount):
+        url = f"{self.base_url}Cancel"
+        data = {
+            "TerminalKey": self.terminal_key,
+            "PaymentId": payment_id,
+            "Amount": amount * 100,  # сумма в копейках
         }
-        params['Token'] = self.generate_token(params)
-        response = requests.post(f'{self.api_url}Cancel', json=params)
+        response = requests.post(url, json=data)
         return response.json()

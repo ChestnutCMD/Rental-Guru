@@ -1,9 +1,13 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +18,7 @@ from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter
-from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog
+from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
@@ -243,3 +247,51 @@ class UpdateRatingView(APIView):
             return Response({"status": "Рейтинг успешно обновлен"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Получение GPS данных", description="Получение GPS данных")
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_gps_location(request):
+    vehicle_id = request.data.get('vehicle_id')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+
+    vehicle = Vehicle.objects.get(id=vehicle_id)
+    vehicle.latitude = latitude
+    vehicle.longitude = longitude
+    vehicle.save()
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'gps_tracking_{vehicle_id}',
+        {
+            'type': 'gps_update',
+            'latitude': latitude,
+            'longitude': longitude
+        }
+    )
+
+    return Response({"status": "success"})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def gps_tracking_view(request, vehicle_id):
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+
+    # Проверка прав доступа. следует добавить еще пользователей
+    if not request.user != vehicle.owner:
+        return Response({"error": "You don't have permission to track this vehicle"}, status=403)
+
+    data = {
+        'vehicle_id': vehicle.id,
+        'brand': vehicle.brand.name,
+        'model': vehicle.model.name,
+        'latitude': vehicle.latitude,
+        'longitude': vehicle.longitude,
+        'last_update': vehicle.last_update.isoformat(),
+        'websocket_url': f'/ws/gps_tracking/{vehicle.id}/',
+    }
+
+    return Response(data)

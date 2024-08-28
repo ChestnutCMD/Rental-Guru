@@ -1,11 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
 
-from app.views import index
 from notification.views import firebase_messaging_sw
 
 urlpatterns = [
@@ -22,9 +20,8 @@ urlpatterns = [
     path('journal/', include('journal.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('', SpectacularSwaggerView.as_view(url_name='schema')),
-
-    path('receiver.html', index, name='receiver'),
     path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase_messaging_sw'),
+    path('payment/', include('payment.urls')),
 ]
 
 if settings.DEBUG:

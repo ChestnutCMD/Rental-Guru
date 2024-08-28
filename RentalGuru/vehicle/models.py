@@ -1,9 +1,9 @@
-from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from polymorphic.models import PolymorphicModel
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from RentalGuru import settings
 from chat.models import RequestRent, Trip
@@ -155,6 +155,9 @@ class Vehicle(PolymorphicModel):
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
     vehicle_park = models.ForeignKey(VehiclePark, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicles', verbose_name='Автопарк')
+    latitude = models.FloatField(null=True, blank=True, verbose_name='Широта')
+    longitude = models.FloatField(null=True, blank=True, verbose_name='Долгота')
+    last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
 
     def get_average_rating(self):
         average_ratings = {}

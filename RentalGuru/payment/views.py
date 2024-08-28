@@ -1,27 +1,34 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .services import TinkoffAPI
+import hmac
+import hashlib
+import json
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.conf import settings
+from .tasks import process_tinkoff_webhook
 
 
-class PaymentView(APIView):
-    def post(self, request, *args, **kwargs):
-        amount = request.data.get('amount')
-        order_id = request.data.get('order_id')
-        description = request.data.get('description')
+@csrf_exempt
+@require_POST
+def tinkoff_webhook(request):
+    # Проверка подписи
+    received_token = request.headers.get('Token')
+    data = request.body.decode('utf-8')
+    calculated_token = hmac.new(
+        settings.TINKOFF_SECRET_KEY.encode('utf-8'),
+        data.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
 
-        tinkoff_api = TinkoffAPI()
-        response = tinkoff_api.init_payment(amount, order_id, description)
+    if received_token != calculated_token:
+        return HttpResponse(status=400)
 
-        if response.get('Success'):
-            return Response(response, status=status.HTTP_200_OK)
-        else:
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    # Обработка данных вебхука
+    payload = json.loads(data)
+    payment_id = payload.get('PaymentId')
+    status = payload.get('Status')
 
+    process_tinkoff_webhook.delay(payment_id, status)
 
-class TinkoffWebhookView(APIView):
-    def post(self, request, *args, **kwargs):
-        # Обработка данных, пришедших в вебхуке
-        data = request.data
-        # Изменить статус заказа на основании PaymentId
-        return Response(status=status.HTTP_200_OK)
+    return HttpResponse(status=200)
