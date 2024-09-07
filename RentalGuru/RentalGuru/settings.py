@@ -254,6 +254,25 @@ JET_THEMES = [
 
 JET_DEFAULT_THEME = 'green'
 
+# JET_SIDE_MENU_ITEMS = [  # Список приложений или пользовательских элементов dict
+#     {'label': _('General'), 'app_label': 'core', 'items': [
+#         {'name': 'help.question'},
+#         {'name': 'pages.page', 'label': _('Static page')},
+#         {'name': 'city'},
+#         {'name': 'validationcode'},
+#         {'label': _('Analytics'), 'url': 'http://example.com', 'url_blank': True},
+#     ]},
+#     {'label': _('Users'), 'items': [
+#         {'name': 'core.user'},
+#         {'name': 'auth.group'},
+#         {'name': 'core.userprofile', 'permissions': ['core.user']},
+#     ]},
+#     {'app_label': 'banners', 'items': [
+#         {'name': 'banner'},
+#         {'name': 'bannertype'},
+#     ]},
+# ]
+
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'

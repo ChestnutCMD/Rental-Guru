@@ -1,6 +1,6 @@
 import random
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
@@ -207,16 +207,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         user = self.user
 
-        # Проверка last_login
-        if not user.last_login:
-            data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
-        user.last_login = timezone.now()
-        user.save(update_fields=['last_login'])
+        # # Проверка last_login
+        # if not user.last_login:
+        #     data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
+        # user.last_login = timezone.now()
+        # user.save(update_fields=['last_login'])
 
         # Если FCM-токен передан, то обновляем его
         fcm_token = attrs.get('fcm_token')
         if fcm_token:
-            FCMToken.objects.update_or_create(user=user, token=fcm_token, defaults={'last_used_at': timezone.now()})
+            try:
+                FCMToken.objects.update_or_create(user=user, token=fcm_token, defaults={'last_used_at': timezone.now()})
+            except IntegrityError:
+                pass
 
         return data
 
