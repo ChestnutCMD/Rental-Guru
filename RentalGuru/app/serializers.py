@@ -17,7 +17,7 @@ from vehicle.serializers.bike import BikeListSerializer
 from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
-from .models import User, Lessor, Renter, RenterDocuments
+from .models import User, Lessor, Renter, RenterDocuments, FavoriteList
 from .task import send_email_reset_code
 from RentalGuru.settings import redis_1
 
@@ -303,3 +303,30 @@ class SocialAuthSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+############# Test
+
+class FavoriteListSerializer(serializers.ModelSerializer):
+    vehicles = VehicleListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = FavoriteList
+        fields = ['id', 'name', 'vehicles']
+        read_only_fields = ['id']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if self.context['request'].parser_context['kwargs'].get('pk'):
+            representation['vehicles'] = VehicleListSerializer(
+                instance.vehicles.all(), many=True, context=self.context
+            ).data
+        else:
+            representation['vehicles'] = instance.vehicles.count()
+        return representation
+
+    def create(self, validated_data):
+        vehicles = validated_data.pop('vehicles', [])
+        favorite_list = FavoriteList.objects.create(**validated_data)
+        favorite_list.vehicles.set(vehicles)
+        return favorite_list

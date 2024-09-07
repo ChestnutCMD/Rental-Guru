@@ -124,3 +124,19 @@ class Rating(models.Model):
         unique_together = ('user', 'renter')
         verbose_name = 'Рейтинг'
         verbose_name_plural = 'Рейтинги'
+
+############### Test
+class FavoriteList(models.Model):
+    renter = models.ForeignKey(Renter, on_delete=models.CASCADE, related_name='favorite_lists')
+    name = models.CharField(max_length=100, verbose_name='Название списка')
+    vehicles = models.ManyToManyField(Vehicle, related_name='in_favorite_lists', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Список избранного'
+        verbose_name_plural = 'Списки избранного'
+        unique_together = ['renter', 'name']
+
+    def __str__(self):
+        return f"{self.name} - {self.renter}"
