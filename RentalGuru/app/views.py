@@ -43,7 +43,12 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Восстановление пароля", description="Восстановление пароля")
+@extend_schema(
+    summary="Восстановление пароля",
+    description="Восстановление пароля по email",
+    request=PasswordResetRequestSerializer,
+    responses={200: None}
+)
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
 
@@ -67,7 +72,12 @@ class PasswordResetRequestView(APIView):
         return Response({"message": "Код для сброса пароля отправлен на вашу почту."}, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Проверка кода для пароля", description="Проверка кода для пароля")
+@extend_schema(
+    summary="Проверка кода для пароля",
+    description="Проверка кода для пароля",
+    request=VerifyCodeSerializer,
+    responses={200: None}
+)
 class VerifyCodeView(APIView):
     permission_classes = [AllowAny]
 
@@ -102,7 +112,12 @@ class VerifyCodeView(APIView):
         return Response({"message": "Код успешно подтвержден."}, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Создание пароля", description="Создание пароля")
+@extend_schema(
+    summary="Создание пароля",
+    description="Создание пароля",
+    request=SetPasswordSerializer,
+    responses={200: None}
+)
 class SetPasswordView(APIView):
     permission_classes = [AllowAny]
 
