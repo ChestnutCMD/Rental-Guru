@@ -1,5 +1,7 @@
 import json
 import random
+from datetime import datetime
+
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 from django.utils import timezone
@@ -51,7 +53,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             'date_of_birth': date_of_birth_str,
             'member_type': member_type,
             'verification_code': verification_code,
-            'status': 'not confirmed'
+            'status': 'not confirmed',
+            'attempts': 0,
+            'last_attempt': datetime.now().isoformat(),
+            'code': code
         }
 
         # Обработка франшизы

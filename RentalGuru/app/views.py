@@ -56,6 +56,11 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
+        try:
+            User.objects.get(email=request.data.get('email'))
+        except User.DoesNotExist:
+            return Response({"message": "Пользователя с таким Email не существует"}, status=status.HTTP_404_NOT_FOUND)
+
         verification_code = str(random.randint(1000, 9999))
 
         cache_data = {
@@ -103,12 +108,12 @@ class VerifyCodeView(APIView):
         if cache_data['code'] != code:
             cache_data['attempts'] += 1
             cache_data['last_attempt'] = datetime.now().isoformat()
-            redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)
+            redis_1.set(f"auth_{email}", json.dumps(cache_data), ex=1800)
             return Response({"error": "Неверный код."}, status=status.HTTP_400_BAD_REQUEST)
 
         cache_data['status'] = 'confirmed'
         cache_data['attempts'] = 0
-        redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)
+        redis_1.set(f"auth_{email}", json.dumps(cache_data), ex=1800)
         return Response({"message": "Код успешно подтвержден."}, status=status.HTTP_200_OK)
 
 
