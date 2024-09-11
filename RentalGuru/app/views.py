@@ -1,6 +1,6 @@
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -61,7 +61,7 @@ class PasswordResetRequestView(APIView):
             'last_attempt': datetime.now().isoformat()
         }
 
-        redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)  # 30 минут
+        redis_1.set(f"auth_{email}", json.dumps(cache_data), ex=1800)  # 30 минут
         send_verification_email.delay(email, verification_code)
 
         return Response({"message": "Код для сброса пароля отправлен на вашу почту."}, status=status.HTTP_200_OK)
@@ -124,6 +124,7 @@ class SetPasswordView(APIView):
         if cache_data['action'] == 'registration':
             user_data = cache_data['data']
             # Создание пользователя
+            date_of_birth = date.fromisoformat(cache_data['date_of_birth'])
             user = User.objects.create_user(
                 email=cache_data['email'],
                 password=password,

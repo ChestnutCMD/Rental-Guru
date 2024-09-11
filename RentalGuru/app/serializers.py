@@ -42,14 +42,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         code = request.query_params.get('code', None)
 
         verification_code = str(random.randint(1000, 9999))
-
+        date_of_birth_str = validated_data['date_of_birth'].isoformat()
         cache_data = {
             'action': 'registration',
             'email': validated_data['email'],
             'first_name': validated_data.get('first_name'),
             'last_name': validated_data.get('last_name'),
-            'date_of_birth': validated_data.get('date_of_birth'),
-            'password': validated_data['password'],
+            'date_of_birth': date_of_birth_str,
             'member_type': member_type,
             'verification_code': verification_code,
             'status': 'not confirmed'
@@ -68,7 +67,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
 
         # Сохранение данных в Redis на 30 минут
-        redis_1.set(f"registration_{validated_data['email']}", json.dumps(cache_data), timeout=1800)
+        redis_1.set(f"registration_{validated_data['email']}", json.dumps(cache_data), ex=1800)
         send_verification_email.delay(validated_data['email'], verification_code)
 
         return validated_data
