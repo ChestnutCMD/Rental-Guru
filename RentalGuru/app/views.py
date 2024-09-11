@@ -150,7 +150,7 @@ class SetPasswordView(APIView):
                 password=password,
                 first_name=cache_data['first_name'],
                 last_name=cache_data['last_name'],
-                date_of_birth=cache_data['date_of_birth'],
+                date_of_birth=date_of_birth,
                 role='member'
             )
 
