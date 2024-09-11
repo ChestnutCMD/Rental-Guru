@@ -41,9 +41,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
         ref = request.query_params.get('ref', None)
-        code = request.query_params.get('code', None)
 
-        verification_code = str(random.randint(1000, 9999))
+        code = str(random.randint(1000, 9999))
         date_of_birth_str = validated_data['date_of_birth'].isoformat()
         cache_data = {
             'action': 'registration',
@@ -52,7 +51,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             'last_name': validated_data.get('last_name'),
             'date_of_birth': date_of_birth_str,
             'member_type': member_type,
-            'verification_code': verification_code,
             'status': 'not confirmed',
             'attempts': 0,
             'last_attempt': datetime.now().isoformat(),
@@ -73,7 +71,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Сохранение данных в Redis на 30 минут
         redis_1.set(f"auth_{validated_data['email']}", json.dumps(cache_data), ex=1800)
-        send_verification_email.delay(validated_data['email'], verification_code)
+        send_verification_email.delay(validated_data['email'], code)
 
         return validated_data
 
