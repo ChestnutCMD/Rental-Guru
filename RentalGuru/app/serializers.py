@@ -67,7 +67,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
 
         # Сохранение данных в Redis на 30 минут
-        redis_1.set(f"registration_{validated_data['email']}", json.dumps(cache_data), ex=1800)
+        redis_1.set(f"auth_{validated_data['email']}", json.dumps(cache_data), ex=1800)
         send_verification_email.delay(validated_data['email'], verification_code)
 
         return validated_data
