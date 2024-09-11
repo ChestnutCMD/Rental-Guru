@@ -16,11 +16,10 @@ def send_email_password(user_name, user_email, password):
 
 
 @shared_task
-def send_email_reset_code(reset_code, user_email):
-
+def send_verification_email(email, code):
     send_mail(
-        subject="Восстановление пароля",
-        message=f'Ваш код для восстановления пароля: {reset_code}',
+        subject="Код подтверждения",
+        message=f'Ваш код подтверждения: {code}',
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user_email],
+        recipient_list=[email],
     )

@@ -1,3 +1,7 @@
+import json
+import random
+from datetime import datetime, timedelta
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
@@ -7,17 +11,23 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from RentalGuru.settings import redis_1
 from chat.models import Trip
+from franchise.models import Franchise
+from influencer.models import Influencer
 from vehicle.models import Vehicle
-from .models import User, RenterDocuments, Renter, Rating, FavoriteList
+from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor
 from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
-    PasswordResetRequestSerializer, PasswordResetConfirmSerializer, SocialAuthSerializer, FavoriteListSerializer
+    PasswordResetRequestSerializer, SocialAuthSerializer, FavoriteListSerializer, \
+    VerifyCodeSerializer, SetPasswordSerializer
+from .task import send_verification_email
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -31,6 +41,120 @@ class ChangePasswordView(APIView):
             serializer.save()
             return Response({'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Восстановление пароля", description="Восстановление пароля")
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        verification_code = str(random.randint(1000, 9999))
+
+        cache_data = {
+            'action': 'reset_password',
+            'email': email,
+            'code': verification_code,
+            'attempts': 0,
+            'last_attempt': datetime.now().isoformat()
+        }
+
+        redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)  # 30 минут
+        send_verification_email.delay(email, verification_code)
+
+        return Response({"message": "Код для сброса пароля отправлен на вашу почту."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Проверка кода для пароля", description="Проверка кода для пароля")
+class VerifyCodeView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = VerifyCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+
+        cached_data = redis_1.get(f"auth_{email}")
+        if cached_data is None:
+            return Response({"error": "Недействительный или просроченный код."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_data = json.loads(cached_data.decode('utf-8'))
+
+        last_attempt = datetime.fromisoformat(cache_data['last_attempt'])
+        if cache_data['attempts'] >= 3 and (datetime.now() - last_attempt) < timedelta(minutes=10):
+            time_left = timedelta(minutes=10) - (datetime.now() - last_attempt)
+            return Response(
+                {"error": f"Слишком много попыток. Пожалуйста, попробуйте через {time_left.seconds // 60} минут."},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        if cache_data['code'] != code:
+            cache_data['attempts'] += 1
+            cache_data['last_attempt'] = datetime.now().isoformat()
+            redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)
+            return Response({"error": "Неверный код."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_data['status'] = 'confirmed'
+        cache_data['attempts'] = 0
+        redis_1.set(f"auth_{email}", json.dumps(cache_data), timeout=1800)
+        return Response({"message": "Код успешно подтвержден."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Создание пароля", description="Создание пароля")
+class SetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        cached_data = redis_1.get(f"auth_{email}")
+        if cached_data is None:
+            return Response({"error": "Недействительный или просроченный запрос."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_data = json.loads(cached_data.decode('utf-8'))
+
+        if cache_data.get('status') != 'confirmed':
+            return Response({"error": "Код не подтвержден."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if cache_data['action'] == 'registration':
+            user_data = cache_data['data']
+            # Создание пользователя
+            user = User.objects.create_user(
+                email=cache_data['email'],
+                password=password,
+                first_name=cache_data['first_name'],
+                last_name=cache_data['last_name'],
+                date_of_birth=cache_data['date_of_birth'],
+                role='member'
+            )
+
+            # Привязка к франшизе или инфлюенсеру
+            if cache_data['member_type'] == 'lessor' and cache_data.get('franchise_id'):
+                franchise = Franchise.objects.get(id=cache_data['franchise_id'])
+                Lessor.objects.create(user=user, franchise=franchise)
+            elif cache_data['member_type'] == 'renter' and cache_data.get('influencer_id'):
+                influencer = Influencer.objects.get(id=cache_data['influencer_id'])
+                Renter.objects.create(user=user, influencer=influencer)
+            elif cache_data['member_type'] == 'lessor':
+                Lessor.objects.create(user=user)
+            elif cache_data['member_type'] == 'renter':
+                Renter.objects.create(user=user)
+            message = "Пользователь успешно зарегистрирован."
+        elif cache_data['action'] == 'reset_password':
+            user = User.objects.get(email=email)
+            user.set_password(password)
+            user.save()
+            message = "Пароль успешно изменен."
+        else:
+            return Response({"error": "Неверный тип действия."}, status=status.HTTP_400_BAD_REQUEST)
+
+        redis_1.delete(f"auth_{email}")
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 @extend_schema(summary="Пользователи CRUD", description="""\nРегистрация, получение списка пользователей, 
@@ -48,14 +172,24 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserDetailSerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy', 'get']:
-            self.permission_classes = [IsAdminOrSelf]
+        if self.action == 'create':
+            permission_classes = [AllowAny]
+        elif self.action in ['update', 'partial_update', 'destroy', 'retrieve']:
+            permission_classes = [IsAdminOrSelf]
         elif self.action == 'list':
-            self.permission_classes = [IsAdmin]
-        return super().get_permissions()
+            permission_classes = [IsAdmin]
+        else:
+            permission_classes = [IsAdminOrSelf]
+        return [permission() for permission in permission_classes]
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"message": "Код подтверждения отправлен на вашу почту."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(summary="Документы арендаторы", description="Документы арендатора")
@@ -290,48 +424,6 @@ class UpdateRatingView(APIView):
                                                             "пароль")
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
-
-class PasswordResetRequestView(APIView):
-    """Запрос на восстановление пароля"""
-
-    @extend_schema(
-        request=PasswordResetRequestSerializer,
-        responses={200: 'Ссылка для восстановления пароля отправлена на ваш email.'},
-        summary="Запрос на восстановление пароля",
-        description="Отправляет ссылку для восстановления пароля на указанный email.",
-    )
-    def post(self, request, *args, **kwargs):
-        serializer = PasswordResetRequestSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            email = serializer["email"]
-            serializer.save()
-            return Response({'message': f'Мы отправили код на указанную почту {email}'}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@extend_schema(
-    summary="Подтверждение сброса пароля",
-    description="Подтверждение сброса пароля с помощью кода восстановления. " +
-                "Необходимые параметры: email, reset_code, new_password.",
-    request=PasswordResetConfirmSerializer,
-    responses={
-        200: OpenApiResponse(
-            response=PasswordResetConfirmSerializer,
-            description="Пароль успешно изменен."
-        ),
-        400: OpenApiResponse(
-            description="Ошибка при подтверждении сброса пароля."
-        )
-    }
-)
-class PasswordResetConfirmView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = PasswordResetConfirmSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Пароль успешно изменен.'}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(summary="Вход через социальные сети", description="Вход и регистрация")

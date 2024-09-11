@@ -1,3 +1,4 @@
+import json
 import random
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
@@ -18,25 +19,21 @@ from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
 from .models import User, Lessor, Renter, RenterDocuments, FavoriteList
-from .task import send_email_reset_code
 from RentalGuru.settings import redis_1
+from .task import send_verification_email
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
+    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    date_of_birth = serializers.DateField(required=True)
     member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'password', 'password2', 'member_type']
+        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type']
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Пароли не совпадают"})
-        return attrs
-
-    @transaction.atomic
     def create(self, validated_data):
         request = self.context.get('request')
         current_user = request.user if request and request.user.is_authenticated else None
@@ -44,43 +41,57 @@ class RegisterSerializer(serializers.ModelSerializer):
         ref = request.query_params.get('ref', None)
         code = request.query_params.get('code', None)
 
-        # Создание нового пользователя
-        user = User.objects.create(
-            email=validated_data['email'],
-            first_name=validated_data.get('first_name', None),
-            last_name=validated_data.get('last_name', None),
-            role='member'
-        )
-        user.set_password(validated_data['password'])
-        user.save()
+        verification_code = str(random.randint(1000, 9999))
 
-        # Если текущий пользователь является директором франшизы, связываем нового пользователя с франшизой
+        cache_data = {
+            'action': 'registration',
+            'email': validated_data['email'],
+            'first_name': validated_data.get('first_name'),
+            'last_name': validated_data.get('last_name'),
+            'date_of_birth': validated_data.get('date_of_birth'),
+            'password': validated_data['password'],
+            'member_type': member_type,
+            'verification_code': verification_code,
+            'status': 'not confirmed'
+        }
+
+        # Обработка франшизы
         if current_user and Franchise.objects.filter(director=current_user).exists():
             franchise = Franchise.objects.get(director=current_user)
-            if member_type == 'lessor':
-                Lessor.objects.create(user=user, franchise=franchise)
-            else:
-                raise ValidationError(
-                    "Новый пользователь может быть связан с франшизой только как арендодатель (lessor).")
-        else:
-            influencer = None
-            # Проверяем реферальную ссылку
-            if ref and code:
-                try:
-                    referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=code)
-                    referral_link.count += 1
-                    referral_link.save()
-                    influencer = referral_link.influencer
-                except Influencer.DoesNotExist:
-                    raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
+            cache_data['franchise_id'] = franchise.id
+        # Обработка инфлюенсера по реферальному коду
+        elif ref and code:
+            try:
+                referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=code)
+                cache_data['influencer_id'] = referral_link.influencer.id
+            except ReferralLink.DoesNotExist:
+                raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
 
-            # Если текущий пользователь не директор или тип пользователя 'renter'
-            if member_type == 'lessor':
-                Lessor.objects.create(user=user)
-            else:
-                Renter.objects.create(user=user, influencer=influencer)
+        # Сохранение данных в Redis на 30 минут
+        redis_1.set(f"registration_{validated_data['email']}", json.dumps(cache_data), timeout=1800)
+        send_verification_email.delay(validated_data['email'], verification_code)
 
-        return user
+        return validated_data
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class VerifyCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(min_length=4, max_length=4)
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Пароли не совпадают."})
+        return attrs
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -222,60 +233,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 pass
 
         return data
-
-
-class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-    class Meta:
-        fields = ['email']
-
-    def validate_email(self, value):
-        if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Пользователь с данным email не найден.")
-        return value
-
-    def save(self):
-        email = self.validated_data['email']
-        reset_code = random.randint(100000, 999999)
-        redis_1.set(f"reset_code_{email}", reset_code, ex=900)
-        send_email_reset_code(reset_code, email)
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    reset_code = serializers.CharField()
-    new_password = serializers.CharField(min_length=8)
-
-    class Meta:
-        fields = ['email', 'reset_code', 'new_password']
-
-    def validate(self, data):
-        email = data['email']
-        reset_code = data['reset_code']
-
-        # Проверка кода в Redis
-        stored_code = redis_1.get(f"reset_code_{email}")
-        # Декодируем байтовую строку в обычную строку
-        if stored_code is not None:
-            stored_code = stored_code.decode('utf-8')
-
-        # Сравниваем коды
-        if stored_code != reset_code:
-            raise serializers.ValidationError(f"Неверный код восстановления. Полученный код: {stored_code}, Ожидаемый код: {reset_code}, Ключ: reset_code_{email}")
-
-        return data
-
-    def save(self):
-        email = self.validated_data['email']
-        new_password = self.validated_data['new_password']
-
-        user = User.objects.get(email=email)
-        user.set_password(new_password)
-        user.save()
-
-        # Удаление кода после успешного сброса пароля
-        redis_1.delete(f"reset_code_{email}")
 
 
 class SocialAuthSerializer(serializers.Serializer):
