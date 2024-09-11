@@ -142,7 +142,7 @@ class SetPasswordView(APIView):
             return Response({"error": "Код не подтвержден."}, status=status.HTTP_400_BAD_REQUEST)
 
         if cache_data['action'] == 'registration':
-            user_data = cache_data['data']
+
             # Создание пользователя
             date_of_birth = date.fromisoformat(cache_data['date_of_birth'])
             user = User.objects.create_user(
