@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import get_object_or_404, ListAPIView
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -21,12 +21,12 @@ from chat.models import Trip
 from franchise.models import Franchise
 from influencer.models import Influencer
 from vehicle.models import Vehicle
-from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor
+from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor, Currency, Language
 from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, SocialAuthSerializer, FavoriteListSerializer, \
-    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer
+    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer, CurrencySerializer, LanguageSerializer
 from .task import send_verification_email
 
 
@@ -500,3 +500,15 @@ class BecomeLessorView(APIView):
             Lessor.objects.create(user=user, **serializer.validated_data)
             return Response({"detail": "Пользователь был успешно переведен в арендодателя"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Список валют", description="Список валют")
+class CurrencyListView(ListAPIView):
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer
+
+
+@extend_schema(summary="Список языков", description="Список языков")
+class LanguageListView(ListAPIView):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializer

@@ -20,7 +20,7 @@ from vehicle.serializers.bike import BikeListSerializer
 from vehicle.serializers.helicopter import HelicopterListSerializer
 from vehicle.serializers.ship import ShipListSerializer
 from vehicle.serializers.specialtechnic import SpecialTechnicListSerializer
-from .models import User, Lessor, Renter, RenterDocuments, FavoriteList
+from .models import User, Lessor, Renter, RenterDocuments, FavoriteList, Currency, Language
 from RentalGuru.settings import redis_1
 from .task import send_verification_email
 
@@ -139,9 +139,23 @@ class LessorDetailSerializer(serializers.ModelSerializer):
         fields = ['super_host', 'count_trip', 'average_response_time']
 
 
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = ['id', 'code']
+
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ['id', 'code']
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     renter = RenterDetailSerializer(read_only=True)
     lessor = LessorDetailSerializer(read_only=True)
+    currency = CurrencySerializer()
+    language = LanguageSerializer()
 
     class Meta:
         model = User
@@ -276,7 +290,6 @@ class SocialAuthSerializer(serializers.Serializer):
         return attrs
 
 
-############# Test
 
 class FavoriteListSerializer(serializers.ModelSerializer):
     vehicles = VehicleListSerializer(many=True, read_only=True)

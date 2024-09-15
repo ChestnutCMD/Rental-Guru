@@ -14,37 +14,44 @@ def upload_avatar(instance, filename):
     return f'media/images/users/{instance.id}/avatar/{filename}'
 
 
+class Currency(models.Model):
+    code = models.CharField(max_length=3, unique=True, verbose_name="Код валюты")
+
+    def __str__(self):
+        return self.code
+
+    class Meta:
+        verbose_name = "Валюта"
+        verbose_name_plural = "Валюты"
+
+
+class Language(models.Model):
+    code = models.CharField(max_length=2, unique=True, verbose_name="Код языка")
+
+    def __str__(self):
+        return self.code
+
+    class Meta:
+        verbose_name = "Язык"
+        verbose_name_plural = "Языки"
+
+
 class User(AbstractUser):
     ROLES = (
         ('member', 'Пользователь'),
         ('manager', 'Менеджер'),
         ('admin', 'Администратор'),
     )
-    CURRENCY = (
-        ('RUB', 'рубль'),
-        ('EUR', 'евро'),
-        ('USD', 'доллар'),
-        ('GBP', 'фунт стерлингов'),
-        ('JPY', 'йена'),
-        ('CNY', 'юань'),
-    )
-    LANGUAGE = (
-        ('ru', 'Русский'),
-        ('en', 'Английский'),
-        ('es', 'Испанский'),
-        ('fr', 'Французский'),
-        ('de', 'Немецкий'),
-        ('zh', 'Китайский'),
-    )
+
     role = models.CharField(max_length=10, choices=ROLES, default='member', verbose_name='Роль')
     date_of_birth = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     telephone = models.CharField(max_length=11, null=True, blank=True, verbose_name='Телефон')
-    currency = models.CharField(max_length=3, null=True, blank=True, choices=CURRENCY, verbose_name='Валюта')
-    language = models.CharField(max_length=2, null=True, blank=True, choices=LANGUAGE, verbose_name='Язык')
+    currency = models.ForeignKey('Currency', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Валюта')
+    language = models.ForeignKey('Language', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Язык')
     avatar = models.ImageField(upload_to=upload_avatar, null=True, blank=True, verbose_name='Аватар')
     about = models.TextField(null=True, blank=True, verbose_name='О себе')
     email_notification = models.BooleanField(default=False, verbose_name='Email уведомления')
-    push_notification = models.BooleanField(default=False, verbose_name='Push уеведомления')
+    push_notification = models.BooleanField(default=False, verbose_name='Push уведомления')
 
     first_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Имя')
     last_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Фамилия')
