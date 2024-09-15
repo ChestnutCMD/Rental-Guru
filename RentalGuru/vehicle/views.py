@@ -7,7 +7,7 @@ from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,14 +18,19 @@ from chat.models import Trip
 from chat.permissions import IsAdminOrOwner
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter
-from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle
+from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
+    VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
+    FeaturesForChildren, FeaturesEquipment, PaymentMethod
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly
-from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer
+from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
+    PaymentMethodSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
-    AutoUpdateSerializer
-from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer
+    AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer
+from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer, \
+    BikeFeaturesAdditionallySerializer
 from .serializers.rating import UpdateRatingSerializer
-from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer
+from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer, \
+    ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer
 from .serializers.helicopter import HelicopterGetSerializer, HelicopterListSerializer, HelicopterCreateSerializer, \
     HelicopterUpdateSerializer
 from .serializers.specialtechnic import SpecialTechnicGetSerializer, SpecialTechnicListSerializer, \
@@ -295,3 +300,52 @@ def gps_tracking_view(request, vehicle_id):
     }
 
     return Response(data)
+
+
+@extend_schema(summary="Список функций транспорта", description="Список функций транспорта")
+class VehicleFeaturesFunctionsListView(ListAPIView):
+    queryset = VehicleFeaturesFunctions.objects.all()
+    serializer_class = VehicleFeaturesFunctionsSerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список дополнительных особенностей авто", description="Список дополнительных особенностей авто")
+class AutoFeaturesAdditionallyListView(ListAPIView):
+    queryset = AutoFeaturesAdditionally.objects.all()
+    serializer_class = AutoFeaturesAdditionallySerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список дополнительных особенностей мотоциклов", description="Список дополнительных особенностей мотоциклов")
+class BikeFeaturesAdditionallyListView(ListAPIView):
+    queryset = BikeFeaturesAdditionally.objects.all()
+    serializer_class = BikeFeaturesAdditionallySerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список дополнительных особенностей суден", description="Список дополнительных особенностей суден")
+class ShipFeaturesAdditionallyListView(ListAPIView):
+    queryset = ShipFeaturesAdditionally.objects.all()
+    serializer_class = ShipFeaturesAdditionallySerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список особенностей авто для детей", description="Список особенностей авто для детей")
+class FeaturesForChildrenListView(ListAPIView):
+    queryset = FeaturesForChildren.objects.all()
+    serializer_class = FeaturesForChildrenSerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список оборудования для суден", description="Список оборудования для суден")
+class FeaturesEquipmentListView(ListAPIView):
+    queryset = FeaturesEquipment.objects.all()
+    serializer_class = FeaturesEquipmentSerializer
+    permission_classes = [IsAuthenticated]
+
+
+@extend_schema(summary="Список способов платежей", description="Список способов платежей")
+class PaymentMethodListView(ListAPIView):
+    queryset = PaymentMethod.objects.all()
+    serializer_class = PaymentMethodSerializer
+    permission_classes = [IsAuthenticated]

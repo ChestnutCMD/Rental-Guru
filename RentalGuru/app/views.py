@@ -26,7 +26,7 @@ from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, SocialAuthSerializer, FavoriteListSerializer, \
-    VerifyCodeSerializer, SetPasswordSerializer
+    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer
 from .task import send_verification_email
 
 
@@ -196,11 +196,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             permission_classes = [AllowAny]
         elif self.action in ['update', 'partial_update', 'destroy', 'retrieve']:
-            permission_classes = [IsAdminOrSelf]
+            permission_classes = [IsAuthenticated, IsAdminOrSelf]
         elif self.action == 'list':
-            permission_classes = [IsAdmin]
+            permission_classes = [IsAuthenticated, IsAdmin]
         else:
-            permission_classes = [IsAdminOrSelf]
+            permission_classes = [IsAuthenticated, IsAdminOrSelf]
         return [permission() for permission in permission_classes]
 
     def perform_update(self, serializer):
@@ -477,3 +477,26 @@ class SocialLoginView(APIView):
 
         token, _ = Token.objects.get_or_create(user=registered_user)
         return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(summary="Стать арендодателем", description="Удаление арендатора и создание арендодателя")
+class BecomeLessorView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSelf]
+
+    def post(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            renter = Renter.objects.get(user=user)
+        except Renter.DoesNotExist:
+            return Response({"detail": "User is not a Renter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        renter.delete()
+
+        serializer = BecomeLessorSerializer(data=request.data)
+        if serializer.is_valid():
+            Lessor.objects.create(user=user, **serializer.validated_data)
+            return Response({"detail": "Пользователь был успешно переведен в арендодателя"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

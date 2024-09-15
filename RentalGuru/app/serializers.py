@@ -146,9 +146,21 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'first_name', 'last_name', 'email', 'role', 'avatar',
-            'date_of_birth', 'telephone', 'currency', 'about',
-            'email_notification', 'push_notification', 'renter', 'lessor'
+            'first_name',
+            'last_name',
+            'email',
+            'role',
+            'avatar',
+            'date_of_birth',
+            'telephone',
+            'currency',
+            'about',
+            'email_notification',
+            'push_notification',
+            'renter',
+            'lessor',
+            'currency',
+            'language'
         ]
         read_only_fields = ['role']
 
@@ -289,3 +301,11 @@ class FavoriteListSerializer(serializers.ModelSerializer):
         favorite_list = FavoriteList.objects.create(**validated_data)
         favorite_list.vehicles.set(vehicles)
         return favorite_list
+
+
+class BecomeLessorSerializer(serializers.ModelSerializer):
+    franchise = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Lessor.objects.all())
+
+    class Meta:
+        model = Lessor
+        fields = ['franchise']

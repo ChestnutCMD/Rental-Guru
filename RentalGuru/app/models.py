@@ -20,10 +20,27 @@ class User(AbstractUser):
         ('manager', 'Менеджер'),
         ('admin', 'Администратор'),
     )
+    CURRENCY = (
+        ('RUB', 'рубль'),
+        ('EUR', 'евро'),
+        ('USD', 'доллар'),
+        ('GBP', 'фунт стерлингов'),
+        ('JPY', 'йена'),
+        ('CNY', 'юань'),
+    )
+    LANGUAGE = (
+        ('ru', 'Русский'),
+        ('en', 'Английский'),
+        ('es', 'Испанский'),
+        ('fr', 'Французский'),
+        ('de', 'Немецкий'),
+        ('zh', 'Китайский'),
+    )
     role = models.CharField(max_length=10, choices=ROLES, default='member', verbose_name='Роль')
     date_of_birth = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     telephone = models.CharField(max_length=11, null=True, blank=True, verbose_name='Телефон')
-    currency = models.CharField(max_length=3, null=True, blank=True, verbose_name='Валюта')
+    currency = models.CharField(max_length=3, null=True, blank=True, choices=CURRENCY, verbose_name='Валюта')
+    language = models.CharField(max_length=2, null=True, blank=True, choices=LANGUAGE, verbose_name='Язык')
     avatar = models.ImageField(upload_to=upload_avatar, null=True, blank=True, verbose_name='Аватар')
     about = models.TextField(null=True, blank=True, verbose_name='О себе')
     email_notification = models.BooleanField(default=False, verbose_name='Email уведомления')
@@ -125,7 +142,7 @@ class Rating(models.Model):
         verbose_name = 'Рейтинг'
         verbose_name_plural = 'Рейтинги'
 
-############### Test
+
 class FavoriteList(models.Model):
     renter = models.ForeignKey(Renter, on_delete=models.CASCADE, related_name='favorite_lists')
     name = models.CharField(max_length=100, verbose_name='Название списка')
