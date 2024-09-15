@@ -306,46 +306,40 @@ def gps_tracking_view(request, vehicle_id):
 class VehicleFeaturesFunctionsListView(ListAPIView):
     queryset = VehicleFeaturesFunctions.objects.all()
     serializer_class = VehicleFeaturesFunctionsSerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список дополнительных особенностей авто", description="Список дополнительных особенностей авто")
 class AutoFeaturesAdditionallyListView(ListAPIView):
     queryset = AutoFeaturesAdditionally.objects.all()
     serializer_class = AutoFeaturesAdditionallySerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список дополнительных особенностей мотоциклов", description="Список дополнительных особенностей мотоциклов")
 class BikeFeaturesAdditionallyListView(ListAPIView):
     queryset = BikeFeaturesAdditionally.objects.all()
     serializer_class = BikeFeaturesAdditionallySerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список дополнительных особенностей суден", description="Список дополнительных особенностей суден")
 class ShipFeaturesAdditionallyListView(ListAPIView):
     queryset = ShipFeaturesAdditionally.objects.all()
     serializer_class = ShipFeaturesAdditionallySerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список особенностей авто для детей", description="Список особенностей авто для детей")
 class FeaturesForChildrenListView(ListAPIView):
     queryset = FeaturesForChildren.objects.all()
     serializer_class = FeaturesForChildrenSerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список оборудования для суден", description="Список оборудования для суден")
 class FeaturesEquipmentListView(ListAPIView):
     queryset = FeaturesEquipment.objects.all()
     serializer_class = FeaturesEquipmentSerializer
-    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(summary="Список способов платежей", description="Список способов платежей")
 class PaymentMethodListView(ListAPIView):
     queryset = PaymentMethod.objects.all()
     serializer_class = PaymentMethodSerializer
-    permission_classes = [IsAuthenticated]
+
