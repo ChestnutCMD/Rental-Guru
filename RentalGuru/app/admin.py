@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Lessor, Renter, Currency, Language
+from .models import User, Lessor, Renter, Currency, Language, RenterDocuments
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -165,6 +165,12 @@ class RenterAdmin(admin.ModelAdmin):
                 'classes': ('collapse',)
             }))
         return fieldsets
+
+
+@admin.register(RenterDocuments)
+class RenterDocumentsAdmin(admin.ModelAdmin):
+    list_filter = ['status']
+    list_display = ['title', 'number', 'status', 'photo']
 
 
 admin.site.register(User, UserAdmin)

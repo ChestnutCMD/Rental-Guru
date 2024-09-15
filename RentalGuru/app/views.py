@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, date
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -16,11 +17,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from RentalGuru import settings
 from RentalGuru.settings import redis_1
 from chat.models import Trip
 from franchise.models import Franchise
 from influencer.models import Influencer
+from notification.models import Notification
 from vehicle.models import Vehicle
+from .filters import RenterDocumentsFilter
 from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor, Currency, Language
 from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
@@ -216,15 +220,20 @@ class UserViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Документы арендаторы", description="Документы арендатора")
 class RenterDocumentsViewSet(viewsets.ModelViewSet):
     serializer_class = RenterDocumentsSerializer
-    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RenterDocumentsFilter
+    permission_classes = [IsAuthenticated, IsAdminOrSelf]
 
     def get_queryset(self):
         user = self.request.user
-        try:
-            renter = user.renter
-        except ObjectDoesNotExist:
-            return RenterDocuments.objects.none()
-        return RenterDocuments.objects.filter(renter=renter)
+        if user.role == 'admin' or user.role == 'manager':
+            return RenterDocuments.objects.all()
+        else:
+            try:
+                renter = user.renter
+            except ObjectDoesNotExist:
+                return RenterDocuments.objects.none()
+            return RenterDocuments.objects.filter(renter=renter)
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -236,11 +245,24 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         user = self.request.user
-        try:
-            renter = user.renter
-        except ObjectDoesNotExist:
-            raise Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(renter=renter)
+        document = self.get_object()
+
+        if user.role == 'admin' or user.role == 'manager':
+            if serializer.valvalidated_data.get('status') == 'approved':
+                url = f'{settings.HOST_URL}' #TODO добавить ссылку
+                content = f'Ваш документ проверен'
+                Notification.objects.create(user=document.renter.user, url=url, content=content)
+            elif serializer.valvalidated_data.get('status') == 'rejected':
+                url = f'{settings.HOST_URL}' #TODO добавить ссылку
+                content = f'Ваш документ отклонен'
+                Notification.objects.create(user=document.renter.user, url=url, content=content)
+            serializer.save()
+        else:
+            # Запрещаем изменять статус для обычных пользователей
+            if 'status' in serializer.validated_data:
+                return Response({'detail': 'Изменение статуса запрещено'}, status=status.HTTP_403_FORBIDDEN)
+
+            serializer.save()
 
     def perform_destroy(self, instance):
         user = self.request.user
@@ -249,9 +271,9 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         except ObjectDoesNotExist:
             raise Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
         if instance.renter != renter:
-            raise Response({'detail': 'Документ не принадлежит текущему арендатору'}, status=status.HTTP_400_BAD_REQUEST)
+            raise Response({'detail': 'Документ не принадлежит текущему арендатору'},
+                           status=status.HTTP_400_BAD_REQUEST)
         instance.delete()
-
 
 @extend_schema(summary="Списки избранного", description="Списки избранного")
 class FavoriteListViewSet(viewsets.ModelViewSet):

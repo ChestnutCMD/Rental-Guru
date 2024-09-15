@@ -130,7 +130,7 @@ class RenterDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Renter
-        fields = ['favorite', 'verification', 'renter_documents']
+        fields = ['renter', 'favorite', 'verification', 'renter_documents', 'status']
 
 
 class LessorDetailSerializer(serializers.ModelSerializer):

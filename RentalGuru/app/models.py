@@ -125,10 +125,16 @@ def upload_renter_document(instance, filename):
 
 
 class RenterDocuments(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'На проверке'),
+        ('approved', 'Подтверждено'),
+        ('rejected', 'Отклонено'),
+    )
     renter = models.ForeignKey(Renter, related_name='renter_documents', on_delete=models.CASCADE)
     title = models.CharField(max_length=30, verbose_name='Вид документа')
     number = models.PositiveIntegerField(verbose_name='Номер')
     photo = models.ImageField(upload_to=upload_renter_document, verbose_name='Фото')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус проверки')
 
     def __str__(self):
         return f'{self.title}: {self.number}'
