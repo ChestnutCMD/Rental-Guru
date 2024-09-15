@@ -1,10 +1,18 @@
 from django.contrib import admin
-from .models import User, Lessor, Renter
+from .models import User, Lessor, Renter, Currency, Language
 
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'first_name', 'last_name', 'role', 'date_of_birth', 'telephone', 'currency', 'avatar')
     list_filter = ('role',)
+
+
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ('code',)
+
+
+class LanguageAdmin(admin.ModelAdmin):
+    list_display = ('code',)
 
 
 class LessorAdmin(admin.ModelAdmin):
@@ -162,3 +170,5 @@ class RenterAdmin(admin.ModelAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(Lessor, LessorAdmin)
 admin.site.register(Renter, RenterAdmin)
+admin.site.register(Currency, CurrencyAdmin)
+admin.site.register(Language, LanguageAdmin)
