@@ -23,14 +23,14 @@ ALLOWED_HOSTS = [getenv('ALLOWED_HOSTS')]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ['https://rentalguru.ru']
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    'https://rental-guru.netlify.app/'
+    'https://rental-guru.netlify.app',
+    'https://rentalguru.ru'
 ]
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -51,6 +51,8 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Application definition
 INSTALLED_APPS = [
@@ -177,11 +179,10 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 }
 
-# CSRF_TRUSTED_ORIGINS = ['https://']
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+# CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     'https://saqartvel.ru',
+    'https://rental-guru.netlify.app'
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
