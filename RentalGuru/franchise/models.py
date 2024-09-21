@@ -10,6 +10,17 @@ from RentalGuru import settings
 from chat.models import Trip
 
 
+class City(models.Model):
+    title = models.CharField(max_length=50, unique=True, verbose_name='Город')
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Город'
+        verbose_name_plural = 'Города'
+
+
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name='Категория')
 
@@ -28,7 +39,7 @@ class Franchise(models.Model):
     telephone = models.CharField(max_length=20, verbose_name='Телефон')
     email = models.EmailField(max_length=50, verbose_name='Эл. почта')
     country = models.CharField(max_length=50, verbose_name='Страна')
-    city = models.CharField(max_length=50, verbose_name='Город')
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name='Город')
 
     director = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Директор')
     commission = models.PositiveIntegerField(default=3, verbose_name='Комиссия')

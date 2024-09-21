@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from app.models import User, Lessor
 from chat.models import RequestRent
-from franchise.models import Franchise, VehiclePark, Category, RequestFranchise
+from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
 from vehicle.models import Vehicle
 
@@ -191,4 +191,10 @@ class FranchiseStatisticsSerializer(serializers.Serializer):
 class RequestFranchiseSerializer(serializers.Serializer):
     class Meta:
         model = RequestFranchise
+        fields = '__all__'
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        models = City
         fields = '__all__'

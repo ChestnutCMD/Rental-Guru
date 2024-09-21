@@ -9,14 +9,14 @@ from rest_framework.views import APIView
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
-from .models import VehiclePark, Franchise, RequestFranchise
-from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager
+from .models import VehiclePark, Franchise, RequestFranchise, City
+from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
 from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSerializer, \
     FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer, LessorSerializer, \
-    FranchiseStatisticsSerializer, RequestFranchiseSerializer
+    FranchiseStatisticsSerializer, RequestFranchiseSerializer, CitySerializer
 
 
 @extend_schema(summary="Автопарк CRUD", description="CRUD Автопарка")
@@ -329,3 +329,9 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
     queryset = RequestFranchise.objects.all()
     serializer_class = RequestFranchiseSerializer
     permission_classes = [IsAuthenticated, IsAdminOrManager]
+
+
+class CityViewSet(viewsets.ModelViewSet):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    permission_classes = [IsAuthenticated, IsAdmin]

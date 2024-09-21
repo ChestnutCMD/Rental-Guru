@@ -1,4 +1,5 @@
 from django_filters import rest_framework as filters
+from haversine import haversine, Unit
 
 from vehicle.models import AutoFeaturesAdditionally, Auto, BikeFeaturesAdditionally, Bike, ShipFeaturesAdditionally, \
     Ship, Helicopter, SpecialTechnic
@@ -12,12 +13,42 @@ class BaseFilter(filters.FilterSet):
     brand = filters.CharFilter(field_name='brand__name', label='Марка')
     year = filters.RangeFilter(field_name='year', label='Год выпуска')
     rental_date = filters.DateFromToRangeFilter(field_name='availabilities__start_date', label='Выбор даты аренды')
+    city = filters.CharFilter(field_name='city__title', label='Город')
+
+    lat = filters.NumberFilter(method='filter_by_lat_lon', label='Широта')
+    lon = filters.NumberFilter(method='filter_by_lat_lon', label='Долгота')
+    radius = filters.NumberFilter(method='filter_by_lat_lon', label='Радиус в км', required=False)
 
     class Meta:
         abstract = True
 
     def filter_by_rental_date(self, queryset, name, value):
         return queryset.filter(availabilities__start_date__lte=value, availabilities__end_date__gte=value)
+
+    def filter_by_lat_lon(self, queryset, name, value):
+        lat = self.data.get('lat')
+        lon = self.data.get('lon')
+        radius = self.data.get('radius', 5)  # Радиус по умолчанию 5 км, если не передан
+
+        if lat and lon:
+            lat = float(lat)
+            lon = float(lon)
+            radius = float(radius)
+            user_location = (lat, lon)
+
+            filtered_queryset = []
+
+            for vehicle in queryset:
+                if vehicle.latitude and vehicle.longitude:
+                    vehicle_location = (vehicle.latitude, vehicle.longitude)
+                    distance = haversine(user_location, vehicle_location, unit=Unit.KILOMETERS)
+
+                    if distance <= radius:
+                        filtered_queryset.append(vehicle)
+
+            return queryset.filter(id__in=[vehicle.id for vehicle in filtered_queryset])
+
+        return queryset
 
 
 class AutoFilter(BaseFilter):
@@ -28,6 +59,7 @@ class AutoFilter(BaseFilter):
     fuel_type = filters.CharFilter(field_name='fuel_type', label='Тип топлива')
     seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission', label='Трансмиссия')
+    body_type = filters.CharFilter(field_name='body_type', label='Тип кузова')
 
     class Meta:
         model = Auto
@@ -94,7 +126,3 @@ class SpecialTechnicFilter(BaseFilter):
         fields = [
             'day_price', 'super_host', 'rental_date', 'brand',
             'year', 'type_technic', 'engine_power', 'operating_weight']
-
-"""
-
-"""

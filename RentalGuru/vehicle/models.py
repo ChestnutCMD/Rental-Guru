@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from RentalGuru import settings
 from chat.models import RequestRent, Trip
-from franchise.models import VehiclePark
+from franchise.models import VehiclePark, City
 from notification.models import Notification
 from vehicle.utils import merge_periods
 
@@ -151,12 +151,14 @@ class Vehicle(PolymorphicModel):
 
     payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
 
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, related_name='vehicle', verbose_name='Город')
     location = models.CharField(max_length=255, verbose_name='Местоположение')
+    latitude = models.FloatField(null=True, blank=True, verbose_name='Широта')
+    longitude = models.FloatField(null=True, blank=True, verbose_name='Долгота')
+
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
     vehicle_park = models.ForeignKey(VehiclePark, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicles', verbose_name='Автопарк')
-    latitude = models.FloatField(null=True, blank=True, verbose_name='Широта')
-    longitude = models.FloatField(null=True, blank=True, verbose_name='Долгота')
     last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
 
     def get_average_rating(self):
