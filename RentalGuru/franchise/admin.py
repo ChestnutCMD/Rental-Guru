@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.db.models import Q
 
 from vehicle.models import Vehicle
-from .models import Franchise, VehiclePark, RequestFranchise, Category
+from .models import Franchise, VehiclePark, RequestFranchise, Category, City
+
+
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('title',)
+    search_fields = ('title',)
+    ordering = ('title',)
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -26,7 +32,6 @@ class VehicleParkInline(admin.TabularInline):
     readonly_fields = ('name',)
 
 
-# Admin class for Franchise
 class FranchiseAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'unn', 'date_register', 'telephone', 'email', 'country', 'city',
@@ -36,7 +41,7 @@ class FranchiseAdmin(admin.ModelAdmin):
     search_fields = ('name', 'unn', 'email', 'telephone', 'country', 'city', 'director__email')
     readonly_fields = ('total_vehicles', 'date_register')
 
-    inlines = [VehicleParkInline]  # Удалили VehicleInline, так как связи нет
+    inlines = [VehicleParkInline]
 
     def save_model(self, request, obj, form, change):
         if change:
@@ -45,10 +50,9 @@ class FranchiseAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.prefetch_related('vehicle_parks', 'lessors')  # Предзагрузка только доступных связанных объектов
+        return qs.prefetch_related('vehicle_parks', 'lessors')
 
     def get_vehicles(self, obj):
-        # Здесь нужно использовать правильную логику получения транспортных средств
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=obj) | Q(owner=obj.director)
         )
@@ -79,6 +83,7 @@ class RequestFranchiseAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Franchise, FranchiseAdmin)
-admin.site.register(Vehicle, VehicleAdmin)  # Зарегистрируйте VehicleAdmin
+admin.site.register(Vehicle, VehicleAdmin)
 admin.site.register(VehiclePark, VehicleParkAdmin)
 admin.site.register(RequestFranchise, RequestFranchiseAdmin)
+admin.site.register(City, CityAdmin)

@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -274,6 +274,7 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
             raise Response({'detail': 'Документ не принадлежит текущему арендатору'},
                            status=status.HTTP_400_BAD_REQUEST)
         instance.delete()
+
 
 @extend_schema(summary="Списки избранного", description="Списки избранного")
 class FavoriteListViewSet(viewsets.ModelViewSet):

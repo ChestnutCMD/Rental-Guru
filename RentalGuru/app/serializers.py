@@ -243,8 +243,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     fcm_token = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
+        try:
+            # Сначала проверяем, существует ли пользователь с таким логином
+            user = User.objects.get(username=attrs['username'])
+        except User.DoesNotExist:
+            raise ValidationError({'detail': 'Не найдено пользователя с такими учетными данными'})
+
+        # Проверка пароля
+        if not user.check_password(attrs['password']):
+            raise ValidationError({'detail': 'Неверный пароль'})
+
+        # Если логин и пароль верны, то вызываем стандартную валидацию
         data = super().validate(attrs)
-        user = self.user
 
         # # Проверка last_login
         # if not user.last_login:
@@ -288,7 +298,6 @@ class SocialAuthSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
-
 
 
 class FavoriteListSerializer(serializers.ModelSerializer):
