@@ -245,7 +245,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         try:
             # Сначала проверяем, существует ли пользователь с таким логином
-            user = User.objects.get(username=attrs['username'])
+            user = User.objects.get(email=attrs['email'])
         except User.DoesNotExist:
             raise ValidationError({'detail': 'Не найдено пользователя с такими учетными данными'})
 
