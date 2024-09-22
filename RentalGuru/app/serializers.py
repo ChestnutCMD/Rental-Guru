@@ -255,7 +255,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Если логин и пароль верны, то вызываем стандартную валидацию
         data = super().validate(attrs)
-
+        data["user_id"] = user.id
         # # Проверка last_login
         # if not user.last_login:
         #     data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
