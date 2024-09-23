@@ -311,7 +311,7 @@ class Auto(Vehicle):
         ('manual', 'Механическая'),
     )
     BODY_CHOICES = (
-        ('automatic', 'Седан'),
+        ('sedan', 'Седан'),
         ('off-road', 'Внедорожник'),
         ('universal', 'Универсал'),
         ('hatchback', 'Хэтчбэк'),

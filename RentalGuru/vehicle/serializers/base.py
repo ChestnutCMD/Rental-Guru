@@ -17,7 +17,7 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 class VehicleDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleDocument
-        fields = ['name', 'image']
+        fields = ['name', 'image', 'number']
         extra_kwargs = {
             'vehicle': {'required': False}
         }
