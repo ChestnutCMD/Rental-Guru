@@ -154,8 +154,8 @@ class LanguageSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     renter = RenterDetailSerializer(read_only=True)
     lessor = LessorDetailSerializer(read_only=True)
-    currency = CurrencySerializer()
-    language = LanguageSerializer()
+    currency = serializers.SlugRelatedField(slug_field='code', queryset=Currency.objects.all())
+    language = serializers.SlugRelatedField(slug_field='code', queryset=Language.objects.all())
 
     class Meta:
         model = User
@@ -167,7 +167,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'avatar',
             'date_of_birth',
             'telephone',
-            'currency',
             'about',
             'email_notification',
             'push_notification',
@@ -201,6 +200,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
                 for attr, value in lessor_data.items():
                     setattr(instance.lessor, attr, value)
                 instance.lessor.save()
+
         return super().update(instance, validated_data)
 
 
@@ -256,6 +256,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Если логин и пароль верны, то вызываем стандартную валидацию
         data = super().validate(attrs)
         data["user_id"] = user.id
+
         # # Проверка last_login
         # if not user.last_login:
         #     data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
