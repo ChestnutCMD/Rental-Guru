@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 from polymorphic.models import PolymorphicModel
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -54,8 +55,8 @@ class AutoFeaturesAdditionally(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Дополнительная особенность, Автомобиль'
-        verbose_name_plural = 'Дополнительные особенности, Автомобиль'
+        verbose_name = 'Автомобиль, дополнительная особенность'
+        verbose_name_plural = 'Автомобиль, дополнительные особенности'
 
 
 class BikeFeaturesAdditionally(models.Model):
@@ -65,8 +66,8 @@ class BikeFeaturesAdditionally(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Дополнительная особенность, Мотоцикл'
-        verbose_name_plural = 'Дополнительные особенности, Мотоцикл'
+        verbose_name = 'Мотоцикл, Дополнительная особенность'
+        verbose_name_plural = 'Мотоцикл, Дополнительные особенности'
 
 
 class ShipFeaturesAdditionally(models.Model):
@@ -76,8 +77,8 @@ class ShipFeaturesAdditionally(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Дополнительная особенность, Судно'
-        verbose_name_plural = 'Дополнительные особенности, Судно'
+        verbose_name = 'Судно, дополнительная особенность'
+        verbose_name_plural = 'Судно, дополнительные особенности'
 
 
 class FeaturesForChildren(models.Model):
@@ -87,8 +88,8 @@ class FeaturesForChildren(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Для детей, Автомобиль'
-        verbose_name_plural = 'Для детей, Автомобиль'
+        verbose_name = 'Автомобиль, для детей'
+        verbose_name_plural = 'Автомобиль, для детей'
 
 
 class FeaturesEquipment(models.Model):
@@ -98,8 +99,8 @@ class FeaturesEquipment(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = 'Оборудование, Судно'
-        verbose_name_plural = 'Оборудование, Судно'
+        verbose_name = 'Судно, оборудование'
+        verbose_name_plural = 'Судно, оборудование'
 
 
 class PaymentMethod(models.Model):
@@ -132,34 +133,34 @@ def default_rating():
 class Vehicle(PolymorphicModel):
     request_rents = GenericRelation(RequestRent, related_query_name='request_rent')
     trips = GenericRelation(Trip, related_query_name='trips')
+
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Владелец')
     brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Марка')
     model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='vehicle', verbose_name='Модель')
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, related_name='vehicle', verbose_name='Город')
+    vehicle_park = models.ForeignKey(VehiclePark, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='vehicles', verbose_name='Автопарк')
+
     year = models.IntegerField(null=True, blank=True, validators=[year_validate], verbose_name='Год выпуска')
     description = models.CharField(max_length=255, null=True, blank=True, verbose_name='Описание')
     long_distance = models.BooleanField(default=False, verbose_name='Междугородние поездки')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     ensurance = models.CharField(max_length=30, verbose_name='Страховка')
-
     drivers_rating = models.DecimalField(null=True, blank=True, decimal_places=1, max_digits=2, verbose_name='Рейтинг арендатора')
     drivers_only_verified = models.BooleanField(default=True, verbose_name='Сдавать только верифицированным пользователям')
-
     price_delivery = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость доставки транспорта')
     price_deposit = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='депозит')
     min_rent_day = models.PositiveIntegerField(default=1, verbose_name='Минимальный срок аренды')
     max_rent_day = models.PositiveIntegerField(default=365, verbose_name='Максимальный срок аренды')
 
-    payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
-
-    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, related_name='vehicle', verbose_name='Город')
     location = models.CharField(max_length=255, verbose_name='Местоположение')
     latitude = models.FloatField(null=True, blank=True, verbose_name='Широта')
     longitude = models.FloatField(null=True, blank=True, verbose_name='Долгота')
-
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
-    vehicle_park = models.ForeignKey(VehiclePark, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicles', verbose_name='Автопарк')
     last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
+
+    payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
 
     def get_average_rating(self):
         average_ratings = {}
@@ -243,12 +244,11 @@ class Availability(models.Model):
         return f'Availability {self.start_date} to {self.end_date}'
 
     def clean(self):
-        """ Проверка, чтобы start_date не была позже end_date """
         if self.start_date > self.end_date:
             raise ValidationError('Дата начала не может быть позже даты окончания.')
 
     def save(self, *args, **kwargs):
-        self.clean()  # Вызов метода clean для проверки
+        self.clean()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -292,46 +292,105 @@ class VehiclePhoto(models.Model):
         verbose_name_plural = 'Фото'
 
 
-class Auto(Vehicle):
-    FUEL_CHOICES = (
-        ('electric', 'Электричество'),
-        ('hybrid', 'Гибрид'),
-        ('petrol', 'Бензин'),
-        ('diesel', 'Дизель'),
-    )
-    CLASS_CHOICES = (
-        ('business', 'Бизнес'),
-        ('premium', 'Премиум'),
-        ('casual', 'Средний')
-    )
-    TRANSMISSION_CHOICES = (
-        ('automatic', 'Автоматическая'),
-        ('robot', 'Робот'),
-        ('variator', 'Вариатор'),
-        ('manual', 'Механическая'),
-    )
-    BODY_CHOICES = (
-        ('sedan', 'Седан'),
-        ('off-road', 'Внедорожник'),
-        ('universal', 'Универсал'),
-        ('hatchback', 'Хэтчбэк'),
-        ('compartment', 'Купэ'),
-        ('minivan', 'Минивэн'),
-        ('minibus', 'Микроавтобус'),
-        ('liftback', 'Лифтбэк'),
-        ('pickup', 'Пикап'),
-        ('van', 'Фургон'),
-        ('convertible', 'Кабриолет')
-    )
+class AutoFuelType(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Вид топлива')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
 
-    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES, verbose_name='Коробка передач')
-    fuel_type = models.CharField(max_length=13, choices=FUEL_CHOICES, verbose_name='Вид топлива')
-    body_type = models.CharField(max_length=13, choices=BODY_CHOICES, verbose_name='Тип кузова')
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Автомобиль, вид топлива'
+        verbose_name_plural = 'Автомобиль, виды топлива'
+
+    # ('electric', 'Электричество'),
+    # ('hybrid', 'Гибрид'),
+    # ('petrol', 'Бензин'),
+    # ('diesel', 'Дизель'),
+
+
+class AutoTransmission(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Коробка передач')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Автомобиль, коробка передач'
+        verbose_name_plural = 'Автомобиль, коробки передач'
+
+#         ('automatic', 'Автоматическая'),
+#         ('robot', 'Робот'),
+#         ('variator', 'Вариатор'),
+#         ('manual', 'Механическая'),
+
+
+class AutoBodyType(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Тип кузова')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Автомобиль, тип кузова'
+        verbose_name_plural = 'Автомобиль, типы кузова'
+
+    #     ('sedan', 'Седан'),
+    #     ('off-road', 'Внедорожник'),
+    #     ('universal', 'Универсал'),
+    #     ('hatchback', 'Хэтчбэк'),
+    #     ('compartment', 'Купэ'),
+    #     ('minivan', 'Минивэн'),
+    #     ('minibus', 'Микроавтобус'),
+    #     ('liftback', 'Лифтбэк'),
+    #     ('pickup', 'Пикап'),
+    #     ('van', 'Фургон'),
+    #     ('convertible', 'Кабриолет')
+
+
+class VehicleClass(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Класс')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Класс'
+        verbose_name_plural = 'Классы'
+
+
+class Auto(Vehicle):
+
+    transmission = models.ForeignKey(AutoTransmission, null=False, on_delete=models.PROTECT, verbose_name='Коробка передач')
+    fuel_type = models.ForeignKey(AutoFuelType, null=False, on_delete=models.PROTECT,  verbose_name='Вид топлива')
+    body_type = models.ForeignKey(AutoBodyType, null=False, on_delete=models.PROTECT, verbose_name='Тип кузова')
+    vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT,  verbose_name='Класс')
 
     acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
     seats = models.PositiveIntegerField(default=4, verbose_name='Количество мест')
-    vehicle_class = models.CharField(max_length=8, choices=CLASS_CHOICES, verbose_name='Класс')
-
     drivers_age = models.PositiveIntegerField(null=True, blank=True, verbose_name='Возраст водителя')
     drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
@@ -343,7 +402,7 @@ class Auto(Vehicle):
         return f'Автомобиль {self.brand.name} {self.model.name}'
 
     def clean(self):
-        if self.seats and (self.seats < 1 or self.seats > 10):
+        if self.seats and (self.seats < 1 or int(self.seats) > 10):
             raise ValidationError({'seats': 'Seats must be between 1 and 10.'})
 
     class Meta:
@@ -351,23 +410,31 @@ class Auto(Vehicle):
         verbose_name_plural = 'Автомобили'
 
 
-class Bike(Vehicle):
-    CLASS_CHOICES = (
-        ('premium', 'Премиум'),
-        ('comfort', 'Комфорт'),
-        ('casual', 'Эконом')
-    )
-    TRANSMISSION_CHOICES = (
-        ('automatic', 'Автоматическая'),
-        ('manual', 'Механическая'),
-    )
+class BikeTransmission(models.Model):
+    title = models.CharField(max_length=12, null=False, verbose_name='Коробка передач')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
 
-    transmission = models.CharField(max_length=12, choices=TRANSMISSION_CHOICES, verbose_name='Коробка передач')
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Мотоцикл, коробка передач'
+        verbose_name_plural = 'Мотоцикл, коробки передач'
+
+
+class Bike(Vehicle):
+
+    transmission = models.ForeignKey(BikeTransmission, null=False, on_delete=models.PROTECT, verbose_name='Коробка передач')
+    vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT, verbose_name='Класс')
+
     engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
     seats = models.PositiveIntegerField(default=2, verbose_name='Количество мест')
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
     acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
-
     drivers_age = models.PositiveIntegerField(null=True, blank=True, verbose_name='Возраст водителя')
     drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
@@ -378,7 +445,7 @@ class Bike(Vehicle):
         return f'Мотоцикл {self.brand.name} {self.model.name}'
 
     def clean(self):
-        if self.seats and (self.seats < 1 or self.seats > 4):
+        if self.seats and (self.seats < 1 or int(self.seats) > 4):
             raise ValidationError({'seats': 'Seats must be between 1 and 4.'})
 
     class Meta:
@@ -387,11 +454,8 @@ class Bike(Vehicle):
 
 
 class Ship(Vehicle):
-    CLASS_CHOICES = (
-        ('premium', 'Премиум'),
-        ('comfort', 'Комфорт'),
-        ('casual', 'Эконом')
-    )
+
+    vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT, verbose_name='Класс')
 
     type_ship = models.CharField(null=True, blank=True, verbose_name='Тип транспорта')
     grot = models.CharField(null=True, blank=True, verbose_name='Грот')
@@ -403,7 +467,6 @@ class Ship(Vehicle):
     one_sleeping_place = models.PositiveIntegerField(null=True, blank=True, verbose_name='1-спальных кают')
     two_sleeping_place = models.PositiveIntegerField(null=True, blank=True, verbose_name='2-спальных кают')
     toilet = models.PositiveIntegerField(null=True, blank=True, verbose_name='Туалетов')
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
     engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
     water_tank = models.IntegerField(null=True, blank=True, verbose_name='Бак для воды, л')
     fuel_tank = models.IntegerField(null=True, blank=True, verbose_name='Топливный бак, л')
@@ -422,17 +485,13 @@ class Ship(Vehicle):
 
 
 class Helicopter(Vehicle):
-    CLASS_CHOICES = (
-        ('premium', 'Премиум'),
-        ('comfort', 'Комфорт'),
-        ('casual', 'Эконом')
-    )
+
+    vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT, verbose_name='Класс')
 
     max_speed = models.IntegerField(null=True, blank=True, verbose_name='Максимальная скорость, км/ч')
     cruising_speed = models.IntegerField(null=True, blank=True, verbose_name='Крейсерская скорость, км/ч')
     flight_range = models.IntegerField(null=True, blank=True, verbose_name='Дальность полета,км')
     flight_duration = models.IntegerField(null=True, blank=True, verbose_name='Длительность полета, ч')
-
     power_cruising = models.IntegerField(null=True, blank=True, verbose_name='Мощность, крейсерская, л.с.')
     take_off_power = models.IntegerField(null=True, blank=True, verbose_name='Мощность взлетная, л.с.')
     full_take_weight = models.IntegerField(null=True, blank=True, verbose_name='Полный взлетный вес, кг')
@@ -440,7 +499,6 @@ class Helicopter(Vehicle):
     engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
     fuel_tank = models.IntegerField(null=True, blank=True, verbose_name='Объем топливного бака, л.')
     acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
-    vehicle_class = models.CharField(max_length=7, choices=CLASS_CHOICES, verbose_name='Класс')
 
     def __str__(self):
         return f'Вертолет {self.brand.name} {self.model.name}'

@@ -9,72 +9,97 @@ admin.site.site_title = "Rental Guru Admin"
 admin.site.index_title = "CRM"
 
 
-class FeedbackInline(GenericStackedInline):
-    model = Feedback
-    extra = 1
+class BaseFeatures(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+    ordering = ('name',)
+
+
+class BaseType(admin.ModelAdmin):
+    list_display = ('id', 'title', 'slug')
+    prepopulated_fields = {"slug": ("title",)}
+    search_fields = ('title',)
+    ordering = ('title',)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.slug:
+            obj.slug = slugify(obj.title)
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(VehicleFeaturesFunctions)
-class VehicleFeaturesFunctionsAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class VehicleFeaturesFunctionsAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(AutoFeaturesAdditionally)
-class AutoFeaturesAdditionallyAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class AutoFeaturesAdditionallyAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(BikeFeaturesAdditionally)
-class BikeFeaturesAdditionallyAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class BikeFeaturesAdditionallyAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(ShipFeaturesAdditionally)
-class ShipFeaturesAdditionallyAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class ShipFeaturesAdditionallyAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(FeaturesForChildren)
-class FeaturesForChildrenAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class FeaturesForChildrenAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(FeaturesEquipment)
-class FeaturesEquipmentAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class FeaturesEquipmentAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(PaymentMethod)
-class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class PaymentMethodAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(VehicleBrand)
-class VehicleBrandAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+class VehicleBrandAdmin(BaseFeatures):
+    pass
 
 
 @admin.register(VehicleModel)
-class VehicleModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'brand')
-    search_fields = ('name', 'brand__name')
-    ordering = ('brand', 'name')
+class VehicleModelAdmin(BaseFeatures):
+    pass
+
+
+@admin.register(VehicleClass)
+class VehicleClassAdmin(BaseType):
+    pass
+
+
+@admin.register(AutoFuelType)
+class AutoFuelTypeAdmin(BaseType):
+    pass
+
+
+@admin.register(AutoTransmission)
+class AutoTransmissionAdmin(BaseType):
+    pass
+
+
+@admin.register(AutoBodyType)
+class AutoBodyTypeAdmin(BaseType):
+    pass
+
+
+@admin.register(BikeTransmission)
+class BikeTransmission(BaseType):
+    pass
+
+
+class FeedbackInline(GenericStackedInline):
+    model = Feedback
+    extra = 1
 
 
 class AvailabilityInline(admin.TabularInline):

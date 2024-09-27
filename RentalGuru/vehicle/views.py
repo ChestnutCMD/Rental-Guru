@@ -1,7 +1,6 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema
@@ -15,19 +14,20 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
-from chat.permissions import IsAdminOrOwner
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
-    FeaturesForChildren, FeaturesEquipment, PaymentMethod
-from .permission import IsAdminOrLessor, IsAdminOrReadOnly
+    FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
+    BikeTransmission, VehicleClass
+from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
-    PaymentMethodSerializer
+    PaymentMethodSerializer, VehicleClassSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
-    AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer
+    AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
+    AutoTransmissionSerializer, AutoBodyTypeSerializer
 from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer, \
-    BikeFeaturesAdditionallySerializer
+    BikeFeaturesAdditionallySerializer, BikeTransmissionSerializer
 from .serializers.rating import UpdateRatingSerializer
 from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer, \
     ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer
@@ -343,3 +343,32 @@ class PaymentMethodListView(ListAPIView):
     queryset = PaymentMethod.objects.all()
     serializer_class = PaymentMethodSerializer
 
+
+@extend_schema(summary="Виды топлива авто", description="Виды топлива")
+class AutoFuelTypeListView(ListAPIView):
+    queryset = AutoFuelType.objects.all()
+    serializer_class = AutoFuelTypeSerializer
+
+
+@extend_schema(summary="Коробки передач авто", description="Коробки передач для авто")
+class AutoTransmissionListView(ListAPIView):
+    queryset = AutoTransmission.objects.all()
+    serializer_class = AutoTransmissionSerializer
+
+
+@extend_schema(summary="Типы кузова авто", description="Типы кузова")
+class AutoBodyTypeListView(ListAPIView):
+    queryset = AutoBodyType.objects.all()
+    serializer_class = AutoBodyTypeSerializer
+
+
+@extend_schema(summary="Коробка передач мотоциклов", description="Коробка передач мотоциклов")
+class BikeTransmissionListView(ListAPIView):
+    queryset = BikeTransmission.objects.all()
+    serializer_class = BikeTransmissionSerializer
+
+
+@extend_schema(summary="Классы транспорта", description="Классы транспорта")
+class VehicleClassListView(ListAPIView):
+    queryset = VehicleClass.objects.all()
+    serializer_class = VehicleClassSerializer

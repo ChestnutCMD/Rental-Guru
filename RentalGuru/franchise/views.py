@@ -331,7 +331,8 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdminOrManager]
 
 
-class CityViewSet(viewsets.ModelViewSet):
+@extend_schema(summary="Список городов", description="Список городов")
+class CityViewSet(generics.ListAPIView):
     queryset = City.objects.all()
     serializer_class = CitySerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+

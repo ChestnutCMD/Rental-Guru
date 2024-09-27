@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from .views import VehicleParkViewSet, RequestsByParkView, ChatsByParkView, FranchiseViewSet, RequestsByFranchiseView, \
     ChatsByFranchiseView, LessorsByFranchiseView, VehiclesByFranchiseView, franchise_statistics, \
-    vehicle_park_statistics, RequestFranchiseCreateView, RequestFranchiseListView, RequestFranchiseDeleteView
+    vehicle_park_statistics, RequestFranchiseCreateView, RequestFranchiseListView, RequestFranchiseDeleteView, \
+    CityViewSet
 
 router = DefaultRouter()
 router.register(r'vehicle_park', VehicleParkViewSet, basename='vehicle_park')
@@ -25,4 +26,5 @@ urlpatterns = [
     path('request-franchise/create/', RequestFranchiseCreateView.as_view(), name='request-franchise-create'),
     path('request-franchise/', RequestFranchiseListView.as_view(), name='request-franchise-list'),
     path('request-franchise/delete/<int:pk>/', RequestFranchiseDeleteView.as_view(), name='request-franchise-delete'),
+    path('city/', CityViewSet.as_view(), name='city'),
 ]

@@ -196,5 +196,5 @@ class RequestFranchiseSerializer(serializers.Serializer):
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
-        models = City
+        model = City
         fields = '__all__'

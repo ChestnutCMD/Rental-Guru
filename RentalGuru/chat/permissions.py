@@ -1,3 +1,5 @@
+from datetime import date
+
 from rest_framework import permissions
 
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
@@ -27,10 +29,8 @@ class IsAdminOrOwner(permissions.BasePermission):
 
 class IsParticipantOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        # Администратор имеет доступ ко всем чатам
         if request.user.role == 'admin':
             return True
-        # Участники чата имеют доступ только к своим чатам
         return request.user in obj.participants.all()
 
 
@@ -40,11 +40,8 @@ class IsChatCreatorOrAdmin(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        # Разрешить GET запросы для всех пользователей
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        # Разрешить обновление только создателю чата или администратору
         return obj.creator == request.user or request.user.role == 'admin'
 
 
@@ -72,7 +69,6 @@ class IsOrganizerAndEndDateToday(permissions.BasePermission):
         except Trip.DoesNotExist:
             return False
 
-        # Проверяем является ли пользователь организатором и совпадает ли end_date с текущей датой
         if trip.organizer == request.user and trip.end_date == date.today():
             return True
 

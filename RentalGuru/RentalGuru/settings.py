@@ -194,20 +194,20 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'DEBUG',
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'chat': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+    # 'loggers': {
+    #     'django': {
+    #         'handlers': ['console'],
+    #         'level': 'DEBUG',
+    #         'propagate': True,
+    #     },
+    #     'chat': {
+    #         'handlers': ['console'],
+    #         'level': 'DEBUG',
+    #         'propagate': True,
+    #     },
+    #},
 }
 
 

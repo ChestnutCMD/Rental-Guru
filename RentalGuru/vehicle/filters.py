@@ -54,12 +54,12 @@ class BaseFilter(filters.FilterSet):
 class AutoFilter(BaseFilter):
 
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
-    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     features = filters.ModelMultipleChoiceFilter(queryset=AutoFeaturesAdditionally.objects.all(), label='Выбор особенностей')
-    fuel_type = filters.CharFilter(field_name='fuel_type', label='Тип топлива')
+    fuel_type = filters.CharFilter(field_name='fuel_type__slug', label='Тип топлива')
     seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
-    transmission = filters.CharFilter(field_name='transmission', label='Трансмиссия')
-    body_type = filters.CharFilter(field_name='body_type', label='Тип кузова')
+    transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
+    body_type = filters.CharFilter(field_name='body_type__slug', label='Тип кузова')
 
     class Meta:
         model = Auto
@@ -71,11 +71,11 @@ class AutoFilter(BaseFilter):
 
 class BikeFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
-    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     features = filters.ModelMultipleChoiceFilter(queryset=BikeFeaturesAdditionally.objects.all(), label='Выбор особенностей')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
-    transmission = filters.CharFilter(field_name='transmission', label='Трансмиссия')
+    transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
 
     class Meta:
         model = Bike
@@ -88,7 +88,7 @@ class BikeFilter(BaseFilter):
 
 class ShipFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
-    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     features = filters.ModelMultipleChoiceFilter(queryset=ShipFeaturesAdditionally.objects.all(), label='Выбор особенностей')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
@@ -104,7 +104,7 @@ class ShipFilter(BaseFilter):
 class HelicopterFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     rental_date = filters.DateFromToRangeFilter(field_name='availabilities__start_date', label='Выбор даты аренды')
-    vehicle_class = filters.CharFilter(field_name='vehicle_class', label='Класс транспорта')
+    vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     max_speed = filters.RangeFilter(field_name='max_speed', label='Максимальная скорость, км/ч')
     full_take_weight = filters.RangeFilter(field_name='full_take_weight', label='Полный взлетный вес, кг')

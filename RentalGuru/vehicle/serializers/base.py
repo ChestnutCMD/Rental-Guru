@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
-    VehicleBrand, VehicleFeaturesFunctions
+    VehicleBrand, VehicleFeaturesFunctions, VehicleClass
 from vehicle.utils import merge_periods
 
 
@@ -42,13 +42,13 @@ class RentPriceSerializer(serializers.ModelSerializer):
 class VehicleBrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleBrand
-        fields = ['name']
+        fields = '__all__'
 
 
 class VehicleModelGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleModel
-        fields = ['name']
+        fields = '__all__'
 
 
 class VehicleModelSerializer(serializers.ModelSerializer):
@@ -225,3 +225,9 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, obj):
         return [i.photo.url for i in obj.photos.all()]
+
+
+class VehicleClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleClass
+        fields = '__all__'
