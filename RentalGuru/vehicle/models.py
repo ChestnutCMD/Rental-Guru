@@ -308,11 +308,6 @@ class AutoFuelType(models.Model):
         verbose_name = 'Автомобиль, вид топлива'
         verbose_name_plural = 'Автомобиль, виды топлива'
 
-    # ('electric', 'Электричество'),
-    # ('hybrid', 'Гибрид'),
-    # ('petrol', 'Бензин'),
-    # ('diesel', 'Дизель'),
-
 
 class AutoTransmission(models.Model):
     title = models.CharField(max_length=50, null=False, verbose_name='Коробка передач')
@@ -330,11 +325,6 @@ class AutoTransmission(models.Model):
         verbose_name = 'Автомобиль, коробка передач'
         verbose_name_plural = 'Автомобиль, коробки передач'
 
-#         ('automatic', 'Автоматическая'),
-#         ('robot', 'Робот'),
-#         ('variator', 'Вариатор'),
-#         ('manual', 'Механическая'),
-
 
 class AutoBodyType(models.Model):
     title = models.CharField(max_length=50, null=False, verbose_name='Тип кузова')
@@ -351,18 +341,6 @@ class AutoBodyType(models.Model):
     class Meta:
         verbose_name = 'Автомобиль, тип кузова'
         verbose_name_plural = 'Автомобиль, типы кузова'
-
-    #     ('sedan', 'Седан'),
-    #     ('off-road', 'Внедорожник'),
-    #     ('universal', 'Универсал'),
-    #     ('hatchback', 'Хэтчбэк'),
-    #     ('compartment', 'Купэ'),
-    #     ('minivan', 'Минивэн'),
-    #     ('minibus', 'Микроавтобус'),
-    #     ('liftback', 'Лифтбэк'),
-    #     ('pickup', 'Пикап'),
-    #     ('van', 'Фургон'),
-    #     ('convertible', 'Кабриолет')
 
 
 class VehicleClass(models.Model):

@@ -75,12 +75,22 @@ class BaseViewSet(viewsets.ModelViewSet):
                                                   \nСортировка по цене от большего к меньшему:\n
                                                   URL: ?ordering=-rent_prices__price""")
 class AutoViewSet(BaseViewSet):
-    queryset = (Auto.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
-                                 'features_additionally', 'availabilities', 'documents', 'rent_prices'))
+    queryset = Auto.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = AutoFilter
     ordering_fields = ['rent_prices__price']
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = (Auto.objects.select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type', 'vehicle_class')
+                                .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos', 'features_additionally', 'availabilities', 'documents', 'rent_prices'))
+        is_renter = hasattr(user, 'renter')
+        is_lessor = hasattr(user, 'lessor')
+        if is_lessor:
+            queryset = queryset.filter(owner=user)
+        elif is_renter:
+            queryset = queryset.filter(verified=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -94,12 +104,23 @@ class AutoViewSet(BaseViewSet):
 
 @extend_schema(summary="Мотоцикл", description="Мотоцикл")
 class BikeViewSet(BaseViewSet):
-    queryset = (Bike.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
-                                 'documents', 'rent_prices', 'photos'))
+    queryset = Bike.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BikeFilter
     ordering_fields = ['rent_prices__price']
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = (Bike.objects.all().select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class').
+                    prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
+                                     'documents', 'rent_prices', 'photos'))
+        is_renter = hasattr(user, 'renter')
+        is_lessor = hasattr(user, 'lessor')
+        if is_lessor:
+            queryset = queryset.filter(owner=user)
+        elif is_renter:
+            queryset = queryset.filter(verified=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -113,12 +134,24 @@ class BikeViewSet(BaseViewSet):
 
 @extend_schema(summary="Судно", description="Судно")
 class ShipViewSet(BaseViewSet):
-    queryset = (Ship.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'features_functions', 'features_additionally', 'features_equipment',
-                                 'availabilities', 'documents', 'rent_prices', 'photos'))
+    queryset = Ship.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = ShipFilter
     ordering_fields = ['rent_prices__price']
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = (Ship.objects.all().select_related('owner', 'brand', 'model', 'vehicle_class').
+                    prefetch_related('payment_method', 'features_functions', 'features_additionally',
+                                     'features_equipment',
+                                     'availabilities', 'documents', 'rent_prices', 'photos'))
+        is_renter = hasattr(user, 'renter')
+        is_lessor = hasattr(user, 'lessor')
+        if is_lessor:
+            queryset = queryset.filter(owner=user)
+        elif is_renter:
+            queryset = queryset.filter(verified=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -132,11 +165,22 @@ class ShipViewSet(BaseViewSet):
 
 @extend_schema(summary="Вертолет", description="Вертолет")
 class HelicopterViewSet(BaseViewSet):
-    queryset = (Helicopter.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+    queryset = Helicopter.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = HelicopterFilter
     ordering_fields = ['rent_prices__price']
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = (Helicopter.objects.all().select_related('owner', 'brand', 'model', 'vehicle_class').
+                    prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+        is_renter = hasattr(user, 'renter')
+        is_lessor = hasattr(user, 'lessor')
+        if is_lessor:
+            queryset = queryset.filter(owner=user)
+        elif is_renter:
+            queryset = queryset.filter(verified=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -150,11 +194,22 @@ class HelicopterViewSet(BaseViewSet):
 
 @extend_schema(summary="Спецтехника", description="Спецтехника")
 class SpecialTechnicViewSet(BaseViewSet):
-    queryset = (SpecialTechnic.objects.all().select_related('owner', 'brand', 'model').
-                prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+    queryset = SpecialTechnic.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = SpecialTechnicFilter
     ordering_fields = ['rent_prices__price']
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = (SpecialTechnic.objects.all().select_related('owner', 'brand', 'model').
+                    prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+        is_renter = hasattr(user, 'renter')
+        is_lessor = hasattr(user, 'lessor')
+        if is_lessor:
+            queryset = queryset.filter(owner=user)
+        elif is_renter:
+            queryset = queryset.filter(verified=True)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
