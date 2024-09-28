@@ -111,8 +111,8 @@ class ChatSupportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatSupport
-        fields = ['id', 'topic', 'topic_name', 'message', 'creator']
-        read_only_fields = ['participants']
+        fields = ['id', 'topic_name', 'message', 'creator']
+        read_only_fields = ['id', 'creator']
 
     def validate(self, attrs):
         if not attrs.get('topic') and not attrs.get('topic_name'):
@@ -136,7 +136,6 @@ class ChatSupportSerializer(serializers.ModelSerializer):
         chat = ChatSupport.objects.create(creator=creator, **validated_data)
         chat.participants.add(creator)
 
-        # Создание первого сообщения
         MessageSupport.objects.create(support_chat=chat, sender=creator, content=message_content)
 
         return chat
@@ -149,7 +148,7 @@ class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatSupport
         fields = ['id', 'topic', 'participants', 'messages']
-        read_only_fields = ['participants']
+        read_only_fields = ['id', 'participants']
 
 
 class VehicleRelatedField(serializers.Field):

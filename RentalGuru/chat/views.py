@@ -432,18 +432,23 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Чат с техподдержкой", description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>""")
 class ChatSupportViewSet(viewsets.ModelViewSet):
+    queryset = ChatSupport.objects.all()
     serializer_class = ChatSupportSerializer
-    permission_classes = [IsChatCreatorOrAdmin]
+    permission_classes = [IsAuthenticated, IsChatCreatorOrAdmin]
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            if user.role == 'admin':
-                return ChatSupport.objects.all()
-            else:
-                return ChatSupport.objects.filter(creator=user)
+        if user.role == 'admin':
+            return ChatSupport.objects.all()
         else:
-            return ChatSupport.objects.none()
+            return ChatSupport.objects.filter(creator=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
@@ -458,16 +463,13 @@ class ChatSupportViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # Для вывода сообщений используем связанный ресурс message_support внутри сериализатора
         serializer = self.get_serializer(instance)
         data = serializer.data
 
-        # Добавляем все сообщения данного чата
         messages = MessageSupport.objects.filter(support_chat=instance)
         message_serializer = MessageSupportSerializer(messages, many=True)
         data['messages'] = message_serializer.data
 
-        # Добавляем название темы
         data['topic_name'] = instance.topic.name if instance.topic else None
         return Response(data)
 

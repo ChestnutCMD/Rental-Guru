@@ -6,7 +6,7 @@ from .views import TripViewSet, ChatViewSet, MessageViewSet, RequestRentViewSet,
 router = DefaultRouter()
 router.register(r'request_rents', RequestRentViewSet, basename='request')
 router.register(r'trips', TripViewSet, basename='trip')
-router.register(r'', ChatViewSet, basename='chat')
+router.register(r'chat', ChatViewSet, basename='chat')
 router.register(r'messages', MessageViewSet, basename='message')
 router.register(r'topics', TopicSupportViewSet, basename='topic')
 router.register(r'support_chat', ChatSupportViewSet, basename='support')
@@ -14,5 +14,5 @@ router.register(r'support_messages', MessageSupportViewSet, basename='support_me
 router.register(r'feedbacks', FeedbackViewSet)
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
 ]

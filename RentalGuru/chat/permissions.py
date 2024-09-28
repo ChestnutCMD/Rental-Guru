@@ -38,10 +38,12 @@ class IsChatCreatorOrAdmin(permissions.BasePermission):
     """
     Разрешение для разрешения доступа к действиям чата только создателю чата или администратору.
     """
+    def has_permission(self, request, view):
+        if request.method == 'POST':
+            return True
+        return True
 
     def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
         return obj.creator == request.user or request.user.role == 'admin'
 
 
