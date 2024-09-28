@@ -38,6 +38,7 @@ from .task import send_verification_email
 class ChangePasswordView(APIView):
     """Смена пароля"""
     permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
 
     def put(self, request, *args, **kwargs):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
