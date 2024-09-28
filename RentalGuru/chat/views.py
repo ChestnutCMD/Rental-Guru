@@ -432,7 +432,7 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Чат с техподдержкой", description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>""")
 class ChatSupportViewSet(viewsets.ModelViewSet):
-    queryset = ChatSupport.objects.all()
+
     serializer_class = ChatSupportSerializer
     permission_classes = [IsAuthenticated, IsChatCreatorOrAdmin]
 
