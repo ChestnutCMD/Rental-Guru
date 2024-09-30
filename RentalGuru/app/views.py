@@ -549,7 +549,7 @@ class PhoneSendCode(APIView):
             return Response({"detail": "Номер телефона уже верифицирован"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             verification_code = random.randint(1000, 9999)
-            redis_1.set(f'phone_{user.telephone}', verification_code, ex=1800)
+            redis_1.set(f'phone_{user.telephone}', json.dumps(verification_code), ex=1800)
             send_sms.delay(user.telephone, verification_code)
             return Response({"detail": "Код подтверждения отправлен."}, status=status.HTTP_200_OK)
 
@@ -570,9 +570,10 @@ class PhoneVerifyCode(APIView):
             if stored_code is None:
                 return Response({"detail": "Срок действия кода подтверждения истек или он недействителен."}, status=status.HTTP_400_BAD_REQUEST)
 
-            if str(stored_code) == str(verification_code):
+            if str(json.loads(stored_code)) == str(verification_code):
                 user.telephone_verified = True
                 user.save()
+                redis_1.delete(f'phone_{user.telephone}')
                 return Response({"detail": "Номер телефона подтвержден"}, status=status.HTTP_200_OK)
             else:
                 return Response({"detail": "Неверный код подтверждения."}, status=status.HTTP_400_BAD_REQUEST)
