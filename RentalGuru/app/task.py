@@ -28,7 +28,7 @@ def send_verification_email(email, code):
 
 
 @shared_task
-def send_sms(self, phone_number, code):
+def send_sms(phone_number, code):
     message = f"Ваш код верификации: {code}"
     payload = {
         'api_key': SMS_AERO_API_KEY,
