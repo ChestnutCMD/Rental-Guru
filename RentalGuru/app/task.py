@@ -1,7 +1,9 @@
+import requests
 from celery import shared_task
 from django.core.mail import send_mail
 
 from RentalGuru import settings
+from RentalGuru.settings import SMS_AERO_API_KEY, SMS_AERO_API_URL
 
 
 @shared_task
@@ -23,3 +25,18 @@ def send_verification_email(email, code):
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[email],
     )
+
+
+@shared_task
+def send_sms(self, phone_number, code):
+    message = f"Ваш код верификации: {code}"
+    payload = {
+        'api_key': SMS_AERO_API_KEY,
+        'to': phone_number,
+        'text': message,
+    }
+    try:
+        response = requests.post(SMS_AERO_API_URL, json=payload)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending SMS: {e}")

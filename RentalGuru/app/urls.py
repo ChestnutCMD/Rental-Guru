@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, FavoriteVehicleViewSet, UpdateRatingView, \
     CustomTokenObtainPairView, PasswordResetRequestView, SocialLoginView, FavoriteListViewSet, VerifyCodeView, \
-    SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView
+    SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -27,6 +27,8 @@ urlpatterns = [
     path('become_lessor/', BecomeLessorView.as_view(), name='become_lessor'),
     path('currency/', CurrencyListView.as_view(), name='currency'),
     path('language/', LanguageListView.as_view(), name='language'),
+    path('phone_send_code/', PhoneSendCode.as_view(), name='phone_send_code'),
+    path('phone_verify_code/', PhoneVerifyCode.as_view(), name='phone_verify_code'),
 
     path('', include(router.urls))
 ]

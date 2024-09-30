@@ -46,6 +46,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLES, default='member', verbose_name='Роль')
     date_of_birth = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     telephone = models.CharField(max_length=11, null=True, blank=True, verbose_name='Телефон')
+    telephone_verified = models.BooleanField(default=False, verbose_name='Телефон подтвержден')
     currency = models.ForeignKey(Currency, default=1, null=True, on_delete=models.SET_NULL, verbose_name='Валюта')
     language = models.ForeignKey(Language, default=1, null=True, on_delete=models.SET_NULL, verbose_name='Язык')
     avatar = models.ImageField(upload_to=upload_avatar, null=True, blank=True, verbose_name='Аватар')

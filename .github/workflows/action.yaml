@@ -33,6 +33,7 @@ jobs:
       TINYPAY_TERMINAL_KEY: ${{ secrets.TINYPAY_TERMINAL_KEY }}
       TINYPAY_PASSWORD: ${{ secrets.TINYPAY_PASSWORD }}
       TINYPAY_API_URL: ${{ secrets.TINYPAY_API_URL }}
+      SMS_AERO_API_KEY: ${{ secrets.SMS_AERO_API_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

@@ -244,16 +244,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         try:
-            # Сначала проверяем, существует ли пользователь с таким логином
             user = User.objects.get(email=attrs['email'])
         except User.DoesNotExist:
             raise ValidationError({'detail': 'Не найдено пользователя с такими учетными данными'})
 
-        # Проверка пароля
         if not user.check_password(attrs['password']):
             raise ValidationError({'detail': 'Неверный пароль'})
 
-        # Если логин и пароль верны, то вызываем стандартную валидацию
         data = super().validate(attrs)
         data["user_id"] = user.id
 
@@ -332,3 +329,7 @@ class BecomeLessorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lessor
         fields = ['franchise']
+
+
+class CodeVerificationSerializer(serializers.Serializer):
+    verification_code = serializers.CharField(max_length=4)

@@ -1,7 +1,6 @@
 import json
 import random
 from datetime import datetime, timedelta, date
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
@@ -11,7 +10,6 @@ from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView
-
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,8 +28,9 @@ from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, SocialAuthSerializer, FavoriteListSerializer, \
-    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer, CurrencySerializer, LanguageSerializer
-from .task import send_verification_email
+    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, \
+    CodeVerificationSerializer
+from .task import send_verification_email, send_sms
 
 
 @extend_schema(summary="Смена пароля", description="Смена пароля")
@@ -536,3 +535,81 @@ class CurrencyListView(ListAPIView):
 class LanguageListView(ListAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
+
+
+@extend_schema(summary="Отправка кода на номер телефона", description="Отправка кода на номер телефона")
+class PhoneSendCode(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if not user.telephone:
+            return Response({"detail": "Номер телефона пользователя не найден."}, status=status.HTTP_400_BAD_REQUEST)
+        elif user.telephone_verified:
+            return Response({"detail": "Номер телефона уже верифицирован"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            verification_code = random.randint(1000, 9999)
+            redis_1.set(f'phone_{user.telephone}', verification_code, ex=1800)
+            send_sms.delay(user.telephone, verification_code)
+            return Response({"detail": "Код подтверждения отправлен."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Верификация номера телефона", description="Верификация номера телефона")
+class PhoneVerifyCode(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CodeVerificationSerializer
+
+    def post(self, request):
+        user = request.user
+        serializer = CodeVerificationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            verification_code = serializer.validated_data['verification_code']
+            stored_code = redis_1.get(f'phone_{user.telephone}')
+
+            if stored_code is None:
+                return Response({"detail": "Срок действия кода подтверждения истек или он недействителен."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if str(stored_code) == str(verification_code):
+                user.telephone_verified = True
+                user.save()
+                return Response({"detail": "Номер телефона подтвержден"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": "Неверный код подтверждения."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Регистрация через Телеграм", description="Регистрация через Телеграм")
+class TelegramRegisterView(APIView):
+    """
+    Принимаем данные авторизации через Telegram и создаем пользователя.
+    """
+    def post(self, request, *args, **kwargs):
+
+        telegram_id = request.data.get('telegram_id')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        role = request.data.get('role')
+        telephone = request.data.get('telephone')
+
+        if not telegram_id:
+            return Response({"error": "Telegram ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(telegram_id=telegram_id).exists():
+            return Response({"error": "User already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create(
+            telegram_id=telegram_id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            role=role,
+            telephone=telephone
+        )
+        if user.role == 'lessor':
+            Lessor.objects.create(user=user)
+        else:
+            Renter.objects.create(user=user)
+
+        return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
