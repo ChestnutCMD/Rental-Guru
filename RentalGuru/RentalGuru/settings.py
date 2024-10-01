@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = getenv('SECRET_KEY')
 SMS_AERO_API_URL = 'https://sms.aero/api/v1/messages/send'
 SMS_AERO_API_KEY = getenv('SMS_AERO_API_KEY')
-
+TELEGRAM_BOT_TOKEN = getenv('TELEGRAM_BOT_TOKEN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = getenv('DEBUG')
@@ -88,9 +88,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'social_django.middleware.SocialAuthExceptionMiddleware',
+
 ]
 
 ROOT_URLCONF = 'RentalGuru.urls'
@@ -324,6 +325,7 @@ TINYPAY_API_URL = getenv('TINYPAY_API_URL')
 
 # OAuth 2.0
 AUTHENTICATION_BACKENDS = (
+    'social_core.backends.yandex.YandexOAuth2',
     'social_core.backends.vk.VKOAuth2',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.mailru.MailruOAuth2',
@@ -355,3 +357,6 @@ CANCELLATION_REFUND_LIMIT_HOURS = 48
 
 # webhook
 TINKOFF_WEBHOOK_URL = f'{HOST_URL}/payments/webhook/tinkoff/'
+
+SOCIAL_AUTH_YANDEX_OAUTH2_KEY = 'e849bc34d1de420ba3e303a0e8af4dbd'
+SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = 'a71b81cdf2e8460292bb907106924020'

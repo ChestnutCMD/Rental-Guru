@@ -53,6 +53,7 @@ class User(AbstractUser):
     about = models.TextField(null=True, blank=True, verbose_name='О себе')
     email_notification = models.BooleanField(default=False, verbose_name='Email уведомления')
     push_notification = models.BooleanField(default=False, verbose_name='Push уведомления')
+    telegram_id = models.CharField(max_length=100, unique=True, null=True, blank=True, verbose_name='Telegram ID')
 
     first_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Имя')
     last_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Фамилия')

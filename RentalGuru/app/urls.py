@@ -29,6 +29,7 @@ urlpatterns = [
     path('language/', LanguageListView.as_view(), name='language'),
     path('phone_send_code/', PhoneSendCode.as_view(), name='phone_send_code'),
     path('phone_verify_code/', PhoneVerifyCode.as_view(), name='phone_verify_code'),
+    path('oauth/', include('social_django.urls', namespace='social')),
 
     path('', include(router.urls))
 ]
