@@ -167,6 +167,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'avatar',
             'date_of_birth',
             'telephone',
+            'telephone_verified',
+            'telegram_id',
             'about',
             'email_notification',
             'push_notification',
