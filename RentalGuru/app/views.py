@@ -9,7 +9,6 @@ from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -18,6 +17,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.test import APIRequestFactory
+from social_django.utils import load_strategy, load_backend
+from social_core.exceptions import AuthForbidden, AuthTokenError
 
 from RentalGuru import settings
 from RentalGuru.settings import redis_1
@@ -31,9 +32,8 @@ from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor,
 from .permissions import IsAdminOrSelf, IsAdmin
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
-    PasswordResetRequestSerializer, SocialAuthSerializer, FavoriteListSerializer, \
-    VerifyCodeSerializer, SetPasswordSerializer, BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, \
-    CodeVerificationSerializer
+    PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
+    BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer
 from .task import send_verification_email, send_sms
 
 
@@ -474,36 +474,61 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-@extend_schema(summary="Вход через социальные сети", description="Вход и регистрация")
-class SocialLoginView(APIView):
-    serializer_class = SocialAuthSerializer
-
-    @transaction.atomic
+@extend_schema(summary="Вход через социальные сети", description="Вход и регистрация. Принимает токен и название "
+                                                                 "провайдера: Яндекс — yandex-oauth2\nMail.ru — "
+                                                                 "mailru-oauth2\nGoogle — google-oauth2\nVK ("
+                                                                 "ВКонтакте) — vk-oauth2")
+class SocialAuthView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        provider = request.data.get('provider')
+        token = request.data.get('token')
 
-        # Если пользователь уже существует, просто возвращаем токен
-        if not user.is_new:
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key}, status=status.HTTP_200_OK)
+        if not all([provider, token]):
+            return Response(
+                {"error": "Provider and token are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Если это новый пользователь, создаем профиль через RegisterSerializer
-        register_data = {
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'password': None,
-            'password2': None,
-            'member_type': serializer.validated_data.get('member_type', 'renter')  # По умолчанию 'renter'
-        }
-        register_serializer = RegisterSerializer(data=register_data, context={'request': request})
-        register_serializer.is_valid(raise_exception=True)
-        registered_user = register_serializer.save()
+        try:
+            strategy = load_strategy(request)
+            backend = load_backend(strategy=strategy, name=provider, redirect_uri=None)
 
-        token, _ = Token.objects.get_or_create(user=registered_user)
-        return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+            try:
+                user_social_auth = backend.do_auth(token)
+            except (AuthForbidden, AuthTokenError) as e:
+                return Response(
+                    {"error": f"Invalid token: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if user_social_auth is None:
+                return Response(
+                    {"error": "Authentication failed"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if user_social_auth.is_new:
+                Renter.objects.create(user=user_social_auth.user)
+
+            refresh = RefreshToken.for_user(user_social_auth.user)
+
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": user_social_auth.user.id,
+                    "email": user_social_auth.user.email,
+                    "first_name": user_social_auth.user.first_name,
+                    "last_name": user_social_auth.user.last_name,
+                    "is_new": user_social_auth.is_new,
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": f"Authentication failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @extend_schema(summary="Стать арендодателем", description="Удаление арендатора и создание арендодателя")

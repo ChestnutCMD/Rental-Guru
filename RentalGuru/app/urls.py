@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, FavoriteVehicleViewSet, UpdateRatingView, \
     CustomTokenObtainPairView, PasswordResetRequestView, SocialLoginView, FavoriteListViewSet, VerifyCodeView, \
-    SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode
+    SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
+    SocialAuthView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -23,13 +24,12 @@ urlpatterns = [
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     path('verify_code/', VerifyCodeView.as_view(), name='verify_code'),
     path('password-set/', SetPasswordView.as_view(), name='password-set'),
-    path('auth/social/', SocialLoginView.as_view(), name='social-login'),
+    path('oauth_social/', SocialAuthView.as_view(), name='social-login'),
     path('become_lessor/', BecomeLessorView.as_view(), name='become_lessor'),
     path('currency/', CurrencyListView.as_view(), name='currency'),
     path('language/', LanguageListView.as_view(), name='language'),
     path('phone_send_code/', PhoneSendCode.as_view(), name='phone_send_code'),
     path('phone_verify_code/', PhoneVerifyCode.as_view(), name='phone_verify_code'),
-    path('oauth/', include('social_django.urls', namespace='social')),
 
     path('', include(router.urls))
 ]

@@ -23,6 +23,7 @@ urlpatterns = [
     path('', SpectacularSwaggerView.as_view(url_name='schema')),
     path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase_messaging_sw'),
     path('payment/', include('payment.urls')),
+    #path('oauth/', include('social_django.urls', namespace='social')),
 ]
 
 if settings.DEBUG:
