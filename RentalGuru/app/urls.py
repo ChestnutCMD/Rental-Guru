@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 
 from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, FavoriteVehicleViewSet, UpdateRatingView, \
-    CustomTokenObtainPairView, PasswordResetRequestView, SocialLoginView, FavoriteListViewSet, VerifyCodeView, \
+    CustomTokenObtainPairView, PasswordResetRequestView, FavoriteListViewSet, VerifyCodeView, \
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
     SocialAuthView
 
