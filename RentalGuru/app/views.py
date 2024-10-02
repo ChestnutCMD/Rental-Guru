@@ -645,7 +645,6 @@ class TelegramCallbackView(APIView):
                     "telegram_id": telegram_id,
                     "first_name": data.get('first_name', ''),
                     "last_name": data.get('last_name', ''),
-                    "username": data.get('username', ''),
                 },
                 "required_fields": ["email", "role"]
             }, status=status.HTTP_200_OK)
@@ -709,8 +708,7 @@ class TelegramRegisterView(APIView):
             email=email,
             role=role,
             first_name=request.data.get('first_name', ''),
-            last_name=request.data.get('last_name', ''),
-            username=request.data.get('username', '')
+            last_name=request.data.get('last_name', '')
         )
 
         if role == 'lessor':
