@@ -609,32 +609,108 @@ class PhoneVerifyCode(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Регистрация через Телеграм", description="Регистрация через Телеграм")
+@extend_schema(
+    summary="Callback для телеграма",
+    description="Callback для телеграма"
+)
+class TelegramCallbackView(APIView):
+    def post(self, request):
+        data = request.data
+        if not self.verify_telegram_data(data):
+            return Response({"error": "Invalid hash"}, status=status.HTTP_400_BAD_REQUEST)
+
+        telegram_id = data.get('id')
+
+        if not telegram_id:
+            return Response({"error": "Telegram ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(telegram_id=telegram_id)
+
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "status": "login",
+                "user_id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token)
+            }, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+
+            return Response({
+                "status": "registration_required",
+                "telegram_data": {
+                    "telegram_id": telegram_id,
+                    "first_name": data.get('first_name', ''),
+                    "last_name": data.get('last_name', ''),
+                    "username": data.get('username', ''),
+                },
+                "required_fields": ["email", "role"]
+            }, status=status.HTTP_200_OK)
+
+    def verify_telegram_data(self, data):
+        if 'hash' not in data:
+            return False
+
+        auth_data = data.copy()
+        hash_value = auth_data.pop('hash')
+
+        data_check_list = []
+        for key in sorted(auth_data.keys()):
+            if auth_data[key] is not None:
+                data_check_list.append(f"{key}={auth_data[key]}")
+
+        data_check_string = '\n'.join(data_check_list)
+
+        secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode('utf-8')).digest()
+        calculated_hash = hmac.new(
+            secret_key,
+            data_check_string.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+
+        return calculated_hash == hash_value
+
+
+@extend_schema(
+    summary="Регистрация пользователя Telegram",
+    description="Регистрация нового пользователя, пришедшего из Telegram"
+)
 class TelegramRegisterView(APIView):
     @transaction.atomic
-    def post(self, request, *args, **kwargs):
-        telegram_id = request.data.get('telegram_id')
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
-        email = request.data.get('email')
-        role = request.data.get('role', 'renter')
-        telephone = request.data.get('telephone')
+    def post(self, request):
+        required_fields = ['telegram_id', 'email', 'role']
+        for field in required_fields:
+            if field not in request.data:
+                return Response(
+                    {"error": f"{field} is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        if not all([telegram_id, email]):
-            return Response({"error": "Telegram ID and email are required"}, status=status.HTTP_400_BAD_REQUEST)
+        telegram_id = request.data['telegram_id']
+        email = request.data['email']
+        role = request.data['role']
 
         if User.objects.filter(telegram_id=telegram_id).exists():
-            return Response({"error": "User with this Telegram ID already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "User with this Telegram ID already exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if User.objects.filter(email=email).exists():
-            return Response({"error": "User with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "User with this email already exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         user = User.objects.create_user(
             telegram_id=telegram_id,
             email=email,
-            first_name=first_name,
-            last_name=last_name,
             role=role,
-            telephone=telephone
+            first_name=request.data.get('first_name', ''),
+            last_name=request.data.get('last_name', ''),
+            username=request.data.get('username', '')
         )
 
         if role == 'lessor':
@@ -652,54 +728,3 @@ class TelegramRegisterView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token)
         }, status=status.HTTP_201_CREATED)
-
-
-class TelegramLoginView(APIView):
-    def post(self, request, *args, **kwargs):
-        telegram_id = request.data.get('telegram_id')
-
-        if not telegram_id:
-            return Response({"error": "Telegram ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = User.objects.get(telegram_id=telegram_id)
-        except User.DoesNotExist:
-            return Response({"error": "User with this Telegram ID does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        refresh = RefreshToken.for_user(user)
-
-        return Response({
-            "user_id": user.id,
-            "email": user.email,
-            "role": user.role,
-            "refresh": str(refresh),
-            "access": str(refresh.access_token)
-        }, status=status.HTTP_200_OK)
-
-
-class TelegramCallbackView(APIView):
-    def post(self, request):
-        data = request.data
-        telegram_id = data.get('telegram_id')
-
-        if not telegram_id:
-            return Response({"error": "Telegram ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = User.objects.get(telegram_id=telegram_id)
-            return self._call_view(TelegramLoginView, request)
-        except User.DoesNotExist:
-            return self._call_view(TelegramRegisterView, request)
-
-    def _call_view(self, view_class, request):
-        view = view_class.as_view()
-        factory = APIRequestFactory()
-        new_request = factory.post('', request.data)
-        new_request.user = request.user
-        return view(new_request)
-
-    def verify_telegram_data(self, data):
-        data_check_string = '\n'.join([f"{k}={v}" for k, v in sorted(data.items()) if k != 'hash'])
-        secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode('utf-8')).digest()
-        hash = hmac.new(secret_key, data_check_string.encode('utf-8'), hashlib.sha256).hexdigest()
-        return hash == data['hash']
