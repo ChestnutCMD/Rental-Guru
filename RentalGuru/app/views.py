@@ -617,12 +617,12 @@ class TelegramCallbackView(APIView):
     def post(self, request):
         data = request.data
         if not self.verify_telegram_data(data):
-            return Response({"error": "Invalid hash"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Недопустимый хэш"}, status=status.HTTP_400_BAD_REQUEST)
 
         telegram_id = data.get('id')
 
         if not telegram_id:
-            return Response({"error": "Telegram ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Требуется идентификатор Telegram ID"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(telegram_id=telegram_id)
@@ -694,19 +694,18 @@ class TelegramRegisterView(APIView):
 
         if User.objects.filter(telegram_id=telegram_id).exists():
             return Response(
-                {"error": "User with this Telegram ID already exists"},
+                {"error": "Пользователь с таким идентификатором Telegram уже существует"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         if User.objects.filter(email=email).exists():
             return Response(
-                {"error": "User with this email already exists"},
+                {"error": "Пользователь с таким адресом электронной почты уже существует"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         user = User.objects.create_user(
             telegram_id=telegram_id,
             email=email,
-            role=role,
             first_name=request.data.get('first_name', ''),
             last_name=request.data.get('last_name', '')
         )
@@ -722,7 +721,7 @@ class TelegramRegisterView(APIView):
             "message": "User registered successfully",
             "user_id": user.id,
             "email": user.email,
-            "role": user.role,
+            "role": role,
             "refresh": str(refresh),
             "access": str(refresh.access_token)
         }, status=status.HTTP_201_CREATED)
