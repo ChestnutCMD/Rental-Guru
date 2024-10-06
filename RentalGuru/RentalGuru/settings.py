@@ -19,6 +19,9 @@ SECRET_KEY = getenv('SECRET_KEY')
 SMS_AERO_API_URL = 'https://sms.aero/api/v1/messages/send'
 SMS_AERO_API_KEY = getenv('SMS_AERO_API_KEY')
 TELEGRAM_BOT_TOKEN = getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_BOT_USERNAME = 'rentalguru_ru_bot'
+TELEGRAM_BOT_ID = '7604254750'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = getenv('DEBUG')
