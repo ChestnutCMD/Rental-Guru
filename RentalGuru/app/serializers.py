@@ -335,3 +335,19 @@ class BecomeLessorSerializer(serializers.ModelSerializer):
 
 class CodeVerificationSerializer(serializers.Serializer):
     verification_code = serializers.CharField(max_length=4)
+
+
+class TelegramRegisterSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(choices=[('lessor', 'Lessor'), ('renter', 'Renter')])
+    date_of_birth = serializers.DateField(format='%Y-%m-%d', input_formats=['%Y-%m-%d'])
+
+    class Meta:
+        model = User
+        fields = ['telegram_id', 'email', 'role', 'date_of_birth', 'first_name', 'last_name']
+
+    def validate(self, data):
+        if User.objects.filter(telegram_id=data['telegram_id']).exists():
+            raise serializers.ValidationError("Пользователь с таким идентификатором Telegram уже существует")
+        if User.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError("Пользователь с таким адресом электронной почты уже существует")
+        return data
