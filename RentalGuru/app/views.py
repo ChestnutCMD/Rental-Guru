@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -36,7 +36,7 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListS
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
     BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer, \
-    TelegramRegisterSerializer
+    TelegramRegisterSerializer, EmailVerifiedSerializer
 from .task import send_verification_email, send_sms
 
 
@@ -158,6 +158,7 @@ class SetPasswordView(APIView):
             date_of_birth = date.fromisoformat(cache_data['date_of_birth'])
             user = User.objects.create_user(
                 email=cache_data['email'],
+                email_verified=True,
                 password=password,
                 first_name=cache_data['first_name'],
                 last_name=cache_data['last_name'],
@@ -224,7 +225,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"message": "Код подтверждения отправлен на вашу почту."}, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Документы арендаторы", description="Документы арендатора")
+@extend_schema(summary="Документы арендатора", description="Документы арендатора")
 class RenterDocumentsViewSet(viewsets.ModelViewSet):
     serializer_class = RenterDocumentsSerializer
     filter_backends = [DjangoFilterBackend]
@@ -247,7 +248,7 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         try:
             renter = user.renter
         except ObjectDoesNotExist:
-            raise Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError({'detail': 'Пользователь не является арендатором'})
         serializer.save(renter=renter)
 
     def perform_update(self, serializer):
@@ -255,19 +256,18 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         document = self.get_object()
 
         if user.role == 'admin' or user.role == 'manager':
-            if serializer.valvalidated_data.get('status') == 'approved':
-                url = f'{settings.HOST_URL}' #TODO добавить ссылку
-                content = f'Ваш документ проверен'
+            if serializer.validated_data.get('status') == 'approved':
+                url = f'{settings.HOST_URL}/documents/{document.id}/'  # Пример ссылки на документ
+                content = 'Ваш документ проверен'
                 Notification.objects.create(user=document.renter.user, url=url, content=content)
-            elif serializer.valvalidated_data.get('status') == 'rejected':
-                url = f'{settings.HOST_URL}' #TODO добавить ссылку
-                content = f'Ваш документ отклонен'
+            elif serializer.validated_data.get('status') == 'rejected':
+                url = f'{settings.HOST_URL}/documents/{document.id}/'  # Пример ссылки на документ
+                content = 'Ваш документ отклонен'
                 Notification.objects.create(user=document.renter.user, url=url, content=content)
             serializer.save()
         else:
-            # Запрещаем изменять статус для обычных пользователей
             if 'status' in serializer.validated_data:
-                return Response({'detail': 'Изменение статуса запрещено'}, status=status.HTTP_403_FORBIDDEN)
+                raise serializers.ValidationError({'detail': 'Изменение статуса запрещено'}, code=status.HTTP_403_FORBIDDEN)
 
             serializer.save()
 
@@ -276,10 +276,9 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         try:
             renter = user.renter
         except ObjectDoesNotExist:
-            raise Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError({'detail': 'Пользователь не является арендатором'})
         if instance.renter != renter:
-            raise Response({'detail': 'Документ не принадлежит текущему арендатору'},
-                           status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError({'detail': 'Документ не принадлежит текущему арендатору'})
         instance.delete()
 
 
@@ -675,61 +674,6 @@ class TelegramCallbackView(APIView):
         return calculated_hash == hash_value
 
 
-# @extend_schema(
-#     summary="Регистрация пользователя Telegram",
-#     description="Регистрация нового пользователя, пришедшего из Telegram"
-# )
-# class TelegramRegisterView(APIView):
-#     @transaction.atomic
-#     def post(self, request):
-#         required_fields = ['telegram_id', 'email', 'role', 'date_of_birth']
-#         for field in required_fields:
-#             if field not in request.data:
-#                 return Response(
-#                     {"error": f"{field} is required"},
-#                     status=status.HTTP_400_BAD_REQUEST
-#                 )
-#
-#         telegram_id = request.data['telegram_id']
-#         email = request.data['email']
-#         role = request.data['role']
-#         date_of_birth = request.data['date_of_birth']
-#
-#         if User.objects.filter(telegram_id=telegram_id).exists():
-#             return Response(
-#                 {"error": "Пользователь с таким идентификатором Telegram уже существует"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         if User.objects.filter(email=email).exists():
-#             return Response(
-#                 {"error": "Пользователь с таким адресом электронной почты уже существует"},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#
-#         user = User.objects.create_user(
-#             telegram_id=telegram_id,
-#             email=email,
-#             date_of_birth=date_of_birth,
-#             first_name=request.data.get('first_name', ''),
-#             last_name=request.data.get('last_name', '')
-#         )
-#
-#         if role == 'lessor':
-#             Lessor.objects.create(user=user)
-#         else:
-#             Renter.objects.create(user=user)
-#
-#         refresh = RefreshToken.for_user(user)
-#
-#         return Response({
-#             "message": "User registered successfully",
-#             "user_id": user.id,
-#             "email": user.email,
-#             "role": role,
-#             "refresh": str(refresh),
-#             "access": str(refresh.access_token)
-#         }, status=status.HTTP_201_CREATED)
-
 @extend_schema(
     summary="Регистрация пользователя Telegram",
     description="Регистрация нового пользователя, пришедшего из Telegram"
@@ -759,3 +703,43 @@ class TelegramRegisterView(APIView):
             }, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Отправка кода на почту для подтверждения email",
+    description="Отправка кода на почту для подтверждения email, для пользователей зарегистрированных Telegram"
+)
+class SendCodeToEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        verification_code = str(random.randint(1000, 9999))
+        redis_1.set(f"verify_{user.email}", json.dumps(verification_code), ex=1800)
+        send_verification_email.delay(user.email, verification_code)
+
+        return Response({"message": "Код для подтверждения почты отправлен на вашу почту."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    summary="Подтверждение email",
+    description="Подтверждение email, для пользователей зарегистрированных Telegram"
+)
+class VerifiedEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmailVerifiedSerializer
+
+    def post(self, request):
+        user = request.user
+        verification_code = request.data.get('verification_code')
+        stored_code = redis_1.get(f"verify_{user.email}")
+        if stored_code is None:
+            return Response({"message": "Код истек или не был найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        if verification_code == json.loads(stored_code.decode('utf-8')):
+            user.email_verified = True
+            user.save()
+            redis_1.delete(f"verify_{user.email}")
+            return Response({"message": "Код успешно подтвержден"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Неверный код"}, status=status.HTTP_403_FORBIDDEN)

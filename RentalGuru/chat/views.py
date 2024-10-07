@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, date
 from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from RentalGuru import settings
-from app.models import User
+from app.models import User, RenterDocuments
 from notification.models import Notification
 from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
@@ -253,7 +253,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if not request_end_date:
             raise DRFValidationError("Обязательна дата окончания.")
 
-        vehicle_type = vehicle_type.lower()  # Преобразуем к нижнему регистру для сравнения
+        vehicle_type = vehicle_type.lower()
         model_mapping = {
             'auto': Auto,
             'bike': Bike,
@@ -293,6 +293,20 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 raise DRFValidationError("Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
         except AttributeError:
             pass
+
+        if vehicle_instance.drivers_experience:
+            driver_license = RenterDocuments.objects.filter(renter=request.user.renter, title='license').first()
+            if not driver_license:
+                raise DRFValidationError("У пользователя не найдено водительского удостоверения.")
+
+            issue_date = driver_license.issue_date
+            if issue_date:
+                years_of_experience = (date.today() - issue_date).days // 365
+                if years_of_experience < vehicle_instance.drivers_experience:
+                    raise DRFValidationError(
+                        "Пользователь не соответствует требованиям водительского стажа, предъявляемым к данному транспортному средству.")
+            else:
+                raise DRFValidationError("Дата выдачи водительского удостоверения не указана.")
         if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
             raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
@@ -418,8 +432,6 @@ class RequestRentViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         self.check_permissions(request)
         return super().update(request, *args, **kwargs)
-
-# Чат с техподдержкой
 
 
 @extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")

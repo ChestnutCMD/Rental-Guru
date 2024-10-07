@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, FavoriteVehicleViewSet, UpdateRatingView, \
     CustomTokenObtainPairView, PasswordResetRequestView, FavoriteListViewSet, VerifyCodeView, \
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
-    SocialAuthView, TelegramCallbackView, TelegramRegisterView
+    SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -32,6 +32,8 @@ urlpatterns = [
     path('phone_verify_code/', PhoneVerifyCode.as_view(), name='phone_verify_code'),
     path('telegram_callback/', TelegramCallbackView.as_view(), name='telegram_callback'),
     path('telegram_register/', TelegramRegisterView.as_view(), name='telegram_register'),
+    path('telegram_send_code/', SendCodeToEmailView.as_view(), name='send_code'),
+    path('telegram_verified_email/', VerifiedEmailView.as_view(), name='verified_email'),
 
     path('', include(router.urls))
 ]

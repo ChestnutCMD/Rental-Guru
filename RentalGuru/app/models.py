@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -59,6 +60,7 @@ class User(AbstractUser):
     last_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Фамилия')
 
     email = models.EmailField(unique=True, verbose_name='Email')
+    email_verified = models.BooleanField(default=False)
     username = None
     objects = UserManager()
     USERNAME_FIELD = 'email'
@@ -132,11 +134,22 @@ class RenterDocuments(models.Model):
         ('approved', 'Подтверждено'),
         ('rejected', 'Отклонено'),
     )
+
+    DOCUMENT_TYPE_CHOICES = (
+        ('passport', 'Паспорт'),
+        ('license', 'Права'),
+    )
+
     renter = models.ForeignKey(Renter, related_name='renter_documents', on_delete=models.CASCADE)
-    title = models.CharField(max_length=30, verbose_name='Вид документа')
+    title = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES, verbose_name='Вид документа')
     number = models.PositiveIntegerField(verbose_name='Номер')
     photo = models.ImageField(upload_to=upload_renter_document, verbose_name='Фото')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус проверки')
+    issue_date = models.DateField(null=True, blank=True, verbose_name='Дата выдачи')
+
+    def clean(self):
+        if self.title == 'license' and not self.issue_date:
+            raise ValidationError({'issue_date': 'Дата выдачи обязательна для документов типа "права".'})
 
     def __str__(self):
         return f'{self.title}: {self.number}'

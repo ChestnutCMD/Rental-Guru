@@ -80,6 +80,15 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
+class EmailVerifiedSerializer(serializers.Serializer):
+    verification_code = serializers.CharField(max_length=4)
+
+    def validate_verification_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Код должен содержать только цифры.")
+        return value
+
+
 class VerifyCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     code = serializers.CharField(min_length=4, max_length=4, required=True)
@@ -122,7 +131,12 @@ class UserListSerializer(serializers.ModelSerializer):
 class RenterDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = RenterDocuments
-        fields = ['title', 'number', 'photo']
+        fields = ['title', 'number', 'photo', 'issue_date']
+
+    def validate(self, data):
+        if data['title'] == 'license' and not data.get('issue_date'):
+            raise serializers.ValidationError({'issue_date': 'Дата выдачи обязательна для документов типа "права".'})
+        return data
 
 
 class RenterDetailSerializer(serializers.ModelSerializer):
