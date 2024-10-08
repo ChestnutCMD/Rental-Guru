@@ -40,9 +40,17 @@ class RentPriceSerializer(serializers.ModelSerializer):
 
 
 class VehicleBrandSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = VehicleBrand
-        fields = '__all__'
+        fields = ['name', 'logo_url']
+
+    def get_logo_url(self, obj):
+        request = self.context.get('request', None)
+        if obj.logo and request is not None:
+            return request.build_absolute_uri(obj.logo.url)
+        return obj.logo.url if obj.logo else None
 
 
 class VehicleModelGetSerializer(serializers.ModelSerializer):
