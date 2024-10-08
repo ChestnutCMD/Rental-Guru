@@ -3,7 +3,7 @@ from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import get_object_or_404, ListAPIView
@@ -15,7 +15,7 @@ from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
 from notification.models import Notification
-from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter
+from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
@@ -427,3 +427,60 @@ class BikeTransmissionListView(ListAPIView):
 class VehicleClassListView(ListAPIView):
     queryset = VehicleClass.objects.all()
     serializer_class = VehicleClassSerializer
+
+
+@extend_schema(summary="Список всего транспорта", description="Список всего транспорта")
+class AllVehiclesListView(APIView):
+    permission_classes = [AllowAny]
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = BaseFilter
+    ordering_fields = ['rent_prices__price']
+
+    @extend_schema(
+        summary="Общий список всех видов транспорта",
+        parameters=[
+            OpenApiParameter("ordering", type=OpenApiTypes.STR, description="Сортировка по полям"),
+            OpenApiParameter("super_host", type=OpenApiTypes.BOOL, description="Суперхост"),
+            OpenApiParameter("day_price", type=OpenApiTypes.STR, description="Дневная цена в формате 'min,max'"),
+            OpenApiParameter("verified_only", type=OpenApiTypes.BOOL,
+                             description="Сдается только верифицированным пользователям"),
+            OpenApiParameter("brand", type=OpenApiTypes.STR, description="Марка"),
+            OpenApiParameter("year", type=OpenApiTypes.STR, description="Год выпуска в формате 'min,max'"),
+            OpenApiParameter("rental_date", type=OpenApiTypes.STR,
+                             description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
+            OpenApiParameter("city", type=OpenApiTypes.STR, description="Город"),
+            OpenApiParameter("lat", type=OpenApiTypes.NUMBER, description="Широта"),
+            OpenApiParameter("lon", type=OpenApiTypes.NUMBER, description="Долгота"),
+            OpenApiParameter("radius", type=OpenApiTypes.NUMBER, description="Радиус в км"),
+        ]
+    )
+    def get(self, request):
+        all_vehicles = []
+
+        autos = Auto.objects.all()
+        bikes = Bike.objects.all()
+        ships = Ship.objects.all()
+        helicopters = Helicopter.objects.all()
+        special_technics = SpecialTechnic.objects.all()
+
+        for queryset, serializer in [
+            (autos, AutoListSerializer),
+            (bikes, BikeListSerializer),
+            (ships, ShipListSerializer),
+            (helicopters, HelicopterListSerializer),
+            (special_technics, SpecialTechnicListSerializer),
+        ]:
+            filtered_queryset = self.apply_filters(queryset, request)
+            vehicles_data = serializer(filtered_queryset, many=True).data
+            all_vehicles.extend(vehicles_data)
+
+        return Response(all_vehicles)
+
+    def apply_filters(self, queryset, request):
+        filtered_queryset = queryset
+
+        filterset = self.filterset_class(request.GET, queryset=filtered_queryset)
+        if filterset.is_valid():
+            filtered_queryset = filterset.qs
+
+        return filtered_queryset
