@@ -225,7 +225,9 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"message": "Код подтверждения отправлен на вашу почту."}, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Документы арендатора", description="Документы арендатора")
+@extend_schema(summary="Документы арендатора", description="title принимает passport или "
+                                                           "license(Водительское уд.). Для license обязательно "
+                                                           "указывать issue_date(Дата выдачи)")
 class RenterDocumentsViewSet(viewsets.ModelViewSet):
     serializer_class = RenterDocumentsSerializer
     filter_backends = [DjangoFilterBackend]
