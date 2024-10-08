@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
+from tornado.escape import linkify
 
 from chat.models import Feedback
 from .models import *
@@ -124,7 +125,7 @@ class RentPriceInline(admin.TabularInline):
 
 
 class BaseVehicleAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'model', 'year', 'owner', 'get_vehicle_type', 'get_average_rating')
+    list_display = (linkify('brand'), linkify('model'), 'year', linkify('owner'), 'get_vehicle_type', 'get_average_rating')
     search_fields = ('brand__name', 'model__name', 'year', 'owner__email')
     list_filter = ('brand', 'model', 'year', 'owner')
     ordering = ('-year',)

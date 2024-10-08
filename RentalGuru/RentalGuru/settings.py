@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'influencer',
     'journal',
     'payment',
+    'complaint',
     'drf_spectacular',
     'polymorphic',
 ]
