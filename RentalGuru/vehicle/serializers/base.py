@@ -44,7 +44,7 @@ class VehicleBrandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VehicleBrand
-        fields = ['name', 'logo_url']
+        fields = ['id', 'name', 'logo_url']
 
     def get_logo_url(self, obj):
         request = self.context.get('request', None)
