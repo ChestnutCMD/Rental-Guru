@@ -332,7 +332,7 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
 
 
 @extend_schema(summary="Список городов", description="Список городов")
-class CityViewSet(generics.ListAPIView):
+class CityView(generics.ListAPIView):
     queryset = City.objects.all()
     serializer_class = CitySerializer
 
