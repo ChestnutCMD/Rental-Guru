@@ -101,7 +101,6 @@ class Renter(models.Model):
     rating = models.JSONField(default=default_rating, verbose_name='Рейтинг')
     influencer = models.ForeignKey(Influencer, null=True, blank=True, on_delete=models.SET_NULL, related_name='renters',
                                    verbose_name='Инфлюенсер')
-    lessor = models.ForeignKey(Lessor, null=True, blank=True, default=None, on_delete=models.DO_NOTHING)
 
     def get_average_rating(self):
         total_ratings = sum(self.rating.values())
