@@ -67,7 +67,7 @@ class VehicleModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VehicleModel
-        fields = ['name', 'brand']
+        fields = ['id', 'name', 'brand']
 
     def create(self, validated_data):
         brand = validated_data['brand']

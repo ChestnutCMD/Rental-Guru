@@ -177,6 +177,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
+            'email_verified',
             'role',
             'avatar',
             'date_of_birth',
