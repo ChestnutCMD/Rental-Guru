@@ -87,7 +87,7 @@ class VehicleModelSerializer(serializers.ModelSerializer):
 class PaymentMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentMethod
-        fields = ['name']
+        fields = ['id', 'name']
 
 
 class BaseVehicleSerializer(serializers.ModelSerializer):
@@ -234,7 +234,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, obj):
-        return [i.photo.url for i in obj.photos.all()]
+        return [f"{HOST_URL}/{i.photo.url}" for i in obj.photos.all()]
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):
