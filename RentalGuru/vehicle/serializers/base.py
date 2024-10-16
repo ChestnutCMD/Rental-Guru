@@ -1,5 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+
+from RentalGuru.settings import HOST_URL
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
     VehicleBrand, VehicleFeaturesFunctions, VehicleClass
 from vehicle.utils import merge_periods
@@ -205,7 +207,7 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, obj):
-        return [i.photo.url for i in obj.photos.all()]
+        return [f"{HOST_URL}/i.photo.url" for i in obj.photos.all()]
 
 
 class VehicleFeaturesFunctionsSerializer(serializers.ModelSerializer):
