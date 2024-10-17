@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
@@ -219,7 +220,7 @@ class RentPrice(models.Model):
     name = models.CharField(choices=RENT_PERIOD, max_length=5, verbose_name='Период')
     price = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость')
     commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия')
-    discount = models.PositiveIntegerField(default=0, verbose_name='Скидка')
+    discount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(90)], verbose_name='Скидка')
     total = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='ИТОГО')
 
     def save(self, *args, **kwargs):
@@ -380,8 +381,8 @@ class Auto(Vehicle):
         return f'Автомобиль {self.brand.name} {self.model.name}'
 
     def clean(self):
-        if self.seats and (self.seats < 1 or int(self.seats) > 10):
-            raise ValidationError({'seats': 'Seats must be between 1 and 10.'})
+        if self.seats and (self.seats < 1 or int(self.seats) > 50):
+            raise ValidationError({'seats': 'Seats must be between 1 and 50.'})
 
     class Meta:
         verbose_name = 'Автомобиль'
@@ -423,8 +424,8 @@ class Bike(Vehicle):
         return f'Мотоцикл {self.brand.name} {self.model.name}'
 
     def clean(self):
-        if self.seats and (self.seats < 1 or int(self.seats) > 4):
-            raise ValidationError({'seats': 'Seats must be between 1 and 4.'})
+        if self.seats and (self.seats < 1 or int(self.seats) > 3):
+            raise ValidationError({'seats': 'Seats must be between 1 and 3.'})
 
     class Meta:
         verbose_name = 'Мотоцикл'

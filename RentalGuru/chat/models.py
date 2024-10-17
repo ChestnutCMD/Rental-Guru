@@ -23,6 +23,7 @@ class RequestRent(models.Model):
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
     deposit_paid = models.BooleanField(default=False)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    delivery = models.BooleanField(default=False)
 
     @property
     def owner(self):
@@ -55,11 +56,20 @@ class RequestRent(models.Model):
             raise ValueError("Не найдено подходящей цены аренды для транспортного средства.")
 
         # Подсчитываем итоговую стоимость
-        total_cost = (rental_days / period_days) * float(rent_price.total)
+        if self.delivery:
+            total_cost = ((rental_days / period_days) * float(rent_price.total)) + self.vehicle.price_delivery
+        else:
+            total_cost = (rental_days / period_days) * float(rent_price.total)
         return total_cost
 
     def save(self, *args, **kwargs):
         """Переопределяем метод save для автоматического подсчета и сохранения total_cost и создания Trip при изменении статуса на 'accept'."""
+
+        if self.delivery:
+            self.delivery_cost = self.vehicle.price_delivery
+        else:
+            self.delivery_cost = 0.00
+
         # Проверяем, изменился ли статус на 'accept'
         if self.pk:
             original = RequestRent.objects.get(pk=self.pk)
@@ -76,12 +86,11 @@ class RequestRent(models.Model):
                     end_date=self.end_date,
                     total_cost=self.total_cost
                 )
-                # Отправка уведомлений или другая логика
+
             else:
                 self.total_cost = self.calculate_rent_price()
                 super(RequestRent, self).save(*args, **kwargs)
         else:
-            # Создание нового объекта
             self.total_cost = self.calculate_rent_price()
             super(RequestRent, self).save(*args, **kwargs)
 

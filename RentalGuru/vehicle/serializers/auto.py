@@ -37,6 +37,26 @@ class AutoCreateSerializer(BaseVehicleCreateSerializer):
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = Auto
 
+    def validate_seats(self, value):
+        if value < 2 or value > 50:
+            raise serializers.ValidationError('Количество сидений должно быть в пределах от 2 до 50.')
+        return value
+
+    def validate_drivers_age(self, value):
+        if value < 18 or value > 80:
+            raise serializers.ValidationError('Возраст водителя должен быть в пределах от 18 до 80 лет.')
+        return value
+
+    def validate_drivers_experience(self, value):
+        if value < 0 or value > 70:
+            raise serializers.ValidationError('Стаж водителя должен быть в пределах от 0 до 70 лет.')
+        return value
+
+    def validate_acceptable_mileage(self, value):
+        if value < 10 or value > 10000:
+            raise serializers.ValidationError('Допустимый пробег должен быть в пределах от 10 до 10000')
+        return value
+
     def create(self, validated_data):
 
         features_for_children_data = validated_data.pop('features_for_children', [])

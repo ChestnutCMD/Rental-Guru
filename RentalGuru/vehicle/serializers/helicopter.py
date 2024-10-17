@@ -11,6 +11,11 @@ class HelicopterCreateSerializer(BaseVehicleCreateSerializer):
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = Helicopter
 
+    def validate_acceptable_mileage(self, value):
+        if value < 10 or value > 100000:
+            raise serializers.ValidationError('Допустимый пробег должен быть в пределах от 10 до 100000')
+        return value
+
 
 class HelicopterUpdateSerializer(BaseVehicleUpdateSerializer):
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())

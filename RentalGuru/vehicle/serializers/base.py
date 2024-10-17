@@ -1,3 +1,4 @@
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -39,6 +40,11 @@ class RentPriceSerializer(serializers.ModelSerializer):
         model = RentPrice
         fields = ['name', 'price', 'commission', 'discount', 'total']
         read_only = 'total'
+
+    def validate_discount(self, value):
+        if value < 0 or value > 90:
+            raise serializers.ValidationError('Скидка должна быть в диапазоне от 0 до 90.')
+        return value
 
 
 class VehicleBrandSerializer(serializers.ModelSerializer):
@@ -152,6 +158,12 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
     class Meta:
         fields = '__all__'
         read_only_fields = ['owner', 'ratings', 'average_ratings', 'verified']
+
+    def validate_year(self, value):
+        current_year = timezone.now().year
+        if value < 1900 or value > current_year:
+            raise serializers.ValidationError(f'Год выпуска должен быть в пределах от 1900 до {current_year}.')
+        return value
 
     def create(self, validated_data):
         request = self.context.get('request')

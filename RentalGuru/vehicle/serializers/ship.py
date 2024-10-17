@@ -15,6 +15,16 @@ class ShipCreateSerializer(BaseVehicleCreateSerializer):
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = Ship
 
+    def validate_seats(self, value):
+        if value < 1 or value > 50:
+            raise serializers.ValidationError('Количество сидений должно быть в пределах от 1 до 50.')
+        return value
+
+    def validate_acceptable_mileage(self, value):
+        if value < 10 or value > 10000:
+            raise serializers.ValidationError('Допустимый пробег должен быть в пределах от 10 до 10000')
+        return value
+
     def create(self, validated_data):
         features_functions_data = validated_data.pop('features_functions', [])
         features_additionally_data = validated_data.pop('features_additionally', [])
