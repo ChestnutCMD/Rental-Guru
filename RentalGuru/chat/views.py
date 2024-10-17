@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
@@ -15,6 +16,7 @@ from notification.models import Notification
 from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
+from .filters import FeedbackFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
@@ -507,6 +509,10 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.select_related('user', 'content_type').all()
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = FeedbackFilter
+    ordering_fields = ['timestamp']
+    ordering = ['-timestamp']
 
     def get_serializer_class(self):
         if self.action in ['create']:
