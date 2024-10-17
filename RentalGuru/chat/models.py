@@ -213,6 +213,7 @@ class Feedback(models.Model):
         'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')
     vehicle = GenericForeignKey('content_type', 'object_id')
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
 
     def __str__(self):
         return self.content
