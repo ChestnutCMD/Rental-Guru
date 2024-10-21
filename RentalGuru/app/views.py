@@ -207,8 +207,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [AllowAny]
-        elif self.action in ['update', 'partial_update', 'destroy', 'retrieve']:
+        elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [IsAuthenticated, IsAdminOrSelf]
+        elif self.action == 'retrieve':
+            permission_classes = [IsAuthenticated]
         elif self.action == 'list':
             permission_classes = [IsAuthenticated, IsAdmin]
         else:
