@@ -57,7 +57,7 @@ class RequestRent(models.Model):
 
         # Подсчитываем итоговую стоимость
         if self.delivery:
-            total_cost = ((rental_days / period_days) * float(rent_price.total)) + self.vehicle.price_delivery
+            total_cost = ((rental_days / period_days) * float(rent_price.total)) + float(self.vehicle.price_delivery)
         else:
             total_cost = (rental_days / period_days) * float(rent_price.total)
         return total_cost
