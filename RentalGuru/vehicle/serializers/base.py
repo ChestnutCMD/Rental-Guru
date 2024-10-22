@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from RentalGuru.settings import HOST_URL
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
-    VehicleBrand, VehicleFeaturesFunctions, VehicleClass
+    VehicleBrand, VehicleFeaturesFunctions, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic
 from vehicle.utils import merge_periods
 
 
@@ -235,9 +235,10 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     average_ratings = serializers.SerializerMethodField()
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelGetSerializer(read_only=True)
+    vehicle_type = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ['id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos']
+        fields = ['id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos', 'vehicle_type']
         read_only_fields = ['average_ratings']
 
     @extend_schema_field(serializers.FloatField())
@@ -247,6 +248,21 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, obj):
         return [f"{HOST_URL}/{i.photo.url}" for i in obj.photos.all()]
+
+    @extend_schema_field(serializers.CharField())
+    def get_vehicle_type(self, obj):
+        """Определяем тип транспорта по классу объекта"""
+        if isinstance(obj, Auto):
+            return 'auto'
+        elif isinstance(obj, Bike):
+            return 'bike'
+        elif isinstance(obj, Ship):
+            return 'ship'
+        elif isinstance(obj, Helicopter):
+            return 'helicopter'
+        elif isinstance(obj, SpecialTechnic):
+            return 'special_technic'
+        return 'unknown'
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):

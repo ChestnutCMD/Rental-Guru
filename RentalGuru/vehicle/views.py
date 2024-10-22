@@ -463,19 +463,15 @@ class AllVehiclesListView(APIView):
         helicopters = Helicopter.objects.filter(verified=True)
         special_technics = SpecialTechnic.objects.filter(verified=True)
 
-        for queryset, serializer, vehicle_type in [
-            (autos, AutoListSerializer, "auto"),
-            (bikes, BikeListSerializer, "bike"),
-            (ships, ShipListSerializer, "ship"),
-            (helicopters, HelicopterListSerializer, "helicopter"),
-            (special_technics, SpecialTechnicListSerializer, "special_technic"),
+        for queryset, serializer in [
+            (autos, AutoListSerializer),
+            (bikes, BikeListSerializer),
+            (ships, ShipListSerializer),
+            (helicopters, HelicopterListSerializer),
+            (special_technics, SpecialTechnicListSerializer),
         ]:
             filtered_queryset = self.apply_filters(queryset, request)
             vehicles_data = serializer(filtered_queryset, many=True).data
-
-            for vehicle in vehicles_data:
-                vehicle['vehicle_type'] = vehicle_type
-
             all_vehicles.extend(vehicles_data)
 
         return Response(all_vehicles)
