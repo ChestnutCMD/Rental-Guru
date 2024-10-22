@@ -172,7 +172,6 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     def get_inline_instances(self, request, obj=None):
         inline_instances = super().get_inline_instances(request, obj)
         if not obj:
-
             inline_instances = [inline for inline in inline_instances if not isinstance(inline, FeedbackInline)]
         return inline_instances
 
@@ -208,7 +207,7 @@ class AutoAdmin(BaseVehicleAdmin):
 class BikeAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', )
+            'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'seats', 'engine_capacity', 'transmission', 'year', 'description',
@@ -235,7 +234,7 @@ class BikeAdmin(BaseVehicleAdmin):
 class ShipAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', )
+            'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
             'fields': ('type_ship', 'brand', 'model', 'year', 'grot', 'length', 'width', 'precipitation', 'seats',
@@ -264,7 +263,7 @@ class ShipAdmin(BaseVehicleAdmin):
 class HelicopterAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', )
+            'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
             'fields': ('brand', 'model', 'year', 'max_speed', 'cruising_speed', 'flight_range',
@@ -290,7 +289,7 @@ class HelicopterAdmin(BaseVehicleAdmin):
 class SpecialTechnicAdmin(BaseVehicleAdmin):
     fieldsets = (
         (None, {
-            'fields': ('owner', )
+            'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
             'fields': ('type_technic', 'brand', 'model', 'year', 'engine_power', 'length', 'width', 'high',

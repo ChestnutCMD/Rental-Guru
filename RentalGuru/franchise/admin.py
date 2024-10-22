@@ -17,12 +17,12 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 
-class VehicleAdmin(admin.ModelAdmin):
-    list_display = (
-        'brand', 'model', 'year', 'owner'
-    )
-    search_fields = ('brand', 'model', 'owner__email')
-    list_filter = ('owner',)
+# class VehicleAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'brand', 'model', 'year', 'owner'
+#     )
+#     search_fields = ('brand', 'model', 'owner__email')
+#     list_filter = ('owner',)
 
 
 # Inline class for VehiclePark
@@ -83,7 +83,7 @@ class RequestFranchiseAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Franchise, FranchiseAdmin)
-admin.site.register(Vehicle, VehicleAdmin)
+#admin.site.register(Vehicle, VehicleAdmin)
 admin.site.register(VehiclePark, VehicleParkAdmin)
 admin.site.register(RequestFranchise, RequestFranchiseAdmin)
 admin.site.register(City, CityAdmin)
