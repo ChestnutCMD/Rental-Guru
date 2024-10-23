@@ -89,13 +89,16 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = ['id', 'trip', 'participants', 'last_message']
 
     def get_participants(self, obj):
+        current_user = self.context['request'].user  # Текущий пользователь
+        other_participants = obj.participants.exclude(id=current_user.id)  # Исключаем текущего пользователя
+
         return [
             {
                 "id": participant.id,
                 "first_name": participant.first_name,
                 "avatar": participant.avatar.url if participant.avatar else None
             }
-            for participant in obj.participants.all()
+            for participant in other_participants
         ]
 
     def get_last_message(self, obj):
@@ -112,6 +115,7 @@ class ChatSerializer(serializers.ModelSerializer):
                 "timestamp": last_message.timestamp
             }
         return None
+
 
 
 class MessageSerializer(BaseMessageSerializer):
