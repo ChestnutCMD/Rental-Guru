@@ -1,6 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Avg
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+
+from vehicle.models import RatingUpdateLog
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 
 
@@ -212,10 +215,39 @@ class FeedbackSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     answer = serializers.CharField(required=False, allow_blank=True)
     vehicle = VehicleRelatedField()
+    average_ratings = serializers.SerializerMethodField()
 
     class Meta:
         model = Feedback
-        fields = ['id', 'user', 'content', 'answer', 'content_type', 'object_id', 'vehicle']
+        fields = ['id', 'user', 'content', 'answer', 'content_type', 'object_id', 'vehicle', 'average_ratings']
 
     def get_user(self, obj):
-        return obj.user.first_name if obj.user else None
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "first_name": obj.user.first_name,
+                "avatar": obj.user.avatar.url if obj.user.avatar else None
+            }
+        return None
+
+    def get_average_ratings(self, obj):
+        content_type = ContentType.objects.get_for_model(obj.vehicle)
+
+        try:
+            log = RatingUpdateLog.objects.get(
+                user=obj.user,
+                content_type=content_type,
+                object_id=obj.vehicle.id
+            )
+
+            ratings_sum = (
+                (log.cleanliness or 0) +
+                (log.maintenance or 0) +
+                (log.communication or 0) +
+                (log.convenience or 0) +
+                (log.accuracy or 0)
+            )
+            average_rating = ratings_sum / 5
+            return round(average_rating, 2)
+        except RatingUpdateLog.DoesNotExist:
+            return None

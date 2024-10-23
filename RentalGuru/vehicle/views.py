@@ -296,7 +296,12 @@ class UpdateRatingView(APIView):
             RatingUpdateLog.objects.create(
                 user=request.user,
                 content_type=content_type,
-                object_id=vehicle_id
+                object_id=vehicle_id,
+                cleanliness=data.get('Cleanliness'),
+                maintenance=data.get('Maintenance'),
+                communication=data.get('Communication'),
+                convenience=data.get('Convenience'),
+                accuracy=data.get('Accuracy')
             )
 
             # Отправка уведомлений

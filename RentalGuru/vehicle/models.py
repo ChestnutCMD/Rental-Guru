@@ -508,6 +508,11 @@ class RatingUpdateLog(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     vehicle = GenericForeignKey('content_type', 'object_id')
+    cleanliness = models.IntegerField(null=True, blank=True)
+    maintenance = models.IntegerField(null=True, blank=True)
+    communication = models.IntegerField(null=True, blank=True)
+    convenience = models.IntegerField(null=True, blank=True)
+    accuracy = models.IntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
