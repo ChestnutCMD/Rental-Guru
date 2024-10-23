@@ -366,8 +366,8 @@ class FavoriteVehicleViewSet(viewsets.ViewSet):
         serializer = VehicleListSerializer(favorites, many=True)
         return Response({'favorites': serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['patch'], url_path='add', url_name='add_favorite')
-    def add_favorite(self, request):
+    @action(detail=True, methods=['patch'], url_path='add_vehicle')
+    def add_vehicle(self, request, pk=None):
         user = request.user
         try:
             renter = user.renter
@@ -380,10 +380,16 @@ class FavoriteVehicleViewSet(viewsets.ViewSet):
 
         try:
             vehicle = Vehicle.objects.get(id=vehicle_id)
-            renter.favorite.add(vehicle)
-            return Response({'detail': 'Транспорт добавлен в общее избранное'}, status=status.HTTP_200_OK)
+            favorite_list = FavoriteList.objects.get(id=pk, renter=renter)
+
+            # Добавляем транспорт в список избранного
+            favorite_list.vehicles.add(vehicle)
+
+            return Response({'detail': 'Транспорт добавлен в избранный список'}, status=status.HTTP_200_OK)
         except Vehicle.DoesNotExist:
             return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
+        except FavoriteList.DoesNotExist:
+            return Response({'detail': 'Список избранного не найден'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['patch'], url_path='remove', url_name='remove_favorite')
     def remove_favorite(self, request):
