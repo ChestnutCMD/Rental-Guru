@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 
@@ -83,10 +84,23 @@ class ChatSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(BaseMessageSerializer):
+    sender_avatar = serializers.SerializerMethodField()
+    sender_first_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Message
         fields = '__all__'
         read_only_fields = ['sender']
+
+    @extend_schema_field(serializers.ImageField())
+    def get_sender_avatar(self, obj):
+        if obj.sender.avatar:
+            return obj.sender.avatar.url
+        return None
+
+    @extend_schema_field(serializers.CharField())
+    def get_sender_first_name(self, obj):
+        return obj.sender.first_name
 
 
 # Чат с техподдержкой

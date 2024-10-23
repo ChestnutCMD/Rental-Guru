@@ -1,7 +1,7 @@
 import django_filters
 from django.contrib.contenttypes.models import ContentType
 
-from chat.models import Feedback
+from chat.models import Feedback, Message
 
 
 class FeedbackFilter(django_filters.FilterSet):
@@ -18,3 +18,12 @@ class FeedbackFilter(django_filters.FilterSet):
         except ContentType.DoesNotExist:
             return queryset.none()
         return queryset.filter(content_type=content_type)
+
+
+class MessageFilter(django_filters.FilterSet):
+    chat_id = django_filters.NumberFilter(field_name='chat__id')
+    ordering = django_filters.OrderingFilter(fields=['timestamp'])
+
+    class Meta:
+        model = Message
+        fields = ['chat_id']

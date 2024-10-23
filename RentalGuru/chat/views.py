@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, permissions, status, serializers
+from rest_framework import viewsets, permissions, status, serializers, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -16,7 +16,7 @@ from notification.models import Notification
 from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
-from .filters import FeedbackFilter
+from .filters import FeedbackFilter, MessageFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
@@ -200,6 +200,9 @@ class ChatViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = MessageFilter
+    ordering_fields = ['timestamp']
 
     def get_queryset(self):
         user = self.request.user
