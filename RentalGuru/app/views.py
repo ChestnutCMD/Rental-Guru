@@ -378,14 +378,9 @@ class FavoriteVehicleViewSet(viewsets.ViewSet):
         if not vehicle_id:
             return Response({'detail': 'Требуется ID транспортного средства'}, status=status.HTTP_400_BAD_REQUEST)
 
-        list_name = request.data.get('name')
-        if not list_name:
-            return Response({'detail': 'Требуется название списка избранного'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            favorite_list = FavoriteList.objects.get(name=list_name, renter=renter)
             vehicle = Vehicle.objects.get(id=vehicle_id)
-            favorite_list.add(vehicle)
+            renter.favorite.add(vehicle)
             return Response({'detail': 'Транспорт добавлен в общее избранное'}, status=status.HTTP_200_OK)
         except Vehicle.DoesNotExist:
             return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
