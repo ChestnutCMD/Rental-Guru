@@ -13,10 +13,10 @@ class ComplaintSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'vehicle', 'topic', 'description']
 
     def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
         if validated_data.get('topic'):
             validated_data.pop('description', None)
-        validated_data.pop('user', None)
-        user = self.context['request'].user
         try:
             return Complaint.objects.create(**validated_data)
         except IntegrityError:
