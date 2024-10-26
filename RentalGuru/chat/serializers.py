@@ -10,8 +10,8 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = ['id', 'status', 'organizer', 'content_type', 'object_id', 'start_date', 'end_date', 'total_cost']
-        read_only_fields = ['id', 'organizer', 'content_type', 'object_id', 'start_date', 'end_date', 'total_cost']
+        exclude = ['__all__']
+        read_only_fields = ['id', 'organizer', 'content_type', 'object_id', 'start_date', 'start_date', 'end_time', 'end_date', 'total_cost']
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -89,8 +89,8 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = ['id', 'trip', 'participants', 'last_message']
 
     def get_participants(self, obj):
-        current_user = self.context['request'].user  # Текущий пользователь
-        other_participants = obj.participants.exclude(id=current_user.id)  # Исключаем текущего пользователя
+        current_user = self.context['request'].user
+        other_participants = obj.participants.exclude(id=current_user.id)
 
         return [
             {

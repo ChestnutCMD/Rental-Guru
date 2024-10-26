@@ -18,6 +18,8 @@ class RequestRent(models.Model):
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')
     vehicle = GenericForeignKey('content_type', 'object_id')
 
+    start_time = models.TimeField(null=True, blank=True, verbose_name='Время начала аренды')
+    end_time = models.TimeField(null=True, blank=True, verbose_name='Время окончания аренды')
     start_date = models.DateField(verbose_name='Начало аренды')
     end_date = models.DateField(verbose_name='Конец аренды')
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
@@ -84,6 +86,8 @@ class RequestRent(models.Model):
                     object_id=self.object_id,
                     start_date=self.start_date,
                     end_date=self.end_date,
+                    start_time=self.start_time,
+                    end_time=self.end_date,
                     total_cost=self.total_cost
                 )
 
@@ -114,6 +118,9 @@ class Trip(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')
     vehicle = GenericForeignKey('content_type', 'object_id')
+
+    start_time = models.TimeField(null=True, blank=True, verbose_name='Время начала аренды')
+    end_time = models.TimeField(null=True, blank=True, verbose_name='Время окончания аренды')
 
     start_date = models.DateField(verbose_name='Начало поездки')
     end_date = models.DateField(verbose_name='Конец поездки')
