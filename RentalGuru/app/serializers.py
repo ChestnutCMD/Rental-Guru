@@ -131,7 +131,8 @@ class UserListSerializer(serializers.ModelSerializer):
 class RenterDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = RenterDocuments
-        fields = ['title', 'number', 'photo', 'issue_date']
+        fields = ['id', 'title', 'number', 'photo', 'issue_date']
+        read_only_fields = ['id']
 
     def validate(self, data):
         if data['title'] == 'license' and not data.get('issue_date'):
@@ -190,9 +191,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'renter',
             'lessor',
             'currency',
-            'language'
+            'language',
+            'date_joined'
         ]
-        read_only_fields = ['role']
+        read_only_fields = ['role', 'date_joined']
 
     def update(self, instance, validated_data):
         user_role = self.context['request'].user.role
