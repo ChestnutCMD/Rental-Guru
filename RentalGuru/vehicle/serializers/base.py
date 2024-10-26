@@ -236,9 +236,14 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelGetSerializer(read_only=True)
     vehicle_type = serializers.SerializerMethodField()
+    free_delivery = serializers.SerializerMethodField()
+    free_deposit = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ['id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'photos', 'vehicle_type']
+        fields = [
+            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities',
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit'
+        ]
         read_only_fields = ['average_ratings']
 
     @extend_schema_field(serializers.FloatField())
@@ -263,6 +268,14 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
         elif isinstance(obj, SpecialTechnic):
             return 'special_technic'
         return 'unknown'
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_free_delivery(self, obj):
+        return obj.delivery and obj.price_delivery == 0
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_free_deposit(self, obj):
+        return obj.price_deposit == 0
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):
