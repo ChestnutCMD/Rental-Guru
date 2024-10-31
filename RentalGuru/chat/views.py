@@ -15,7 +15,7 @@ from app.models import User, RenterDocuments
 from notification.models import Notification
 from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
-from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
+from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .filters import FeedbackFilter, MessageFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
@@ -271,9 +271,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
-        vehicle = Vehicle.objects.filter(id=object_id)
+        availability = vehicle_instance.availability
+
         # Проверка доступности
-        if vehicle.availability.on_request:
+        if availability.on_request:
             request_start_date = None
             request_end_date = None
         else:
