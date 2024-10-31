@@ -319,7 +319,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
             raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
-        if vehicle_instance.drivers_rating and vehicle_instance.drivers_rating > request.user.renter.get_average_rating():
+        if vehicle_instance.drivers_rating and vehicle_instance.drivers_rating > request.user.renter.get_average_rating() and request.user.renter.get_average_rating() != 0:
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
         serializer = self.get_serializer(data=request.data)
