@@ -271,10 +271,9 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
-        availability = vehicle_instance.availability
+        availabilities = vehicle_instance.availabilities.all()
 
-        # Проверка доступности
-        if availability.on_request:
+        if availabilities.filter(on_request=True).exists():
             request_start_date = None
             request_end_date = None
         else:
