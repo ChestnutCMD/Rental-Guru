@@ -219,13 +219,13 @@ class RentPrice(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='rent_prices')
     name = models.CharField(choices=RENT_PERIOD, max_length=5, verbose_name='Период')
     price = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость')
-    commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия')
     discount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(90)], verbose_name='Скидка')
-    total = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='ИТОГО')
+    total = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='ИТОГО', editable=False)
 
     def save(self, *args, **kwargs):
-        self.total = (float(self.price) + float(self.commission)) * (100 - float(self.discount)) / 100
-        super(RentPrice, self).save(*args, **kwargs)
+        commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor') else 10.0
+        self.total = (float(self.price) + (float(self.price) * commission / 100)) * (100 - float(self.discount)) / 100
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Стоимость аренды на {self.name} - {self.total}'

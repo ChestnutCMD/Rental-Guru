@@ -73,10 +73,15 @@ class User(AbstractUser):
 class Lessor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lessor')
     super_host = models.BooleanField(default=False, verbose_name='Суперхост')
-    count_trip = models.PositiveIntegerField(default=0, verbose_name='Колличество поездок')
+    count_trip = models.PositiveIntegerField(default=0, verbose_name='Количество поездок')
     average_response_time = models.DurationField(null=True, blank=True, verbose_name='Среднее время ответа')
     franchise = models.ForeignKey(Franchise, on_delete=models.SET_NULL, null=True, blank=True, related_name='lessors',
                                   verbose_name='Франшиза')
+    commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия', default=10.0)
+
+    def clean(self):
+        if not (1 <= self.commission <= 90):
+            raise ValidationError('Комиссия должна быть в пределах от 1% до 90%.')
 
     @receiver(post_delete, sender=Franchise)
     def delete_related_vehicles(sender, instance, **kwargs):

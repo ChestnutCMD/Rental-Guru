@@ -67,8 +67,8 @@ class VehiclePhotoSerializer(serializers.ModelSerializer):
 class RentPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = RentPrice
-        fields = ['name', 'price', 'commission', 'discount', 'total']
-        read_only = 'total'
+        fields = ['name', 'price', 'discount', 'total']
+        read_only_fields = ['total']
 
     def validate_discount(self, value):
         if value < 0 or value > 90:
