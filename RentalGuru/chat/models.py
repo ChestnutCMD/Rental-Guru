@@ -42,6 +42,13 @@ class RequestRent(models.Model):
             return (self.end_date - self.start_date).days + 1
         return 0
 
+    def create_chat(self):
+        """Создание чата при подаче заявки или подтверждении аренды."""
+        if not Chat.objects.filter(request_rent=self).exists():
+            chat = Chat.objects.create(request_rent=self)
+            chat.participants.add(self.organizer, self.vehicle.owner)
+            chat.save()
+
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
         from vehicle.models import RentPrice
@@ -70,39 +77,17 @@ class RequestRent(models.Model):
     def clean(self):
         super().clean()
 
-    def create_chat(self):
-        """Создание чата при подаче заявки или подтверждении аренды."""
-        if not Chat.objects.filter(request_rent=self).exists():
-            chat = Chat.objects.create(request_rent=self)
-            chat.participants.add(self.organizer, self.vehicle.owner)
-            chat.save()
-
     def save(self, *args, **kwargs):
-        self.clean()
-        if self.deposit_cost == 0.00 and self.vehicle:
-            self.deposit_cost = self.vehicle.price_deposit
-
-        self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
-
-        if self.pk:
+        # Минимальные проверки и сохранение связанных полей
+        if not self.pk:  # Если объект создается, а не обновляется
+            if self.vehicle and not self.deposit_cost:
+                self.deposit_cost = self.vehicle.price_deposit
+            self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
+        else:
+            # Логика при обновлении статуса
             original = RequestRent.objects.get(pk=self.pk)
             if original.status != 'accept' and self.status == 'accept':
                 self.total_cost = self.calculate_rent_price()
-                self.create_chat()
-                Trip.objects.create(
-                    organizer=self.organizer,
-                    content_type=self.content_type,
-                    object_id=self.object_id,
-                    start_date=self.start_date,
-                    end_date=self.end_date,
-                    start_time=self.start_time,
-                    end_time=self.end_time,
-                    total_cost=self.total_cost
-                )
-        else:
-            self.total_cost = self.calculate_rent_price()
-            if self.vehicle.availabilities.filter(on_request=True).exists() and self.status == 'unknown':
-                self.create_chat()
 
         super(RequestRent, self).save(*args, **kwargs)
 
@@ -161,7 +146,7 @@ class Trip(models.Model):
 
 
 class Chat(models.Model):
-    request_rent = models.ForeignKey(RequestRent, null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
+    request_rent = models.ForeignKey(RequestRent, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:

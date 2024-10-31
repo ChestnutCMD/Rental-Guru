@@ -266,11 +266,13 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if not model:
             raise DRFValidationError(f"Недопустимый тип транспортного средства: {vehicle_type}")
 
+        # Попытка получить сохранённый экземпляр транспортного средства
         try:
             vehicle_instance = model.objects.get(id=object_id)
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
+        # Проверка доступности транспортного средства
         availabilities = vehicle_instance.availabilities.all()
 
         if availabilities.filter(on_request=True).exists():
@@ -320,44 +322,9 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                     f"Период аренды должен быть между {min_days} и {max_days} днями. "
                     f"Текущий период: {rental_days} дней."
                 )
-                raise DRFValidationError(warning_message)
+                return Response({'warning': warning_message}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Проверка возраста водителя
-        if vehicle_instance.drivers_age:
-            if request.user.date_of_birth:
-                user_age = calculate_age(request.user.date_of_birth)
-                drivers_age = vehicle_instance.drivers_age
-                if user_age < drivers_age:
-                    raise DRFValidationError(
-                        "Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
-            else:
-                raise DRFValidationError(
-                    "Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
-
-        # Проверка стажа водителя
-        if vehicle_instance.drivers_experience:
-            driver_license = RenterDocuments.objects.filter(renter=request.user.renter, title='license').first()
-            if not driver_license:
-                raise DRFValidationError("У пользователя не найдено водительского удостоверения.")
-
-            issue_date = driver_license.issue_date
-            if issue_date:
-                years_of_experience = (date.today() - issue_date).days // 365
-                if years_of_experience < vehicle_instance.drivers_experience:
-                    raise DRFValidationError(
-                        "Пользователь не соответствует требованиям водительского стажа, предъявляемым к данному транспортному средству.")
-            else:
-                raise DRFValidationError("Дата выдачи водительского удостоверения не указана.")
-
-        # Проверка верификации пользователя
-        if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
-            raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
-
-        # Проверка рейтинга водителя
-        if vehicle_instance.drivers_rating and vehicle_instance.drivers_rating > request.user.renter.get_average_rating() and request.user.renter.get_average_rating() != 0:
-            raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
-
-        # Сериализация данных и создание заявки
+        # Создание записи аренды после всех проверок
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_rent = serializer.save()
