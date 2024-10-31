@@ -274,7 +274,6 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         availabilities = vehicle_instance.availabilities.all()
 
         if availabilities.filter(on_request=True).exists():
-            # Если транспорт доступен "по запросу", не нужно указывать даты
             request_start_date = None
             request_end_date = None
         else:
@@ -292,10 +291,21 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             if isinstance(request_end_date, str):
                 request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
 
-            sub_period = {'start_date': request_start_date, 'end_date': request_end_date}
+            # Преобразование дат в строки перед передачей в is_period_contained
+            sub_period = {
+                'start_date': request_start_date.strftime('%Y-%m-%d'),
+                'end_date': request_end_date.strftime('%Y-%m-%d')
+            }
 
             # Проверяем доступные даты
-            availabilities_dates = availabilities.values('start_date', 'end_date')
+            availabilities_dates = [
+                {
+                    'start_date': availability.start_date.strftime('%Y-%m-%d'),
+                    'end_date': availability.end_date.strftime('%Y-%m-%d')
+                }
+                for availability in availabilities
+            ]
+
             if not is_period_contained(availabilities_dates, sub_period):
                 raise DRFValidationError("Запрашиваемый период недоступен для данного транспортного средства.")
 
@@ -309,7 +319,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                     f"Период аренды должен быть между {min_days} и {max_days} днями. "
                     f"Текущий период: {rental_days} дней."
                 )
-                return Response({'warning': warning_message}, status=status.HTTP_400_BAD_REQUEST)
+                raise DRFValidationError(warning_message)
 
         # Проверка возраста водителя
         if vehicle_instance.drivers_age:
