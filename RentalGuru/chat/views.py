@@ -323,6 +323,12 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
         if request_start_date and request_end_date:
+            try:
+                request_start_date = datetime.strptime(request_start_date, '%Y-%m-%d').date()
+                request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
+            except ValueError:
+                raise DRFValidationError("Неверный формат даты. Ожидается YYYY-MM-DD.")
+
             rental_days = (request_end_date - request_start_date).days + 1
             min_days = vehicle_instance.min_rent_day
             max_days = vehicle_instance.max_rent_day
