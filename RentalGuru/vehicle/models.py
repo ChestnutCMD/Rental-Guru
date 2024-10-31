@@ -224,7 +224,7 @@ class RentPrice(models.Model):
 
     def save(self, *args, **kwargs):
         commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor') else 10.0
-        self.total = (float(self.price) + (float(self.price) * commission / 100)) * (100 - float(self.discount)) / 100
+        self.total = (float(self.price) + (float(self.price) * float(commission) / 100)) * (100 - float(self.discount)) / 100
         super().save(*args, **kwargs)
 
     def __str__(self):
