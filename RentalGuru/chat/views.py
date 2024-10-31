@@ -271,10 +271,8 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
-        # Получение доступностей через related_name
         availabilities = vehicle_instance.availabilities.all()
 
-        # Проверка доступности
         if availabilities.filter(on_request=True).exists():
             # Если транспорт доступен "по запросу", не нужно указывать даты
             request_start_date = None
@@ -288,26 +286,20 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             if not request_end_date:
                 raise DRFValidationError("Обязательна дата окончания.")
 
-            # Если входящие данные уже даты, убираем преобразование
-            if isinstance(request_start_date, str) and isinstance(request_end_date, str):
-                # Преобразование строк в объекты даты
-                try:
-                    request_start_date = datetime.strptime(request_start_date, '%Y-%m-%d').date()
-                    request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
-                except ValueError:
-                    raise DRFValidationError("Неверный формат даты. Ожидается YYYY-MM-DD.")
-
-            # Проверка доступности по датам
-            availabilities_dates = availabilities.values('start_date', 'end_date')
-            if not availabilities_dates:
-                raise DRFValidationError("Не найдено доступных дат для этого транспорта.")
+            # Преобразование строк в объекты даты
+            if isinstance(request_start_date, str):
+                request_start_date = datetime.strptime(request_start_date, '%Y-%m-%d').date()
+            if isinstance(request_end_date, str):
+                request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
 
             sub_period = {'start_date': request_start_date, 'end_date': request_end_date}
 
+            # Проверяем доступные даты
+            availabilities_dates = availabilities.values('start_date', 'end_date')
             if not is_period_contained(availabilities_dates, sub_period):
                 raise DRFValidationError("Запрашиваемый период недоступен для данного транспортного средства.")
 
-            # Проверка на допустимый период аренды
+            # Проверка на минимальное и максимальное количество дней аренды
             rental_days = (request_end_date - request_start_date).days + 1
             min_days = vehicle_instance.min_rent_day
             max_days = vehicle_instance.max_rent_day
@@ -319,17 +311,19 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 )
                 return Response({'warning': warning_message}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Проверка возраста и опыта водителя
+        # Проверка возраста водителя
         if vehicle_instance.drivers_age:
             if request.user.date_of_birth:
                 user_age = calculate_age(request.user.date_of_birth)
-                if user_age < vehicle_instance.drivers_age:
+                drivers_age = vehicle_instance.drivers_age
+                if user_age < drivers_age:
                     raise DRFValidationError(
                         "Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
             else:
                 raise DRFValidationError(
                     "Пользователь не соответствует возрастным требованиям, предъявляемым к данному транспортному средству.")
 
+        # Проверка стажа водителя
         if vehicle_instance.drivers_experience:
             driver_license = RenterDocuments.objects.filter(renter=request.user.renter, title='license').first()
             if not driver_license:
@@ -344,12 +338,15 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             else:
                 raise DRFValidationError("Дата выдачи водительского удостоверения не указана.")
 
+        # Проверка верификации пользователя
         if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
-            raise DRFValidationError("Транспорт сдается только верифицированным пользователям.")
+            raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
+        # Проверка рейтинга водителя
         if vehicle_instance.drivers_rating and vehicle_instance.drivers_rating > request.user.renter.get_average_rating() and request.user.renter.get_average_rating() != 0:
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
+        # Сериализация данных и создание заявки
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_rent = serializer.save()
