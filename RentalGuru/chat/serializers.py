@@ -85,7 +85,7 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ['id', 'trip', 'participants', 'last_message']
+        fields = ['id', 'request_rent', 'participants', 'last_message']
 
     def get_participants(self, obj):
         current_user = self.context['request'].user
