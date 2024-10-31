@@ -69,14 +69,6 @@ class RequestRent(models.Model):
 
     def clean(self):
         super().clean()
-        if self.start_date and self.end_date:
-            rental_days = self.rental_days
-            min_days = self.vehicle.min_rent_day
-            max_days = self.vehicle.max_rent_day
-            if rental_days < min_days or rental_days > max_days:
-                raise ValidationError(
-                    f"Период аренды должен быть между {min_days} и {max_days} днями."
-                )
 
     def create_chat(self):
         """Создание чата при подаче заявки или подтверждении аренды."""

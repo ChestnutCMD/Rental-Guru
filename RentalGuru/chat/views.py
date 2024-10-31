@@ -322,6 +322,18 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if vehicle_instance.drivers_rating and vehicle_instance.drivers_rating > request.user.renter.get_average_rating() and request.user.renter.get_average_rating() != 0:
             raise DRFValidationError(f"Требуемый рейтинг для аренды транспорта: {vehicle_instance.drivers_rating}")
 
+        if request_start_date and request_end_date:
+            rental_days = (request_end_date - request_start_date).days + 1
+            min_days = vehicle_instance.min_rent_day
+            max_days = vehicle_instance.max_rent_day
+
+            if rental_days < min_days or rental_days > max_days:
+                warning_message = (
+                    f"Период аренды должен быть между {min_days} и {max_days} днями. "
+                    f"Текущий период: {rental_days} дней."
+                )
+                raise DRFValidationError(warning_message)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_rent = serializer.save()
