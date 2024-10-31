@@ -1,4 +1,5 @@
-from django.contrib import admin
+from django import forms
+from django.contrib import admin, messages
 from .models import User, Lessor, Renter, Currency, Language, RenterDocuments
 
 
@@ -7,160 +8,159 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('role',)
 
 
-class CurrencyAdmin(admin.ModelAdmin):
-    list_display = ('code',)
-
-
-class LanguageAdmin(admin.ModelAdmin):
-    list_display = ('code',)
-
-
-class LessorAdmin(admin.ModelAdmin):
-    list_display = ('user', 'super_host', 'count_trip', 'average_response_time', 'commission')
-    list_filter = ('user__role',)
-    search_fields = ('user__first_name', 'user__last_name', 'user__email')
-
-    def get_readonly_fields(self, request, obj=None):
-        return super().get_readonly_fields(request, obj)
-
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = [
-            ('Основная информация', {
-                'fields': ('user', 'super_host', 'count_trip', 'average_response_time')
-            }),
-        ]
-        if obj:
-            fieldsets.append(('Информация о пользователе', {
-                'fields': (
-                    'user_email', 'user_first_name', 'user_last_name', 'user_date_of_birth',
-                    'user_telephone', 'user_currency', 'user_avatar', 'user_about',
-                    'user_email_notification', 'user_push_notification'
-                ),
-                'classes': ('collapse',)
-            }))
-        return fieldsets
-
-    def user_email(self, obj):
-        return obj.user.email
-    user_email.short_description = 'Email пользователя'
-
-    def user_first_name(self, obj):
-        return obj.user.first_name
-    user_first_name.short_description = 'Имя пользователя'
-
-    def user_last_name(self, obj):
-        return obj.user.last_name
-    user_last_name.short_description = 'Фамилия пользователя'
-
-    def user_date_of_birth(self, obj):
-        return obj.user.date_of_birth
-    user_date_of_birth.short_description = 'Дата рождения'
-
-    def user_telephone(self, obj):
-        return obj.user.telephone
-    user_telephone.short_description = 'Телефон'
-
-    def user_currency(self, obj):
-        return obj.user.currency
-    user_currency.short_description = 'Валюта'
-
-    def user_avatar(self, obj):
-        return obj.user.avatar
-    user_avatar.short_description = 'Аватар'
-
-    def user_about(self, obj):
-        return obj.user.about
-    user_about.short_description = 'О себе'
-
-    def user_email_notification(self, obj):
-        return obj.user.email_notification
-    user_email_notification.short_description = 'Email уведомления'
-
-    def user_push_notification(self, obj):
-        return obj.user.push_notification
-    user_push_notification.short_description = 'Push уведомления'
-
-
-class RenterAdmin(admin.ModelAdmin):
-    list_display = (
-        'user', 'verification', 'get_average_rating',
-        'user_email', 'user_first_name', 'user_last_name',
-        'user_date_of_birth', 'user_telephone', 'user_currency',
-        'user_avatar', 'user_about', 'user_email_notification',
-        'user_push_notification'
+class BaseUserAdminForm(forms.ModelForm):
+    user_first_name = forms.CharField(label='Имя', required=False)
+    user_last_name = forms.CharField(label='Фамилия', required=False)
+    user_date_of_birth = forms.DateField(label='Дата рождения', required=False)
+    user_telephone = forms.CharField(label='Телефон', required=False)
+    user_currency = forms.ModelChoiceField(
+        queryset=Currency.objects.all(),
+        label='Валюта',
+        required=False
     )
-    list_filter = ('user__role',)
+    user_avatar = forms.ImageField(label='Аватар', required=False)
+    user_about = forms.CharField(
+        label='О себе',
+        widget=forms.Textarea,
+        required=False
+    )
+    user_email_notification = forms.BooleanField(
+        label='Email уведомления',
+        required=False
+    )
+    user_push_notification = forms.BooleanField(
+        label='Push уведомления',
+        required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['user_first_name'].initial = self.instance.user.first_name
+            self.fields['user_last_name'].initial = self.instance.user.last_name
+            self.fields['user_date_of_birth'].initial = self.instance.user.date_of_birth
+            self.fields['user_telephone'].initial = self.instance.user.telephone
+            self.fields['user_currency'].initial = self.instance.user.currency
+            self.fields['user_avatar'].initial = self.instance.user.avatar
+            self.fields['user_about'].initial = self.instance.user.about
+            self.fields['user_email_notification'].initial = self.instance.user.email_notification
+            self.fields['user_push_notification'].initial = self.instance.user.push_notification
+
+
+class LessorAdminForm(BaseUserAdminForm):
+    class Meta:
+        model = Lessor
+        fields = '__all__'
+
+
+class RenterAdminForm(BaseUserAdminForm):
+    class Meta:
+        model = Renter
+        fields = '__all__'
+
+
+class BaseUserRelatedAdmin(admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        if form.cleaned_data:
+            user = obj.user
+            user_fields = [
+                'first_name', 'last_name', 'date_of_birth', 'telephone',
+                'currency', 'avatar', 'about', 'email_notification',
+                'push_notification'
+            ]
+
+            changed = False
+            for field in user_fields:
+                field_key = f'user_{field}'
+                if field_key in form.cleaned_data:
+                    value = form.cleaned_data[field_key]
+                    if value != getattr(user, field):
+                        setattr(user, field, value)
+                        changed = True
+
+            if changed:
+                try:
+                    user.save()
+                    messages.success(request, 'Информация пользователя успешно обновлена')
+                except Exception as e:
+                    messages.error(request, f'Ошибка при обновлении информации пользователя: {str(e)}')
+
+        super().save_model(request, obj, form, change)
+
+
+class LessorAdmin(BaseUserRelatedAdmin):
+    form = LessorAdminForm
+    list_display = ('user', 'super_host', 'count_trip', 'average_response_time', 'commission')
+    list_filter = ('super_host',)
     search_fields = ('user__first_name', 'user__last_name', 'user__email')
 
-    def get_readonly_fields(self, request, obj=None):
-        return super().get_readonly_fields(request, obj)  # Убираем лишние ограничения
+    fieldsets = [
+        ('Основная информация', {
+            'fields': ('user', 'super_host', 'count_trip', 'average_response_time', 'commission')
+        }),
+        ('Информация о пользователе', {
+            'fields': (
+                'user_first_name', 'user_last_name', 'user_date_of_birth',
+                'user_telephone', 'user_currency', 'user_avatar', 'user_about',
+                'user_email_notification', 'user_push_notification'
+            ),
+            'classes': ('collapse',)
+        })
+    ]
 
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = [
-            ('Основная информация', {
-                'fields': ('user', 'verification', 'rating')
-            }),
-        ]
-        if obj:
-            fieldsets.append(('Информация о пользователе', {
-                'fields': (
-                    'user_email', 'user_first_name', 'user_last_name', 'user_date_of_birth',
-                    'user_telephone', 'user_currency', 'user_avatar', 'user_about',
-                    'user_email_notification', 'user_push_notification'
-                ),
-                'classes': ('collapse',)
-            }))
-        return fieldsets
 
-    def user_email(self, obj):
-        return obj.user.email
-    user_email.short_description = 'Email пользователя'
+class RenterDocumentsInline(admin.TabularInline):
+    model = RenterDocuments
+    extra = 0
+    fields = ['title', 'number', 'photo', 'status', 'issue_date']
+    readonly_fields = ['photo']  # Делаем поле фото только для чтения в инлайн форме
+    can_delete = True
+    show_change_link = True  # Добавляем ссылку на редактирование документа
 
-    def user_first_name(self, obj):
-        return obj.user.first_name
-    user_first_name.short_description = 'Имя пользователя'
 
-    def user_last_name(self, obj):
-        return obj.user.last_name
-    user_last_name.short_description = 'Фамилия пользователя'
+class RenterAdmin(BaseUserRelatedAdmin):
+    form = RenterAdminForm
+    inlines = [RenterDocumentsInline]
+    list_display = (
+        'user', 'verification', 'get_average_rating'
+    )
+    list_filter = ('verification',)
+    search_fields = ('user__first_name', 'user__last_name', 'user__email')
 
-    def user_date_of_birth(self, obj):
-        return obj.user.date_of_birth
-    user_date_of_birth.short_description = 'Дата рождения'
-
-    def user_telephone(self, obj):
-        return obj.user.telephone
-    user_telephone.short_description = 'Телефон'
-
-    def user_currency(self, obj):
-        return obj.user.currency
-    user_currency.short_description = 'Валюта'
-
-    def user_avatar(self, obj):
-        return obj.user.avatar
-    user_avatar.short_description = 'Аватар'
-
-    def user_about(self, obj):
-        return obj.user.about
-    user_about.short_description = 'О себе'
-
-    def user_email_notification(self, obj):
-        return obj.user.email_notification
-    user_email_notification.short_description = 'Email уведомления'
-
-    def user_push_notification(self, obj):
-        return obj.user.push_notification
-    user_push_notification.short_description = 'Push уведомления'
+    fieldsets = [
+        ('Основная информация', {
+            'fields': ('user', 'verification')
+        }),
+        ('Информация о пользователе', {
+            'fields': (
+                'user_first_name', 'user_last_name', 'user_date_of_birth',
+                'user_telephone', 'user_currency', 'user_avatar', 'user_about',
+                'user_email_notification', 'user_push_notification'
+            ),
+            'classes': ('collapse',)
+        })
+    ]
 
 
 @admin.register(RenterDocuments)
 class RenterDocumentsAdmin(admin.ModelAdmin):
-    list_filter = ['status']
-    list_display = ['title', 'number', 'status', 'photo']
+    list_display = ['renter', 'title', 'number', 'status', 'issue_date']
+    list_filter = ['status', 'title']
+    search_fields = ['number', 'renter__user__email', 'renter__user__first_name', 'renter__user__last_name']
+    list_select_related = ['renter', 'renter__user']
+
+    fieldsets = [
+        ('Основная информация', {
+            'fields': ('renter', 'title', 'number', 'status', 'issue_date')
+        }),
+        ('Фото документа', {
+            'fields': ('photo',)
+        })
+    ]
 
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Lessor, LessorAdmin)
 admin.site.register(Renter, RenterAdmin)
-admin.site.register(Currency, CurrencyAdmin)
-admin.site.register(Language, LanguageAdmin)
+admin.site.register(Currency)
+admin.site.register(Language)
