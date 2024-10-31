@@ -1,29 +1,33 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from RentalGuru import settings
 
 
 class RequestRent(models.Model):
+    """ Заявки на аренду """
     STATUS_CHOICES = (
         ('accept', 'Принять'),
         ('denied', 'Отказать'),
-        ('unknown', 'Не рассмотренно')
+        ('unknown', 'Не рассмотрено')
     )
     status = models.CharField(max_length=7, default='unknown', choices=STATUS_CHOICES, verbose_name='Статус')
-    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='request_rent_organized_trips', verbose_name='Автор')
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                  related_name='request_rent_organized_trips', verbose_name='Автор')
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
+        'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')
     vehicle = GenericForeignKey('content_type', 'object_id')
 
     start_time = models.TimeField(null=True, blank=True, verbose_name='Время начала аренды')
     end_time = models.TimeField(null=True, blank=True, verbose_name='Время окончания аренды')
-    start_date = models.DateField(verbose_name='Начало аренды')
-    end_date = models.DateField(verbose_name='Конец аренды')
+    start_date = models.DateField(verbose_name='Начало аренды', null=True, blank=True)
+    end_date = models.DateField(verbose_name='Конец аренды', null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
-    deposit_paid = models.BooleanField(default=False)
+    deposit_paid = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     delivery = models.BooleanField(default=False)
 
@@ -34,13 +38,15 @@ class RequestRent(models.Model):
     @property
     def rental_days(self):
         """Подсчитывает количество дней аренды."""
-        return (self.end_date - self.start_date).days + 1
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days + 1
+        return 0
 
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
+        from vehicle.models import RentPrice
         rental_days = self.rental_days
 
-        # Сначала определяем периоды аренды в порядке убывания
         period_priorities = [
             ('year', 365),
             ('month', 30),
@@ -48,38 +54,49 @@ class RequestRent(models.Model):
             ('day', 1)
         ]
 
-        # Ищем подходящий период
         for period, period_days in period_priorities:
-            from vehicle.models import RentPrice
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
             if rent_price:
                 break
         else:
             raise ValueError("Не найдено подходящей цены аренды для транспортного средства.")
 
-        # Подсчитываем итоговую стоимость
         if self.delivery:
             total_cost = ((rental_days / period_days) * float(rent_price.total)) + float(self.vehicle.price_delivery)
         else:
             total_cost = (rental_days / period_days) * float(rent_price.total)
         return total_cost
 
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date:
+            rental_days = self.rental_days
+            min_days = self.vehicle.min_rent_day
+            max_days = self.vehicle.max_rent_day
+            if rental_days < min_days or rental_days > max_days:
+                raise ValidationError(
+                    f"Период аренды должен быть между {min_days} и {max_days} днями."
+                )
+
+    def create_chat(self):
+        """Создание чата при подаче заявки или подтверждении аренды."""
+        if not Chat.objects.filter(request_rent=self).exists():
+            chat = Chat.objects.create(request_rent=self)
+            chat.participants.add(self.organizer, self.vehicle.owner)
+            chat.save()
+
     def save(self, *args, **kwargs):
-        """Переопределяем метод save для автоматического подсчета и сохранения total_cost и создания Trip при изменении статуса на 'accept'."""
+        self.clean()
+        if self.deposit_paid == 0.00 and self.vehicle:
+            self.deposit_paid = self.vehicle.price_deposit
 
-        if self.delivery:
-            self.delivery_cost = self.vehicle.price_delivery
-        else:
-            self.delivery_cost = 0.00
+        self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
 
-        # Проверяем, изменился ли статус на 'accept'
         if self.pk:
             original = RequestRent.objects.get(pk=self.pk)
             if original.status != 'accept' and self.status == 'accept':
-                # Если статус меняется на 'accept', создаем Trip
                 self.total_cost = self.calculate_rent_price()
-                super(RequestRent, self).save(*args, **kwargs)
-
+                self.create_chat()
                 Trip.objects.create(
                     organizer=self.organizer,
                     content_type=self.content_type,
@@ -87,16 +104,15 @@ class RequestRent(models.Model):
                     start_date=self.start_date,
                     end_date=self.end_date,
                     start_time=self.start_time,
-                    end_time=self.end_date,
+                    end_time=self.end_time,
                     total_cost=self.total_cost
                 )
-
-            else:
-                self.total_cost = self.calculate_rent_price()
-                super(RequestRent, self).save(*args, **kwargs)
         else:
             self.total_cost = self.calculate_rent_price()
-            super(RequestRent, self).save(*args, **kwargs)
+            if self.vehicle.availabilities.filter(on_request=True).exists() and self.status == 'unknown':
+                self.create_chat()
+
+        super(RequestRent, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'request rent id-{self.pk}'
@@ -107,6 +123,7 @@ class RequestRent(models.Model):
 
 
 class Trip(models.Model):
+    """ Поездки """
     STATUS_CHOICES = (
         ('current', 'Текущая поездка'),
         ('finished', 'Завершить'),
@@ -131,7 +148,6 @@ class Trip(models.Model):
         return self.vehicle.owner
 
     def save(self, *args, **kwargs):
-        # Получаем старую версию объекта для сравнения
         if self.pk:
             previous_trip = Trip.objects.get(pk=self.pk)
         else:
@@ -139,7 +155,7 @@ class Trip(models.Model):
 
         super(Trip, self).save(*args, **kwargs)
 
-        # Увеличиваем счетчик поездок при изменении статуса на "finished"
+        # Увеличение счетчика поездок при изменении статуса на "finished"
         if previous_trip and previous_trip.status != 'finished' and self.status == 'finished':
             self.owner.lessor.count_trip += 1
             self.owner.lessor.save(update_fields=['count_trip'])
@@ -153,7 +169,7 @@ class Trip(models.Model):
 
 
 class Chat(models.Model):
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, verbose_name='Поездка')
+    request_rent = models.ForeignKey(RequestRent, null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:

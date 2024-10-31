@@ -17,10 +17,10 @@ class MessageInline(admin.TabularInline):
 
 @admin.register(Chat)
 class ChatAdmin(admin.ModelAdmin):
-    list_display = ('id', 'trip', 'participants_list')
-    search_fields = ('trip__organizer__first_name', 'participants__first_name')
+    list_display = ('id', 'request_rent', 'participants_list')
+    search_fields = ('request_rent__organizer__first_name', 'participants__first_name')
     inlines = [MessageInline]
-    list_display_links = ('participants_list', 'trip')
+    list_display_links = ('participants_list', 'request_rent')
 
     def participants_list(self, obj):
         return ", ".join([p.first_name for p in obj.participants.all()])

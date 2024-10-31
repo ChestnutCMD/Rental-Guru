@@ -6,6 +6,3 @@ class ChatConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'chat'
     verbose_name = _("Чаты")
-
-    def ready(self):
-        import chat.signals

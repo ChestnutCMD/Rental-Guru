@@ -1,5 +1,4 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Avg
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -115,7 +114,6 @@ class ChatSerializer(serializers.ModelSerializer):
                 "timestamp": last_message.timestamp
             }
         return None
-
 
 
 class MessageSerializer(BaseMessageSerializer):
