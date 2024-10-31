@@ -274,6 +274,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         availabilities = vehicle_instance.availabilities.all()
 
         if availabilities.filter(on_request=True).exists():
+            # Если транспорт доступен "по запросу", даты указывать не нужно
             request_start_date = None
             request_end_date = None
         else:
@@ -297,7 +298,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 'end_date': request_end_date.strftime('%Y-%m-%d')
             }
 
-            # Проверяем доступные даты
+            # Проверка доступных дат
             availabilities_dates = [
                 {
                     'start_date': availability.start_date.strftime('%Y-%m-%d'),
