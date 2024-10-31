@@ -271,9 +271,12 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
+        # Получение доступностей через related_name
         availabilities = vehicle_instance.availabilities.all()
 
+        # Проверка доступности
         if availabilities.filter(on_request=True).exists():
+            # Если транспорт доступен "по запросу", не нужно указывать даты
             request_start_date = None
             request_end_date = None
         else:
@@ -285,26 +288,23 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             if not request_end_date:
                 raise DRFValidationError("Обязательна дата окончания.")
 
-            # Преобразование строк в объекты даты
-            try:
-                request_start_date = datetime.strptime(request_start_date, '%Y-%m-%d').date()
-                request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
-            except ValueError:
-                raise DRFValidationError("Неверный формат даты. Ожидается YYYY-MM-DD.")
+            # Если входящие данные уже даты, убираем преобразование
+            if isinstance(request_start_date, str) and isinstance(request_end_date, str):
+                # Преобразование строк в объекты даты
+                try:
+                    request_start_date = datetime.strptime(request_start_date, '%Y-%m-%d').date()
+                    request_end_date = datetime.strptime(request_end_date, '%Y-%m-%d').date()
+                except ValueError:
+                    raise DRFValidationError("Неверный формат даты. Ожидается YYYY-MM-DD.")
 
             # Проверка доступности по датам
-            availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
-            if not availabilities:
+            availabilities_dates = availabilities.values('start_date', 'end_date')
+            if not availabilities_dates:
                 raise DRFValidationError("Не найдено доступных дат для этого транспорта.")
-
-            # Преобразование дат в строки
-            for availability in availabilities:
-                availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d')
-                availability['end_date'] = availability['end_date'].strftime('%Y-%m-%d')
 
             sub_period = {'start_date': request_start_date, 'end_date': request_end_date}
 
-            if not is_period_contained(availabilities, sub_period):
+            if not is_period_contained(availabilities_dates, sub_period):
                 raise DRFValidationError("Запрашиваемый период недоступен для данного транспортного средства.")
 
             # Проверка на допустимый период аренды
