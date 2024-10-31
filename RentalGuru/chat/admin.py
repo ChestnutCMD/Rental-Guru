@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RequestRent, Trip, Chat, Message, ChatSupport, MessageSupport
+from .models import RequestRent, Chat, Message, ChatSupport, MessageSupport
 
 
 @admin.register(RequestRent)

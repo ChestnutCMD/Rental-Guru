@@ -27,9 +27,10 @@ class RequestRent(models.Model):
     start_date = models.DateField(verbose_name='Начало аренды', null=True, blank=True)
     end_date = models.DateField(verbose_name='Конец аренды', null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
-    deposit_paid = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
+    deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     delivery = models.BooleanField(default=False)
+    deposit_paid = models.BooleanField(default=False)
 
     @property
     def owner(self):
@@ -87,8 +88,8 @@ class RequestRent(models.Model):
 
     def save(self, *args, **kwargs):
         self.clean()
-        if self.deposit_paid == 0.00 and self.vehicle:
-            self.deposit_paid = self.vehicle.price_deposit
+        if self.deposit_cost == 0.00 and self.vehicle:
+            self.deposit_cost = self.vehicle.price_deposit
 
         self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
 
