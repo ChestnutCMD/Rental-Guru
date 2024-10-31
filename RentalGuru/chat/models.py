@@ -30,7 +30,6 @@ class RequestRent(models.Model):
     deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     delivery = models.BooleanField(default=False)
-    deposit_paid = models.BooleanField(default=False)
 
     @property
     def owner(self):
