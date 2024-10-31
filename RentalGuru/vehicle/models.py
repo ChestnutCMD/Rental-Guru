@@ -238,19 +238,36 @@ class RentPrice(models.Model):
 
 class Availability(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='availabilities')
-    start_date = models.DateField(verbose_name='Начало')
-    end_date = models.DateField(verbose_name='Конец')
+    start_date = models.DateField(verbose_name='Начало', null=True, blank=True)
+    end_date = models.DateField(verbose_name='Конец', null=True, blank=True)
+    on_request = models.BooleanField(default=False, verbose_name='По запросу')
 
     def __str__(self):
-        return f'Availability {self.start_date} to {self.end_date}'
+        if self.on_request:
+            return f'Availability Request for {self.vehicle}'
+        return f'Availability {self.start_date} to {self.end_date} for {self.vehicle}'
 
     def clean(self):
-        if self.start_date > self.end_date:
-            raise ValidationError('Дата начала не может быть позже даты окончания.')
+        if not self.on_request:
+            if not self.start_date or not self.end_date:
+                raise ValidationError('Поля start_date и end_date обязательны, если on_request=False.')
+            if self.start_date > self.end_date:
+                raise ValidationError('Дата начала не может быть позже даты окончания.')
+        else:
+            if self.start_date or self.end_date:
+                raise ValidationError('Поля start_date и end_date не должны быть заполнены, если on_request=True.')
 
     def save(self, *args, **kwargs):
-        self.clean()
+        if self.on_request or (not self.start_date and not self.end_date):
+            self.on_request = True
+            self.start_date, self.end_date = None, None
+
         super().save(*args, **kwargs)
+
+        if self.on_request:
+            Availability.objects.filter(vehicle=self.vehicle).exclude(id=self.pk).delete()
+        else:
+            Availability.objects.filter(vehicle=self.vehicle, on_request=True).exclude(id=self.pk).delete()
 
     class Meta:
         verbose_name = 'Дата аренды'

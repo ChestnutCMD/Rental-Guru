@@ -11,10 +11,39 @@ from vehicle.utils import merge_periods
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Availability
-        fields = ['start_date', 'end_date']
+        fields = ['vehicle', 'start_date', 'end_date', 'on_request']
         extra_kwargs = {
-            'vehicle': {'required': False}
+            'vehicle': {'required': False},
+            'start_date': {'required': False, 'allow_null': True},
+            'end_date': {'required': False, 'allow_null': True},
+            'on_request': {'required': False}
         }
+
+    def validate(self, data):
+        on_request = data.get('on_request', None)
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if on_request is None:
+            data['on_request'] = True if not start_date and not end_date else False
+            on_request = data['on_request']
+
+        if on_request:
+            data['start_date'] = None
+            data['end_date'] = None
+        else:
+            if not start_date or not end_date:
+                raise serializers.ValidationError('Поля start_date и end_date обязательны, если on_request=False.')
+            if start_date > end_date:
+                raise serializers.ValidationError('Дата начала не может быть позже даты окончания.')
+
+        return data
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.on_request:
+            return {'vehicle': representation['vehicle'], 'on_request': representation['on_request']}
+        return representation
 
 
 class VehicleDocumentSerializer(serializers.ModelSerializer):
@@ -174,8 +203,7 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         prices_data = validated_data.pop('rent_prices', [])
         photos_data = validated_data.pop('photos', [])
 
-        # Объединение периодов доступности
-        if availabilities_data:
+        if any(not availability.get('on_request', True) for availability in availabilities_data):
             availabilities_data = merge_periods(availabilities_data)
 
         vehicle = super().create(validated_data)
@@ -242,7 +270,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities',
-            'photos', 'vehicle_type', 'free_delivery', 'free_deposit'
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude'
         ]
         read_only_fields = ['average_ratings']
 

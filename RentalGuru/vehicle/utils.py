@@ -34,7 +34,6 @@ def merge_periods(periods):
             merged_periods.append(current_period)
             current_period = valid_periods[i]
 
-    # Добавляем последний период
     merged_periods.append(current_period)
 
     return merged_periods
