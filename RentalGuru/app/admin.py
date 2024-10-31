@@ -170,7 +170,7 @@ class RenterAdmin(admin.ModelAdmin):
 @admin.register(RenterDocuments)
 class RenterDocumentsAdmin(admin.ModelAdmin):
     list_filter = ['status']
-    list_display = ['title', 'number', 'status', 'photo']
+    list_display = ['title', 'number', 'status', 'photo', 'commission']
 
 
 admin.site.register(User, UserAdmin)
