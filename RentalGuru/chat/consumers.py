@@ -365,6 +365,7 @@ class ChatConsumer(BaseChatConsumer):
         data = json.loads(text_data)
 
         if 'update_request_rent' in data:
+            data['status'] = 'unknown'
             success = await self.handle_request_rent_update(data['update_request_rent'])
             if success:
                 await self.send(text_data=json.dumps({
@@ -386,8 +387,11 @@ class ChatConsumer(BaseChatConsumer):
 
         is_owner = await database_sync_to_async(lambda: user == request_rent.vehicle.owner)()
         has_availability = await self.has_on_request_availability(request_rent.vehicle)
+        request_status = await self.check_request_status(request_rent)
 
-        if is_owner and has_availability:
+        if is_owner and has_availability and request_status:
+            request_rent.status = 'unknown'
+
             fields_to_update = ['start_time', 'end_time', 'start_date', 'end_date', 'total_cost']
             for field in fields_to_update:
                 if field in update_data:
@@ -401,8 +405,23 @@ class ChatConsumer(BaseChatConsumer):
                 request_rent.object_id = update_data['object_id']
 
             await database_sync_to_async(request_rent.save)()
+
+            message_content = {
+                              "start_time": request_rent.start_time,
+                              "end_time": request_rent.end_time,
+                              "start_date": request_rent.start_date,
+                              "end_date": request_rent.end_date,
+                              "total_cost": request_rent.total_cost,
+                              "status": request_rent.status
+            }
+            await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
+
             return True
         return False
+
+    @database_sync_to_async
+    def check_request_status(self, request_rent):
+        return request_rent.status == 'unknown' or request_rent.status == 'denied'
 
     @database_sync_to_async
     def has_on_request_availability(self, vehicle):
@@ -479,6 +498,8 @@ class ChatConsumer(BaseChatConsumer):
             'message_id': message_id,
             'translated_content': translated_content
         }, ensure_ascii=False))
+
+#############################################################################Пока работает
 
 
 class ChatSupportConsumer(BaseChatConsumer):
