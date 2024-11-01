@@ -80,7 +80,7 @@ class Lessor(models.Model):
     commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия', default=10.0)
 
     def clean(self):
-        if not (1 <= self.commission <= 90):
+        if not (1 <= float(self.commission) <= 90):
             raise ValidationError('Комиссия должна быть в пределах от 1% до 90%.')
 
     @receiver(post_delete, sender=Franchise)

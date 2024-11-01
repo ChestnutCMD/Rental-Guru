@@ -157,12 +157,16 @@ class Chat(models.Model):
         return f'Чат id-{self.pk}'
 
 
+def file_chat_upload_to(instance, filename):
+    return f'media/files/chat/{instance.id}/{filename}'
+
+
 class Message(models.Model):
     chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE, verbose_name='Чат')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Отправитель')
     content = models.TextField(verbose_name='Сообщение')
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
-    file = models.FileField(upload_to='media/chat_files/', blank=True, null=True, verbose_name='Файл')
+    file = models.FileField(upload_to=file_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
 
     class Meta:
