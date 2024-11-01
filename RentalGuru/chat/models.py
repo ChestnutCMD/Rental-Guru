@@ -154,11 +154,11 @@ class Chat(models.Model):
         verbose_name_plural = 'Чаты'
 
     def __str__(self):
-        return f'Чат id-{self.pk}'
+        return f'chat_id_{self.pk}'
 
 
 def file_chat_upload_to(instance, filename):
-    return f'media/files/chat/{instance.id}/{filename}'
+    return f'media/files/chat/{instance.chat}/{filename}'
 
 
 class Message(models.Model):
@@ -175,6 +175,7 @@ class Message(models.Model):
 
     def __str__(self):
         return self.content
+
 
 
 class TopicSupport(models.Model):
@@ -199,7 +200,7 @@ class ChatSupport(models.Model):
         verbose_name_plural = 'Чаты с техподдержкой'
 
     def __str__(self):
-        return f'Чат техподдержки id-{self.pk}'
+        return f'support_chat_id_{self.pk}'
 
 
 class MessageSupport(models.Model):

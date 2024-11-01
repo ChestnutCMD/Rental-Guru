@@ -1,5 +1,8 @@
+import base64
+import io
 import logging
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.utils import timezone
 from googletrans import Translator
@@ -10,6 +13,7 @@ from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 import json
 
+from RentalGuru.settings import HOST_URL
 from chat.models import MessageSupport, ChatSupport, Message, Chat
 from .tasks import translate_message
 
@@ -118,12 +122,39 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_send_message(self, data):
         message_content = data.get('message') if isinstance(data.get('message'), str) else data.get('content', '')
-        file = data.get('file')
+        base64_file = data.get('file')
         user = self.scope['user']
+
+        # Обработка файла
+        file = None
+        if base64_file:
+            try:
+                # Декодируем данные файла из Base64
+                file_data = base64.b64decode(base64_file.get('data', '').split(',')[1])
+                file_name = base64_file.get('name', 'unnamed_file')
+                content_type = base64_file.get('type', 'application/octet-stream')
+
+                # Создаем InMemoryUploadedFile для сохранения в базе данных
+                file = InMemoryUploadedFile(
+                    file=io.BytesIO(file_data),
+                    field_name=None,
+                    name=file_name,
+                    content_type=content_type,
+                    size=len(file_data),
+                    charset=None
+                )
+            except Exception as e:
+                logger.error(f"Error decoding base64 file: {e}")
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to decode the uploaded file'
+                }))
+                return False
 
         logger.info(f"Original message: {message_content}")
 
         try:
+            # Выполняем перевод содержимого сообщения, если это необходимо
             translated_message_content = translator.translate(message_content, dest=self.language).text
         except Exception as e:
             logger.error(f"Error during translation: {e}")
@@ -132,9 +163,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"Translated message: {translated_message_content}")
 
         try:
+            # Сохраняем сообщение с файлом
             message = await self.save_message(user, translated_message_content, file)
             message_data = self.format_message(message, user)
 
+            # Отправляем сообщение в группу WebSocket
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
@@ -146,6 +179,10 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             return True
         except Exception as e:
             logger.error(f"Error saving message: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Internal server error'
+            }))
             return False
 
     async def handle_update_message(self, data):
@@ -299,7 +336,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             },
             'content': message.content,
             'timestamp': message.timestamp.isoformat(),
-            'file': message.file.url if message.file else None,
+            'file': f"{HOST_URL}{message.file.url}" if message.file else None,
             'deleted': message.deleted
         }
 

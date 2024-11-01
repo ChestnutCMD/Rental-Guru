@@ -188,10 +188,10 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 при принятии заявки на аренду 
                                                                                 арендодателем. Чат доступен по адресу:\n 
                         wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
-                        Отправка простого сообщения: {"message": "Hello"}
-                        Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
+                        Отправка простого сообщения: {"message": "Hello"}                        
                         Удаление сообщения: {"delete": message_id}
-                        Обновление сообщения: {"update": message_id, "content": "New content"}""")
+                        Обновление сообщения: {"update": message_id, "content": "New content"}
+                        Отправка сообщения с файлом: {"message": {"content": "текст сообщения", "file": {"data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/...", "name": "example.jpg", "type": "image/jpeg"}}}""")
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
