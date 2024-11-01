@@ -315,7 +315,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             message_data = self.format_message(message, message.sender)
             message_data_list.append(message_data)
 
-            # Запускаем задачу перевода асинхронно
             translate_message.delay(message.id, message.content, self.language, self.channel_name)
 
         return message_data_list
@@ -385,18 +384,15 @@ class ChatConsumer(BaseChatConsumer):
         chat = await database_sync_to_async(self.get_chat_instance)()
         request_rent = chat.request_rent
 
-        # Проверяем, является ли пользователь владельцем транспортного средства и есть ли доступности с on_request=True
         is_owner = await database_sync_to_async(lambda: user == request_rent.vehicle.owner)()
         has_availability = await self.has_on_request_availability(request_rent.vehicle)
 
         if is_owner and has_availability:
-            # Обновляем поля заявки
             fields_to_update = ['start_time', 'end_time', 'start_date', 'end_date', 'total_cost']
             for field in fields_to_update:
                 if field in update_data:
                     setattr(request_rent, field, update_data[field])
 
-            # Обновляем content_type и object_id, если они переданы
             if 'content_type' in update_data:
                 content_type = await self.get_content_type(update_data['content_type'])
                 request_rent.content_type = content_type
@@ -478,7 +474,6 @@ class ChatConsumer(BaseChatConsumer):
         message_id = event['message_id']
         translated_content = event['translated_content']
 
-        # Отправляем обновленное сообщение клиенту
         await self.send(text_data=json.dumps({
             'type': 'message_translated',
             'message_id': message_id,
