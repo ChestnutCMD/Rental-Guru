@@ -190,8 +190,30 @@ class TripViewSet(viewsets.ModelViewSet):
                         wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                         Отправка простого сообщения: {"message": "Hello"}                        
                         Удаление сообщения: {"delete": message_id}
-                        Обновление сообщения: {"update": message_id, "content": "New content"}
-                        Отправка сообщения с файлом: {"message": {"content": "текст сообщения", "file": {"data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/...", "name": "example.jpg", "type": "image/jpeg"}}}""")
+                        Обновление сообщения: {"update": message_id, "content": "New content"}\n
+                        Отправка сообщения с файлом: {
+                                                      "message": {
+                                                                  "content": "текст сообщения", 
+                                                                  "file": {
+                                                                           "data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/...", 
+                                                                           "name": "example.jpg", 
+                                                                           "type": "image/jpeg"
+                                                                          }
+                                                                 }
+                                                     }
+                        
+                        Обновление заявки со стороны арендодателя: {
+                                                                    "update_request_rent": {
+                                                                        "content_type": "Auto",
+                                                                        "object_id": 7,
+                                                                        "start_time": "09:00",
+                                                                        "end_time": "18:00",
+                                                                        "start_date": "2024-11-01",
+                                                                        "end_date": "2024-11-10",
+                                                                        "total_cost": "500.00"
+                                                                        }
+                                                                    }
+                                                                """)
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
@@ -272,17 +294,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         if not model:
             raise DRFValidationError(f"Недопустимый тип транспортного средства: {vehicle_type}")
 
-        # Попытка получить сохранённый экземпляр транспортного средства
         try:
             vehicle_instance = model.objects.get(id=object_id)
         except model.DoesNotExist:
             raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
-        # Проверка доступности транспортного средства
         availabilities = vehicle_instance.availabilities.all()
 
         if availabilities.filter(on_request=True).exists():
-            # Если транспорт доступен "по запросу", даты указывать не нужно
             request_start_date = None
             request_end_date = None
         else:

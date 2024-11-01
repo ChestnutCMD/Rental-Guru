@@ -2,6 +2,7 @@ import base64
 import io
 import logging
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.utils import timezone
@@ -362,9 +363,58 @@ class ChatConsumer(BaseChatConsumer):
         await super().connect()
 
     async def receive(self, text_data):
-        self.message_received_at = timezone.now()
-        await super().receive(text_data)
-        await self.update_response_time()
+        data = json.loads(text_data)
+
+        if 'update_request_rent' in data:
+            success = await self.handle_request_rent_update(data['update_request_rent'])
+            if success:
+                await self.send(text_data=json.dumps({
+                    'type': 'update_success',
+                    'message': 'RequestRent updated successfully.'
+                }))
+            else:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to update RequestRent.'
+                }))
+        else:
+            await super().receive(text_data)
+
+    async def handle_request_rent_update(self, update_data):
+        user = self.scope['user']
+        chat = await database_sync_to_async(self.get_chat_instance)()
+        request_rent = chat.request_rent
+
+        # Проверяем, является ли пользователь владельцем транспортного средства и есть ли доступности с on_request=True
+        is_owner = await database_sync_to_async(lambda: user == request_rent.vehicle.owner)()
+        has_availability = await self.has_on_request_availability(request_rent.vehicle)
+
+        if is_owner and has_availability:
+            # Обновляем поля заявки
+            fields_to_update = ['start_time', 'end_time', 'start_date', 'end_date', 'total_cost']
+            for field in fields_to_update:
+                if field in update_data:
+                    setattr(request_rent, field, update_data[field])
+
+            # Обновляем content_type и object_id, если они переданы
+            if 'content_type' in update_data:
+                content_type = await self.get_content_type(update_data['content_type'])
+                request_rent.content_type = content_type
+
+            if 'object_id' in update_data:
+                request_rent.object_id = update_data['object_id']
+
+            await database_sync_to_async(request_rent.save)()
+            return True
+        return False
+
+    @database_sync_to_async
+    def has_on_request_availability(self, vehicle):
+        return vehicle.availabilities.filter(on_request=True).exists()
+
+    @database_sync_to_async
+    def get_content_type(self, model_name):
+        return ContentType.objects.get(model=model_name.lower())
 
     @database_sync_to_async
     def update_response_time(self):
@@ -434,7 +484,7 @@ class ChatConsumer(BaseChatConsumer):
             'message_id': message_id,
             'translated_content': translated_content
         }, ensure_ascii=False))
-        
+
 
 class ChatSupportConsumer(BaseChatConsumer):
     def get_chat_instance(self):
