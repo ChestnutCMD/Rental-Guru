@@ -38,7 +38,7 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
             Notification.objects.create(
                 user=instance.vehicle.owner,
                 content=f"Поступил запрос аренды на {instance.vehicle}",
-                url=f"wss://{HOST_URL}/ws/chat/{chat.pk}/"
+                url=f"wss://{HOST_URL.split('//')[1]}/ws/chat/{chat.pk}/"
             )
 
     if instance.status == 'accept' and not Trip.objects.filter(object_id=instance.object_id,
