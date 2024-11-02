@@ -2,10 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 
-from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, FavoriteVehicleViewSet, UpdateRatingView, \
-    CustomTokenObtainPairView, PasswordResetRequestView, FavoriteListViewSet, VerifyCodeView, \
+from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, UpdateRatingView, \
+    CustomTokenObtainPairView, PasswordResetRequestView, VerifyCodeView, \
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
-    SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView
+    SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
+    FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
+    FavoriteListDetailView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -13,8 +15,6 @@ from rest_framework_simplejwt.views import TokenRefreshView
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'renter-documents', RenterDocumentsViewSet, basename='renter-documents')
-router.register(r'favorites', FavoriteVehicleViewSet, basename='favorite-vehicle')
-router.register(r'favorite-lists', FavoriteListViewSet, basename='favorite-list')
 
 urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -34,6 +34,12 @@ urlpatterns = [
     path('telegram_register/', TelegramRegisterView.as_view(), name='telegram_register'),
     path('telegram_send_code/', SendCodeToEmailView.as_view(), name='send_code'),
     path('telegram_verified_email/', VerifiedEmailView.as_view(), name='verified_email'),
+
+    path('favorite_list/', FavoriteListView.as_view(), name='favorite_list'),
+    path('favorite_list/<int:id>/', FavoriteListDetailView.as_view(), name='favorite_list_detail'),
+    path('favorite_list/<int:pk>/delete/', FavoriteListDeleteView.as_view(), name='delete_favorite_list'),
+    path('favorite_list/<int:vehicle_id>/add_vehicle/', AddVehicleToFavoriteListView.as_view(), name='add_vehicle_to_favorite_list'),
+    path('favorite_list/<int:vehicle_id>/remove_vehicle/', RemoveVehicleFromFavoriteListView.as_view(), name='remove_vehicle_from_favorite_list'),
 
     path('', include(router.urls))
 ]

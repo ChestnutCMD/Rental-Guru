@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets, serializers
+from rest_framework import status, viewsets, serializers, generics
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -31,7 +31,7 @@ from notification.models import Notification
 from vehicle.models import Vehicle
 from .filters import RenterDocumentsFilter
 from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor, Currency, Language
-from .permissions import IsAdminOrSelf, IsAdmin
+from .permissions import IsAdminOrSelf, IsAdmin, IsAdminOrOwner, HasRenter
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
@@ -286,151 +286,96 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-@extend_schema(summary="Списки избранного", description="Списки избранного")
-class FavoriteListViewSet(viewsets.ModelViewSet):
+@extend_schema(summary="Списки избранного", description="Получение всех списков избранного пользователя")
+class FavoriteListView(generics.ListAPIView):
+    """Получить все списки избранного пользователя"""
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
     serializer_class = FavoriteListSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return FavoriteList.objects.filter(renter=self.request.user.renter)
 
-    def perform_create(self, serializer):
-        serializer.save(renter=self.request.user.renter)
 
-    @action(detail=True, methods=['post'])
-    def add_vehicle(self, request, pk=None):
-        favorite_list = self.get_object()
-        vehicle_id = request.data.get('vehicle_id')
-        if not vehicle_id:
-            return Response({'detail': 'Требуется ID транспортного средства'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            favorite_list.vehicles.add(vehicle)
-            # Удаляем из общего избранного, если он там был
-            request.user.renter.favorite.remove(vehicle)
-            return Response({'detail': 'Транспорт добавлен в список и удален из общего избранного'}, status=status.HTTP_200_OK)
-        except Vehicle.DoesNotExist:
-            return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
+@extend_schema(summary="Удаление списка избранного", description="Удаляет список избранного")
+class FavoriteListDeleteView(generics.DestroyAPIView):
+    """Удалить список избранного"""
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
+    queryset = FavoriteList.objects.all()
 
-    @action(detail=True, methods=['post'])
-    def remove_vehicle(self, request, pk=None):
-        favorite_list = self.get_object()
-        vehicle_id = request.data.get('vehicle_id')
-        if not vehicle_id:
-            return Response({'detail': 'Требуется ID транспортного средства'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            favorite_list.vehicles.remove(vehicle)
-            return Response({'detail': 'Транспорт удален из списка'}, status=status.HTTP_200_OK)
-        except Vehicle.DoesNotExist:
-            return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        return super().get_queryset().filter(renter=self.request.user.renter)
+
+
+class AddVehicleToFavoriteListView(APIView):
+    """ Добавление транспорта в список """
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
 
     @extend_schema(
-        summary="Создать новый список избранного",
-        description="Создает новый пустой список избранного или список с указанными транспортными средствами",
+        summary="Добавление транспорта в список",
+        description="Добавляет транспорт в список. Если нет списка с переданным названием, то создастся новый список",
         request=FavoriteListSerializer,
         responses={201: FavoriteListSerializer},
     )
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def post(self, request, vehicle_id):
+        list_name = request.data.get('name')
+        if not list_name:
+            return Response({'detail': 'Название списка обязательно'}, status=status.HTTP_400_BAD_REQUEST)
+
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+        favorite_list, created = FavoriteList.objects.get_or_create(renter=request.user.renter, name=list_name)
+        favorite_list.vehicles.add(vehicle)
+
+        return Response({'detail': 'Транспорт добавлен в список избранного', 'created': created}, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Удаление транспорта из избранного", description="Находит транспорт по id в списках избранного и удаляет его")
+class RemoveVehicleFromFavoriteListView(APIView):
+    """ Удаление транспорта из избранного """
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
+
+    def post(self, request, vehicle_id):
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+        favorite_lists = FavoriteList.objects.filter(renter=request.user.renter)
+        vehicle_found = False
+
+        for favorite_list in favorite_lists:
+            if vehicle in favorite_list.vehicles.all():
+                favorite_list.vehicles.remove(vehicle)
+                vehicle_found = True
+
+        if not vehicle_found:
+            return Response({'detail': 'Транспорт не найден в избранном'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'detail': 'Транспорт удалён из всех списков избранного'}, status=status.HTTP_200_OK)
+
+
+class FavoriteListDetailView(APIView):
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
+
+    @extend_schema(summary="Вывод транспорта из списка избранного",
+                   description="Выводит весь список транспорта из списка")
+    def get(self, request, id):
+        favorite_list = get_object_or_404(FavoriteList, id=id, renter=request.user.renter)
+        vehicles = favorite_list.vehicles.all()
+        serializer = VehicleListSerializer(vehicles, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        summary="Получить детальную информацию о списке избранного",
-        description="Возвращает детальную информацию о списке избранного, включая полные данные о транспортных средствах",
-        responses={200: FavoriteListSerializer},
+        summary="Изменение названия списка",
+        description="Изменяет название списка",
+        request=FavoriteListSerializer,
+        responses={201: FavoriteListSerializer},
     )
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+    def patch(self, request, id):
+        favorite_list = get_object_or_404(FavoriteList, id=id, renter=request.user.renter)
+        serializer = FavoriteListSerializer(favorite_list, data=request.data, partial=True,
+                                            context={'request': request})
 
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-@extend_schema(summary="Избранный транпорт", description="Избранный транпорт арендатора. Эндпоинты app/favorite/add/ "
-                                                         "и app/favorite/remove/ принимают {'vehicle_id': id} для "
-                                                         "добавления и удаления в список избранного соответственно")
-class FavoriteVehicleViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    def list(self, request):
-        user = request.user
-        try:
-            renter = user.renter
-        except Renter.DoesNotExist:
-            return Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
-
-        favorites = renter.favorite.all()
-        serializer = VehicleListSerializer(favorites, many=True)
-        return Response({'favorites': serializer.data}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['patch'], url_path='add', url_name='add_favorite')
-    def add_favorite(self, request):
-        user = request.user
-        try:
-            renter = user.renter
-        except Renter.DoesNotExist:
-            return Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
-
-        vehicle_id = request.data.get('vehicle_id')
-        if not vehicle_id:
-            return Response({'detail': 'Требуется ID транспортного средства'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            renter.favorite.add(vehicle)
-            return Response({'detail': 'Транспорт добавлен в общее избранное'}, status=status.HTTP_200_OK)
-        except Vehicle.DoesNotExist:
-            return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['patch'], url_path='remove', url_name='remove_favorite')
-    def remove_favorite(self, request):
-        user = request.user
-        try:
-            renter = user.renter
-        except Renter.DoesNotExist:
-            return Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
-
-        vehicle_id = request.data.get('vehicle_id')
-        if not vehicle_id:
-            return Response({'detail': 'Требуется ID транспортного средства'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            renter.favorite.remove(vehicle)
-            return Response({'detail': 'Транспорт удален из общего избранного'}, status=status.HTTP_200_OK)
-        except Vehicle.DoesNotExist:
-            return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['post'], url_path='move_to_list', url_name='move_to_list')
-    def move_to_list(self, request):
-        user = request.user
-        try:
-            renter = user.renter
-        except Renter.DoesNotExist:
-            return Response({'detail': 'Пользователь не является арендатором'}, status=status.HTTP_400_BAD_REQUEST)
-
-        vehicle_id = request.data.get('vehicle_id')
-        list_id = request.data.get('list_id')
-
-        if not vehicle_id or not list_id:
-            return Response({'detail': 'Требуется ID транспортного средства и ID списка'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            vehicle = Vehicle.objects.get(id=vehicle_id)
-            favorite_list = FavoriteList.objects.get(id=list_id, renter=renter)
-
-            # Удаляем из общего избранного и добавляем в конкретный список
-            renter.favorite.remove(vehicle)
-            favorite_list.vehicles.add(vehicle)
-
-            return Response({'detail': 'Транспорт перемещен из общего избранного в указанный список'}, status=status.HTTP_200_OK)
-        except Vehicle.DoesNotExist:
-            return Response({'detail': 'Транспорт не найден'}, status=status.HTTP_404_NOT_FOUND)
-        except FavoriteList.DoesNotExist:
-            return Response({'detail': 'Список избранного не найден'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(summary="Обновление рейтинга арендатора", description="Выставляется владельцем транспорта, после "
@@ -442,11 +387,8 @@ class UpdateRatingView(APIView):
     def post(self, request, renter_id):
         renter = get_object_or_404(Renter.objects.select_related('user'), id=renter_id)
         user = request.user
-
-        # Получаем все поездки арендатора и проверяем, что текущий пользователь является владельцем транспортного средства в одной из завершённых поездок
         trips = Trip.objects.filter(organizer=renter.user, end_date__lt=now()).select_related(
             'content_type').prefetch_related('vehicle')
-
         is_owner = any(trip.vehicle.owner == user for trip in trips)
 
         if not is_owner:
@@ -454,7 +396,6 @@ class UpdateRatingView(APIView):
                                 "detail": "Вы не являетесь владельцем транспортного средства в завершённых поездках данного арендатора."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Проверяем, что текущий пользователь еще не оставлял рейтинг этому арендатору
         if Rating.objects.filter(user=user, renter=renter).exists():
             return Response({"detail": "Вы уже оставляли рейтинг этому арендатору."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -462,12 +403,8 @@ class UpdateRatingView(APIView):
         serializer = UpdateRatingSerializer(data=request.data)
 
         if serializer.is_valid():
-            # Обновляем рейтинг арендатора
             serializer.update(renter, serializer.validated_data)
-
-            # Сохраняем информацию о рейтинге
             Rating.objects.create(user=user, renter=renter, rating=serializer.validated_data['rating'])
-
             return Response({"average_rating": renter.get_average_rating()}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

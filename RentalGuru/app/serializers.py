@@ -131,21 +131,30 @@ class UserListSerializer(serializers.ModelSerializer):
 class RenterDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = RenterDocuments
-        fields = ['id', 'title', 'number', 'photo', 'issue_date']
-        read_only_fields = ['id']
+        fields = ['id', 'title', 'number', 'photo', 'issue_date', 'status']
+        read_only_fields = ['id', 'status']
 
     def validate(self, data):
         if data['title'] == 'license' and not data.get('issue_date'):
             raise serializers.ValidationError({'issue_date': 'Дата выдачи обязательна для документов типа "права".'})
         return data
 
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+
+        if 'status' in validated_data:
+            if request and request.user.role not in ('admin', 'manager'):
+                raise serializers.ValidationError(
+                    {'detail': 'Изменение статуса разрешено только администратору или менеджеру'})
+
+        return super().update(instance, validated_data)
 
 class RenterDetailSerializer(serializers.ModelSerializer):
     renter_documents = RenterDocumentsSerializer(many=True, read_only=True)
 
     class Meta:
         model = Renter
-        fields = ['user', 'favorite', 'verification', 'renter_documents', 'influencer', 'rating']
+        fields = ['user', 'verification', 'renter_documents', 'influencer', 'rating']
 
 
 class LessorDetailSerializer(serializers.ModelSerializer):
@@ -322,7 +331,7 @@ class FavoriteListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FavoriteList
-        fields = ['id', 'name', 'vehicles']
+        fields = ['id', 'name', 'vehicles', 'created_at', 'updated_at']
         read_only_fields = ['id']
 
     def to_representation(self, instance):

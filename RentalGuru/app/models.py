@@ -101,7 +101,6 @@ def default_rating():
 
 class Renter(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='renter')
-    favorite = models.ManyToManyField(Vehicle, blank=True, verbose_name='Избранное')
     verification = models.BooleanField(default=False, verbose_name='Верифированный пользователь')
     rating = models.JSONField(default=default_rating, verbose_name='Рейтинг')
     influencer = models.ForeignKey(Influencer, null=True, blank=True, on_delete=models.SET_NULL, related_name='renters',
