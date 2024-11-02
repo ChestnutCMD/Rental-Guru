@@ -9,8 +9,10 @@ def merge_periods(periods):
     # Преобразуем даты в строки и сортируем периоды
     periods = sorted(periods, key=lambda x: x['start_date'])
 
-    # Фильтруем периоды с некорректными датами
-    valid_periods = [p for p in periods if p['start_date'] <= p['end_date']]
+    try:
+        valid_periods = [p for p in periods if p['start_date'] <= p['end_date']]
+    except TypeError:
+        return []
 
     if not valid_periods:
         return []
