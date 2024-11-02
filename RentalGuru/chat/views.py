@@ -213,7 +213,11 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                         "total_cost": "500.00"
                                                                         }
                                                                     }
-                                                                """)
+                        Обновление статуса заявки со стороны арендатора: {
+                                                                          "update_status": {
+                                                                             "status": "accept"
+                                                                             }
+                                                                        }""")
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]

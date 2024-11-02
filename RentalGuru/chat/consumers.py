@@ -2,6 +2,7 @@ import base64
 import io
 import logging
 
+from asgiref.sync import sync_to_async
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
@@ -16,6 +17,7 @@ import json
 
 from RentalGuru.settings import HOST_URL
 from chat.models import MessageSupport, ChatSupport, Message, Chat
+from notification.models import Notification
 from .tasks import translate_message
 
 translator = Translator()
@@ -417,12 +419,12 @@ class ChatConsumer(BaseChatConsumer):
             await database_sync_to_async(request_rent.save)()
 
             message_content = {
-                              "start_time": request_rent.start_time,
-                              "end_time": request_rent.end_time,
-                              "start_date": request_rent.start_date,
-                              "end_date": request_rent.end_date,
-                              "total_cost": request_rent.total_cost,
-                              "status": request_rent.status
+                "start_time": request_rent.start_time,
+                "end_time": request_rent.end_time,
+                "start_date": request_rent.start_date,
+                "end_date": request_rent.end_date,
+                "total_cost": request_rent.total_cost,
+                "status": request_rent.status
             }
             await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
 
@@ -431,7 +433,7 @@ class ChatConsumer(BaseChatConsumer):
 
     @database_sync_to_async
     def check_request_status(self, request_rent):
-        return request_rent.status == 'unknown' or request_rent.status == 'denied'
+        return request_rent.status in ['unknown', 'denied']
 
     @database_sync_to_async
     def has_on_request_availability(self, vehicle):
@@ -460,6 +462,10 @@ class ChatConsumer(BaseChatConsumer):
         request_rent.status = new_status
         await database_sync_to_async(request_rent.save)()
 
+        if new_status == 'accept':
+            vehicle_owner = await database_sync_to_async(lambda: request_rent.vehicle.owner)()
+            await self.create_notification(vehicle_owner, "Статус вашей заявки на аренду был принят.")
+
         status_display = {
             'accept': 'Принято',
             'denied': 'Отклонено'
@@ -467,6 +473,11 @@ class ChatConsumer(BaseChatConsumer):
         message_content = f"Статус заявки был обновлён на: **{status_display.get(new_status, new_status)}**."
         await self.handle_send_message({'message': message_content})
         return True
+
+    @database_sync_to_async
+    def create_notification(self, user, content):
+        """Создает уведомление для пользователя."""
+        Notification.objects.create(user=user, content=content)
 
     @database_sync_to_async
     def check_request_rent_fields(self, request_rent):
@@ -482,9 +493,7 @@ class ChatConsumer(BaseChatConsumer):
     async def send_status_update_message(self, chat, message_content):
         """Создает и отправляет сообщение в чат о статусе заявки."""
         user = self.scope['user']
-        message = await database_sync_to_async(self.create_message_instance)(
-            chat, user, json.dumps(message_content, ensure_ascii=False), file=None
-        )
+        message = await database_sync_to_async(self.create_message_instance)(chat, user, json.dumps(message_content, ensure_ascii=False), file=None)
         message_data = self.format_message(message, user)
 
         await self.channel_layer.group_send(
@@ -525,9 +534,6 @@ class ChatConsumer(BaseChatConsumer):
             'id', 'request_rent__id', 'request_rent__organizer__id', 'request_rent__content_type__id', 'request_rent__object_id'
         ).get(id=self.chat_id)
 
-    def get_chat_model(self):
-        return Chat
-
     def create_message_instance(self, chat, user, message_content, file):
         return Message.objects.create(chat=chat, sender=user, content=message_content, file=file)
 
@@ -544,22 +550,20 @@ class ChatConsumer(BaseChatConsumer):
             return True
 
         is_franchise_director = (
-                hasattr(chat.request_rent.vehicle, 'owner') and
-                chat.request_rent.vehicle.owner.lessor.franchise and
-                chat.request_rent.vehicle.owner.lessor.franchise.director == user
+            hasattr(chat.request_rent.vehicle, 'owner') and
+            chat.request_rent.vehicle.owner.lessor.franchise and
+            chat.request_rent.vehicle.owner.lessor.franchise.director == user
         )
 
         return (
-                user in chat.participants.all() or
-                user == chat.request_rent.organizer or
-                user == chat.request_rent.vehicle.owner or
-                is_franchise_director
+            user in chat.participants.all() or
+            user == chat.request_rent.organizer or
+            user == chat.request_rent.vehicle.owner or
+            is_franchise_director
         )
 
     async def chat_message_translated(self, event):
-        """
-        Обработчик для переведенных сообщений
-        """
+        """ Обработчик для переведенных сообщений """
         message_id = event['message_id']
         translated_content = event['translated_content']
 
