@@ -13,7 +13,7 @@ class RequestRent(models.Model):
         ('denied', 'Отказать'),
         ('unknown', 'Не рассмотрено')
     )
-    status = models.CharField(max_length=7, default='unknown', choices=STATUS_CHOICES, verbose_name='Статус')
+    status = models.CharField(max_length=8, default='unknown', choices=STATUS_CHOICES, verbose_name='Статус')
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                   related_name='request_rent_organized_trips', verbose_name='Автор')
 
@@ -146,7 +146,7 @@ class Trip(models.Model):
 
 
 class Chat(models.Model):
-    request_rent = models.ForeignKey(RequestRent, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
+    request_rent = models.ForeignKey(RequestRent, null=True, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:

@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseChatConsumer(AsyncWebsocketConsumer):
+    """ Базовый чат от кторого наследуются чат на аренду и чат с техподдержкой"""
     async def connect(self):
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.chat_group_name = f'chat_{self.chat_id}'
@@ -126,16 +127,13 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         base64_file = data.get('file')
         user = self.scope['user']
 
-        # Обработка файла
         file = None
         if base64_file:
             try:
-                # Декодируем данные файла из Base64
                 file_data = base64.b64decode(base64_file.get('data', '').split(',')[1])
                 file_name = base64_file.get('name', 'unnamed_file')
                 content_type = base64_file.get('type', 'application/octet-stream')
 
-                # Создаем InMemoryUploadedFile для сохранения в базе данных
                 file = InMemoryUploadedFile(
                     file=io.BytesIO(file_data),
                     field_name=None,
@@ -155,7 +153,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"Original message: {message_content}")
 
         try:
-            # Выполняем перевод содержимого сообщения, если это необходимо
             translated_message_content = translator.translate(message_content, dest=self.language).text
         except Exception as e:
             logger.error(f"Error during translation: {e}")
@@ -164,11 +161,9 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"Translated message: {translated_message_content}")
 
         try:
-            # Сохраняем сообщение с файлом
             message = await self.save_message(user, translated_message_content, file)
             message_data = self.format_message(message, user)
 
-            # Отправляем сообщение в группу WebSocket
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
@@ -357,6 +352,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
 
 class ChatConsumer(BaseChatConsumer):
+    """ Чат по аренде """
     async def connect(self):
         self.connected_at = timezone.now()
         await super().connect()
@@ -377,10 +373,24 @@ class ChatConsumer(BaseChatConsumer):
                     'type': 'error',
                     'message': 'Failed to update RequestRent.'
                 }))
+        elif 'update_status' in data:
+            new_status = data['update_status']
+            success = await self.handle_request_rent_status_update(new_status)
+            if success:
+                await self.send(text_data=json.dumps({
+                    'type': 'status_update_success',
+                    'message': f"Status updated to {new_status}."
+                }))
+            else:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to update status.'
+                }))
         else:
             await super().receive(text_data)
 
     async def handle_request_rent_update(self, update_data):
+        """ Обновление заявки на аренду арендодателем """
         user = self.scope['user']
         chat = await database_sync_to_async(self.get_chat_instance)()
         request_rent = chat.request_rent
@@ -427,12 +437,72 @@ class ChatConsumer(BaseChatConsumer):
     def has_on_request_availability(self, vehicle):
         return vehicle.availabilities.filter(on_request=True).exists()
 
+    async def handle_request_rent_status_update(self, update_data):
+        """ Обновление статуса заявки на аренду от арендатора """
+        user = self.scope['user']
+        chat = await database_sync_to_async(self.get_chat_instance)()
+        request_rent = chat.request_rent
+
+        is_organizer = await database_sync_to_async(lambda: user == request_rent.organizer)()
+        if not is_organizer:
+            return False
+
+        new_status = update_data.get('status')
+        valid_statuses = ['accept', 'denied']
+        if new_status not in valid_statuses:
+            return False
+
+        if new_status == 'accept':
+            fields_valid = await self.check_request_rent_fields(request_rent)
+            if not fields_valid:
+                return False
+
+        request_rent.status = new_status
+        await database_sync_to_async(request_rent.save)()
+
+        status_display = {
+            'accept': 'Принято',
+            'denied': 'Отклонено'
+        }
+        message_content = f"Статус заявки был обновлён на: **{status_display.get(new_status, new_status)}**."
+        await self.handle_send_message({'message': message_content})
+        return True
+
+    @database_sync_to_async
+    def check_request_rent_fields(self, request_rent):
+        """Проверяет, что поля не равны None и total_cost больше 0."""
+        return all([
+            request_rent.start_time is not None,
+            request_rent.end_time is not None,
+            request_rent.start_date is not None,
+            request_rent.end_date is not None,
+            request_rent.total_cost > 0
+        ])
+
+    async def send_status_update_message(self, chat, message_content):
+        """Создает и отправляет сообщение в чат о статусе заявки."""
+        user = self.scope['user']
+        message = await database_sync_to_async(self.create_message_instance)(
+            chat, user, json.dumps(message_content, ensure_ascii=False), file=None
+        )
+        message_data = self.format_message(message, user)
+
+        await self.channel_layer.group_send(
+            self.chat_group_name,
+            {
+                'type': 'chat_message',
+                'message': message_data,
+                'action': 'status_update'
+            }
+        )
+
     @database_sync_to_async
     def get_content_type(self, model_name):
         return ContentType.objects.get(model=model_name.lower())
 
     @database_sync_to_async
     def update_response_time(self):
+        """ Обновление среднего времени ответа арендодателя"""
         user = self.scope['user']
         if hasattr(user, 'lessor'):
             response_time = self.message_received_at - self.connected_at
@@ -499,10 +569,9 @@ class ChatConsumer(BaseChatConsumer):
             'translated_content': translated_content
         }, ensure_ascii=False))
 
-#############################################################################Пока работает
-
 
 class ChatSupportConsumer(BaseChatConsumer):
+    """ Чат техподдержки """
     def get_chat_instance(self):
         return self.get_chat_model().objects.select_related('creator', 'topic').get(id=self.chat_id)
 

@@ -12,7 +12,6 @@ from notification.models import Notification
 def handle_request_rent_post_save(sender, instance, created, **kwargs):
     """Обработчик для создания чата и связанных записей поездок."""
     if created and instance.vehicle:
-        # Создаем чат, если заявка доступна "по запросу" и статус "не рассмотрено"
         if instance.vehicle.availabilities.filter(on_request=True).exists() and instance.status == 'unknown':
             instance.create_chat()
 
@@ -42,8 +41,9 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 url=f"wss://{HOST_URL}/ws/chat/{chat.pk}/"
             )
 
-    # Если заявка подтверждена, создаем поездку
-    if instance.status == 'accept':
+    if instance.status == 'accept' and not Trip.objects.filter(object_id=instance.object_id,
+                                                               start_date=instance.start_date,
+                                                               end_date=instance.end_date).exists():
         Trip.objects.create(
             organizer=instance.organizer,
             content_type=instance.content_type,
