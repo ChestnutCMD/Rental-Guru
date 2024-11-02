@@ -44,12 +44,8 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-
-        # Если пользователь - администратор, возвращаем все ссылки
         if user.role == 'admin':
             return ReferralLink.objects.select_related('influencer__user')
-
-        # Если пользователь не администратор, возвращаем только его ссылки
         return ReferralLink.objects.filter(influencer__user=user).select_related('influencer__user')
 
     def perform_create(self, serializer):

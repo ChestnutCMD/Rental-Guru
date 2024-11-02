@@ -32,7 +32,7 @@ class Influencer(models.Model):
 
 class ReferralLink(models.Model):
     influencer = models.ForeignKey('Influencer', on_delete=models.CASCADE, related_name='referral_links', verbose_name='Инфлюенсер')
-    channel = models.CharField(max_length=50, verbose_name='Название канала')  # YouTube, Telegram, Instagram, etc.
+    channel = models.CharField(max_length=50, verbose_name='Название канала')
     link = models.URLField(blank=True, verbose_name='Ссылка')
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
 
@@ -45,7 +45,7 @@ class ReferralLink(models.Model):
         super().save(*args, **kwargs)
 
     def generate_referral_link(self):
-        base_url = f"{settings.HOST_URL}/app/users/"  # Замените на фактический базовый URL вашего сайта
+        base_url = f"{settings.HOST_URL}/app/users/"
         random_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         return f"{base_url}?ref={self.influencer.referral_code}&code={random_code}"
 

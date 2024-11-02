@@ -1,3 +1,5 @@
+import os
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
@@ -19,7 +21,7 @@ from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, Speci
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
-    BikeTransmission, VehicleClass
+    BikeTransmission, VehicleClass, VehiclePhoto
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
     PaymentMethodSerializer, VehicleClassSerializer
@@ -489,3 +491,22 @@ class AllVehiclesListView(APIView):
             filtered_queryset = filterset.qs
 
         return filtered_queryset
+
+
+class VehiclePhotoDeleteView(APIView):
+    permission_classes = [IsAdminOrOwner]
+
+    def get_object(self):
+        photo = get_object_or_404(VehiclePhoto, id=self.kwargs['photo_id'])
+        return photo.vehicle
+
+    def delete(self, request, photo_id):
+        photo = get_object_or_404(VehiclePhoto, id=photo_id)
+        self.check_object_permissions(request, photo.vehicle)
+
+        photo_path = photo.photo.path
+        photo.delete()
+        if os.path.isfile(photo_path):
+            os.remove(photo_path)
+
+        return Response({"detail": "Фото удалено"}, status=status.HTTP_204_NO_CONTENT)

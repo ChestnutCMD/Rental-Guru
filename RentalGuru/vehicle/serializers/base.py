@@ -245,9 +245,12 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
     def get_payment_method(self, obj):
         return [payment.name for payment in obj.payment_method.all()]
 
-    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_photos(self, obj):
-        return [f"{HOST_URL}/{i.photo.url}" for i in obj.photos.all()]
+        return [
+            {"id": i.id, "url": f"{HOST_URL}/{i.photo.url}"}
+            for i in obj.photos.all()
+        ]
 
 
 class VehicleFeaturesFunctionsSerializer(serializers.ModelSerializer):

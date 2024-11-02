@@ -4,7 +4,8 @@ from .views import VehicleBrandViewSet, VehicleModelViewSet, AutoViewSet, BikeVi
     SpecialTechnicViewSet, UpdateRatingView, gps_tracking_view, VehicleFeaturesFunctionsListView, \
     AutoFeaturesAdditionallyListView, BikeFeaturesAdditionallyListView, ShipFeaturesAdditionallyListView, \
     FeaturesForChildrenListView, FeaturesEquipmentListView, PaymentMethodListView, BikeTransmissionListView, \
-    AutoTransmissionListView, AutoFuelTypeListView, AutoBodyTypeListView, VehicleClassListView, AllVehiclesListView
+    AutoTransmissionListView, AutoFuelTypeListView, AutoBodyTypeListView, VehicleClassListView, AllVehiclesListView, \
+    VehiclePhotoDeleteView
 
 router = DefaultRouter()
 router.register(r'brands', VehicleBrandViewSet)
@@ -34,4 +35,5 @@ urlpatterns = [
 
     path('all_vehicles/', AllVehiclesListView.as_view(), name='all_vehicles'),
     path('ws/gps_tracking/<int:vehicle_id>/', gps_tracking_view, name='gps_tracking'),
+    path('photos/<int:photo_id>/delete/', VehiclePhotoDeleteView.as_view(), name='delete_vehicle_photo'),
 ]
