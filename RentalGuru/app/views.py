@@ -348,6 +348,19 @@ class RemoveVehicleFromFavoriteListView(APIView):
         return Response({'detail': 'Транспорт удалён из всех списков избранного'}, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Получение всего транспорта", description="Возвращает массив всего транспорта из всех списков избранного")
+class FavoriteListAllVehiclesView(APIView):
+    permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
+
+    @extend_schema(summary="Получить весь транспорт из всех списков избранного",
+                   description="Возвращает транспорт из всех списков избранного пользователя")
+    def get(self, request):
+        favorite_lists = FavoriteList.objects.filter(renter=request.user.renter)
+        vehicles = Vehicle.objects.filter(in_favorite_lists__in=favorite_lists).prefetch_related('photos', 'owner')
+        serializer = VehicleListSerializer(vehicles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class FavoriteListDetailView(APIView):
     permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
 

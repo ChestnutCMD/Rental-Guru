@@ -149,6 +149,7 @@ class RenterDocumentsSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
+
 class RenterDetailSerializer(serializers.ModelSerializer):
     renter_documents = RenterDocumentsSerializer(many=True, read_only=True)
 

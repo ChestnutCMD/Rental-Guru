@@ -7,7 +7,7 @@ from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, Upda
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
     SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
     FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
-    FavoriteListDetailView
+    FavoriteListDetailView, FavoriteListAllVehiclesView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -36,6 +36,7 @@ urlpatterns = [
     path('telegram_verified_email/', VerifiedEmailView.as_view(), name='verified_email'),
 
     path('favorite_list/', FavoriteListView.as_view(), name='favorite_list'),
+    path('favorite_list/all_vehicles/', FavoriteListAllVehiclesView.as_view(), name='all_vehicles_from_favorite_lists'),
     path('favorite_list/<int:id>/', FavoriteListDetailView.as_view(), name='favorite_list_detail'),
     path('favorite_list/<int:pk>/delete/', FavoriteListDeleteView.as_view(), name='delete_favorite_list'),
     path('favorite_list/<int:vehicle_id>/add_vehicle/', AddVehicleToFavoriteListView.as_view(), name='add_vehicle_to_favorite_list'),
