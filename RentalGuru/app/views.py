@@ -36,7 +36,7 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListS
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
     BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer, \
-    TelegramRegisterSerializer, EmailVerifiedSerializer
+    TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList
 from .task import send_verification_email, send_sms
 
 
@@ -348,7 +348,7 @@ class RemoveVehicleFromFavoriteListView(APIView):
         return Response({'detail': 'Транспорт удалён из всех списков избранного'}, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Получение всего транспорта", description="Возвращает массив всего транспорта из всех списков избранного")
+@extend_schema(summary="Получение ID всего транспорта", description="Возвращает массив из ID всего транспорта из всех списков избранного")
 class FavoriteListAllVehiclesView(APIView):
     permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
 
@@ -356,8 +356,9 @@ class FavoriteListAllVehiclesView(APIView):
                    description="Возвращает транспорт из всех списков избранного пользователя")
     def get(self, request):
         favorite_lists = FavoriteList.objects.filter(renter=request.user.renter)
-        vehicles = Vehicle.objects.filter(in_favorite_lists__in=favorite_lists).prefetch_related('photos', 'owner')
-        serializer = VehicleListSerializer(vehicles, many=True)
+        vehicles = Vehicle.objects.filter(in_favorite_lists__in=favorite_lists)
+        #serializer = VehicleListSerializer(vehicles, many=True)
+        serializer = VehicleFavoriteList(vehicles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

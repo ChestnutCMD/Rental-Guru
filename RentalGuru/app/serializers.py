@@ -233,6 +233,12 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class VehicleFavoriteList(serializers.ModelSerializer):
+    class Meta:
+        model = Vehicle
+        fields = ['id']
+
+
 class VehicleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehicle
