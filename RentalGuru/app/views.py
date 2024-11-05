@@ -12,7 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets, serializers, generics
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404, ListAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -287,13 +287,32 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(summary="Списки избранного", description="Получение всех списков избранного пользователя")
-class FavoriteListView(generics.ListAPIView):
+class FavoriteListView(ListAPIView, CreateAPIView):
     """Получить все списки избранного пользователя"""
     permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
     serializer_class = FavoriteListSerializer
 
     def get_queryset(self):
         return FavoriteList.objects.filter(renter=self.request.user.renter)
+
+    @extend_schema(
+        summary="Создание нового списка избранного",
+        description="Создаёт пустой список избранного с указанным названием",
+        request=FavoriteListSerializer,
+        responses={201: FavoriteListSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        list_name = request.data.get('name')
+        if not list_name:
+            return Response({'detail': 'Название списка обязательно'}, status=status.HTTP_400_BAD_REQUEST)
+
+        favorite_list, created = FavoriteList.objects.get_or_create(renter=request.user.renter, name=list_name)
+
+        if created:
+            serializer = self.get_serializer(favorite_list)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'detail': 'Список с таким названием уже существует'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(summary="Удаление списка избранного", description="Удаляет список избранного")
@@ -357,7 +376,6 @@ class FavoriteListAllVehiclesView(APIView):
     def get(self, request):
         favorite_lists = FavoriteList.objects.filter(renter=request.user.renter)
         vehicles = Vehicle.objects.filter(in_favorite_lists__in=favorite_lists)
-        #serializer = VehicleListSerializer(vehicles, many=True)
         serializer = VehicleFavoriteList(vehicles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
