@@ -188,7 +188,7 @@ class FranchiseStatisticsSerializer(serializers.Serializer):
     active_users_count = serializers.IntegerField()
 
 
-class RequestFranchiseSerializer(serializers.Serializer):
+class RequestFranchiseSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestFranchise
         fields = '__all__'
