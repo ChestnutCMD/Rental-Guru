@@ -27,8 +27,16 @@ class VehicleBrand(models.Model):
 
 
 class VehicleModel(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE)
+    VEHICLE_TYPES = (
+        ('auto', 'Автомобиль'),
+        ('bike', 'Мотоцикл'),
+        ('ship', 'Судно'),
+        ('helicopter', 'Вертолет'),
+        ('special_technic', 'Спецтехника'),
+    )
+    name = models.CharField(max_length=50, unique=True, verbose_name='Название')
+    brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, verbose_name='Марка')
+    vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPES, null=True, blank=True, verbose_name='Тип транспорта')
 
     def __str__(self):
         return self.name

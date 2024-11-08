@@ -17,7 +17,8 @@ from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
 from notification.models import Notification
-from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter
+from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
+    VehicleModelFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
@@ -49,6 +50,8 @@ class VehicleBrandViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Модель транспорта", description="Модель транспорта")
 class VehicleModelViewSet(viewsets.ModelViewSet):
     queryset = VehicleModel.objects.all().select_related('brand')
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = VehicleModelFilter
     serializer_class = VehicleModelSerializer
     permission_classes = [IsAdminOrReadOnly]
 

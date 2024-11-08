@@ -1,8 +1,7 @@
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
-from vehicle.models import AutoFeaturesAdditionally, Auto, BikeFeaturesAdditionally, Bike, ShipFeaturesAdditionally, \
-    Ship, Helicopter, SpecialTechnic
+from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel
 
 
 class BaseFilter(filters.FilterSet):
@@ -145,3 +144,11 @@ class SpecialTechnicFilter(BaseFilter):
         fields = [
             'day_price', 'super_host', 'rental_date', 'brand',
             'year', 'type_technic', 'engine_power', 'operating_weight']
+
+
+class VehicleModelFilter(filters.FilterSet):
+    vehicle_type = filters.ChoiceFilter(choices=VehicleModel.VEHICLE_TYPES, label="Тип транспорта")
+
+    class Meta:
+        model = VehicleModel
+        fields = ['vehicle_type']
