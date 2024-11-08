@@ -16,7 +16,11 @@ class IsAdminOrSelf(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.role in ('admin', 'manager'):
             return True
-        return hasattr(request.user, 'renter') and obj.renter == request.user.renter
+        elif hasattr(request.user, 'renter'):
+            return obj.renter == request.user.renter
+        elif hasattr(request.user, 'lessor'):
+            return obj.lessor == request.user.lessor
+        return False
 
 
 class IsAdminOrOwner(BasePermission):
