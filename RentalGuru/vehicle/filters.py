@@ -25,6 +25,10 @@ class BaseFilter(filters.FilterSet):
     def filter_by_rental_date(self, queryset, name, value):
         return queryset.filter(availabilities__start_date__lte=value, availabilities__end_date__gte=value)
 
+    def filter_by_brand(self, queryset, name, value):
+        brand_names = value.split(",")
+        return queryset.filter(brand__name__in=brand_names)
+
     def filter_by_lat_lon(self, queryset, name, value):
         lat = self.data.get('lat')
         lon = self.data.get('lon')
