@@ -2,7 +2,7 @@ from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
 from vehicle.models import AutoFeaturesAdditionally, Auto, BikeFeaturesAdditionally, Bike, ShipFeaturesAdditionally, \
-    Ship, Helicopter, SpecialTechnic, VehicleBrand
+    Ship, Helicopter, SpecialTechnic
 
 
 class BaseFilter(filters.FilterSet):
@@ -59,11 +59,16 @@ class AutoFilter(BaseFilter):
 
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
-    features = filters.ModelMultipleChoiceFilter(queryset=AutoFeaturesAdditionally.objects.all(), field_name='features_additionally', label='Выбор особенностей')
     fuel_type = filters.CharFilter(field_name='fuel_type__slug', label='Тип топлива')
     seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
     body_type = filters.CharFilter(field_name='body_type__slug', label='Тип кузова')
+    features = filters.ModelMultipleChoiceFilter(
+        field_name='features_additionally__name',
+        queryset=AutoFeaturesAdditionally.objects.all(),
+        to_field_name='name',
+        label='Выбор особенностей'
+    )
 
     class Meta:
         model = Auto
@@ -76,10 +81,15 @@ class AutoFilter(BaseFilter):
 class BikeFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
-    features = filters.ModelMultipleChoiceFilter(queryset=BikeFeaturesAdditionally.objects.all(), field_name='features_additionally', label='Выбор особенностей')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
+    features = filters.ModelMultipleChoiceFilter(
+        field_name='features_additionally__name',
+        queryset=AutoFeaturesAdditionally.objects.all(),
+        to_field_name='name',
+        label='Выбор особенностей'
+    )
 
     class Meta:
         model = Bike
@@ -93,10 +103,15 @@ class BikeFilter(BaseFilter):
 class ShipFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
-    features = filters.ModelMultipleChoiceFilter(queryset=ShipFeaturesAdditionally.objects.all(), field_name='features_additionally', label='Выбор особенностей')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
     grot = filters.CharFilter(field_name='grot', label='Грот')
+    features = filters.ModelMultipleChoiceFilter(
+        field_name='features_additionally__name',
+        queryset=AutoFeaturesAdditionally.objects.all(),
+        to_field_name='name',
+        label='Выбор особенностей'
+    )
 
     class Meta:
         model = Ship
