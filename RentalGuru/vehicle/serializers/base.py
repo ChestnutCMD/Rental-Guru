@@ -194,6 +194,34 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
             raise serializers.ValidationError(f'Год выпуска должен быть в пределах от 1900 до {current_year}.')
         return value
 
+    def validate(self, data):
+        model_id = data.get('model')
+
+        if not model_id:
+            raise serializers.ValidationError("Модель транспортного средства не указана.")
+        vehicle_model = VehicleModel.objects.get(id=model_id)
+
+        instance = self.instance
+        if isinstance(instance, Auto):
+            expected_vehicle_type = 'auto'
+        elif isinstance(instance, Bike):
+            expected_vehicle_type = 'bike'
+        elif isinstance(instance, Ship):
+            expected_vehicle_type = 'ship'
+        elif isinstance(instance, Helicopter):
+            expected_vehicle_type = 'helicopter'
+        elif isinstance(instance, SpecialTechnic):
+            expected_vehicle_type = 'special_technic'
+        else:
+            raise serializers.ValidationError("Неизвестный тип транспортного средства.")
+
+        if vehicle_model.vehicle_type != expected_vehicle_type:
+            raise serializers.ValidationError(
+                f"Модель {vehicle_model.name} не подходит для типа транспорта '{expected_vehicle_type}'."
+            )
+
+        return data
+
     def create(self, validated_data):
         request = self.context.get('request')
         validated_data['owner'] = request.user
