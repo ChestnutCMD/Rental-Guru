@@ -55,7 +55,7 @@ class AutoFilter(BaseFilter):
 
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
-    features = filters.ModelMultipleChoiceFilter(queryset=AutoFeaturesAdditionally.objects.all(), label='Выбор особенностей')
+    features = filters.ModelMultipleChoiceFilter(queryset=AutoFeaturesAdditionally.objects.all(), field_name='features_additionally', label='Выбор особенностей')
     fuel_type = filters.CharFilter(field_name='fuel_type__slug', label='Тип топлива')
     seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
