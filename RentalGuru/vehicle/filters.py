@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
@@ -12,7 +13,7 @@ class BaseFilter(filters.FilterSet):
                                           label='Сдается только верифицированным пользователям')
     brand = filters.CharFilter(method='filter_by_brand', label='Марка')
     year = filters.RangeFilter(field_name='year', label='Год выпуска')
-    rental_date = filters.DateFromToRangeFilter(field_name='availabilities__start_date', label='Выбор даты аренды')
+    rental_date = filters.DateFromToRangeFilter(method='filter_by_rental_date', label='Выбор даты аренды')
     city = filters.CharFilter(field_name='city__title', label='Город')
 
     lat = filters.NumberFilter(method='filter_by_lat_lon', label='Широта')
@@ -23,7 +24,19 @@ class BaseFilter(filters.FilterSet):
         abstract = True
 
     def filter_by_rental_date(self, queryset, name, value):
-        return queryset.filter(availabilities__start_date__lte=value, availabilities__end_date__gte=value)
+        """
+        Фильтрация по диапазону дат аренды, чтобы начальная дата фильтра была позже или совпадала с
+        availabilities__start_date, а конечная дата была раньше или совпадала с availabilities__end_date.
+        """
+        if value.start and value.stop:
+            queryset = queryset.filter(
+                Q(availabilities__start_date__lte=value.start) & Q(availabilities__end_date__gte=value.stop)
+            )
+        elif value.start:
+            queryset = queryset.filter(availabilities__start_date__lte=value.start)
+        elif value.stop:
+            queryset = queryset.filter(availabilities__end_date__gte=value.stop)
+        return queryset
 
     def filter_by_brand(self, queryset, name, value):
         brand_names = value.split(",")
