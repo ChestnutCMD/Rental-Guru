@@ -1,7 +1,8 @@
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
-from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel
+from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel, \
+    BikeFeaturesAdditionally, ShipFeaturesAdditionally
 
 
 class BaseFilter(filters.FilterSet):
@@ -85,7 +86,7 @@ class BikeFilter(BaseFilter):
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
     features = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__name',
-        queryset=AutoFeaturesAdditionally.objects.all(),
+        queryset=BikeFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
     )
@@ -107,7 +108,7 @@ class ShipFilter(BaseFilter):
     grot = filters.CharFilter(field_name='grot', label='Грот')
     features = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__name',
-        queryset=AutoFeaturesAdditionally.objects.all(),
+        queryset=ShipFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
     )
