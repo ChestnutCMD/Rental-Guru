@@ -3,7 +3,7 @@ import os
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.db.models import F, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
@@ -499,6 +499,7 @@ class AllVehiclesListView(APIView):
         return filtered_queryset
 
 
+@extend_schema(summary="Удаление фото транспорта", description="Удаление фото транспорта по id")
 class VehiclePhotoDeleteView(APIView):
     permission_classes = [IsAdminOrOwner]
 
@@ -518,6 +519,12 @@ class VehiclePhotoDeleteView(APIView):
         return Response({"detail": "Фото удалено"}, status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(summary="Поиск транспорта", description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
+                                                       Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
+                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
+                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
+                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
+                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
 class VehicleSearchViewSet(viewsets.ViewSet):
     def get_serializer_for_model(self, model_class):
         serializers = {
@@ -539,10 +546,13 @@ class VehicleSearchViewSet(viewsets.ViewSet):
                 'vehicles': []
             })
 
-        search_query = SearchQuery(query, config='russian')
+        matching_brands = VehicleBrand.objects.annotate(
+            similarity=TrigramSimilarity('name', query)
+        ).filter(similarity__gt=0.3).order_by('-similarity')
 
-        matching_brands = VehicleBrand.objects.filter(search_vector=search_query)
-        matching_models = VehicleModel.objects.filter(search_vector=search_query)
+        matching_models = VehicleModel.objects.annotate(
+            similarity=TrigramSimilarity('name', query)
+        ).filter(similarity__gt=0.3).order_by('-similarity')
 
         vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
 

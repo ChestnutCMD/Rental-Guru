@@ -28,6 +28,7 @@ class VehicleBrand(models.Model):
         verbose_name = 'Марка'
         verbose_name_plural = 'Марки'
         indexes = [
+            GinIndex(fields=['name'], name='vehicle_brand_name_trgm', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['search_vector'])
         ]
 
@@ -52,6 +53,7 @@ class VehicleModel(models.Model):
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
         indexes = [
+            GinIndex(fields=['name'], name='vehicle_model_name_trgm', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['search_vector'])
         ]
 
