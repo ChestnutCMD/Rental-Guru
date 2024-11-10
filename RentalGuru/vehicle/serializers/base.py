@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from RentalGuru.settings import HOST_URL
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
-    VehicleBrand, VehicleFeaturesFunctions, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic
+    VehicleBrand, VehicleFeaturesFunctions, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic, Vehicle
 from vehicle.utils import merge_periods
 
 
@@ -341,3 +341,13 @@ class VehicleClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleClass
         fields = '__all__'
+
+
+class VehicleSerializer(serializers.ModelSerializer):
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+    model_name = serializers.CharField(source='model.name', read_only=True)
+    vehicle_type = serializers.CharField(source='get_vehicle_type_display', read_only=True)
+
+    class Meta:
+        model = Vehicle
+        fields = ['id', 'brand_name', 'model_name', 'vehicle_type']

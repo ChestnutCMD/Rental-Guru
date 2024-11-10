@@ -1,3 +1,5 @@
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -17,6 +19,7 @@ from vehicle.utils import merge_periods
 class VehicleBrand(models.Model):
     name = models.CharField(max_length=50, unique=True)
     logo = models.ImageField(upload_to='media/images/vehicle/brand_logo')
+    search_vector = SearchVectorField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -24,6 +27,9 @@ class VehicleBrand(models.Model):
     class Meta:
         verbose_name = 'Марка'
         verbose_name_plural = 'Марки'
+        indexes = [
+            GinIndex(fields=['search_vector'])
+        ]
 
 
 class VehicleModel(models.Model):
@@ -37,6 +43,7 @@ class VehicleModel(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name='Название')
     brand = models.ForeignKey(VehicleBrand, on_delete=models.CASCADE, verbose_name='Марка')
     vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPES, null=True, blank=True, verbose_name='Тип транспорта')
+    search_vector = SearchVectorField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -44,6 +51,9 @@ class VehicleModel(models.Model):
     class Meta:
         verbose_name = 'Модель'
         verbose_name_plural = 'Модели'
+        indexes = [
+            GinIndex(fields=['search_vector'])
+        ]
 
 
 class VehicleFeaturesFunctions(models.Model):
@@ -191,6 +201,7 @@ class Vehicle(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         previous_instance = Vehicle.objects.filter(pk=self.pk).first()
+
         super().save(*args, **kwargs)
 
         if previous_instance and not previous_instance.verified and self.verified:

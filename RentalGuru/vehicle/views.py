@@ -3,15 +3,18 @@ import os
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.db.models import F, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from RentalGuru import settings
 from app.models import Lessor
@@ -25,7 +28,7 @@ from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, Sp
     BikeTransmission, VehicleClass, VehiclePhoto
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
-    PaymentMethodSerializer, VehicleClassSerializer
+    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
     AutoTransmissionSerializer, AutoBodyTypeSerializer
@@ -513,3 +516,56 @@ class VehiclePhotoDeleteView(APIView):
             os.remove(photo_path)
 
         return Response({"detail": "Фото удалено"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class VehicleSearchViewSet(viewsets.ViewSet):
+    def get_serializer_for_model(self, model_class):
+        serializers = {
+            Auto: AutoListSerializer,
+            Bike: BikeListSerializer,
+            Ship: ShipListSerializer,
+            Helicopter: HelicopterListSerializer,
+            SpecialTechnic: SpecialTechnicListSerializer,
+        }
+        return serializers.get(model_class, VehicleSerializer)
+
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        vehicle_type = request.query_params.get('type', None)
+
+        if not query:
+            return Response({
+                'vehicles': []
+            })
+
+        search_query = SearchQuery(query, config='russian')
+
+        matching_brands = VehicleBrand.objects.filter(search_vector=search_query)
+        matching_models = VehicleModel.objects.filter(search_vector=search_query)
+
+        vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
+
+        vehicle_type_mapping = {
+            'auto': Auto,
+            'bike': Bike,
+            'ship': Ship,
+            'helicopter': Helicopter,
+            'special_technic': SpecialTechnic
+        }
+
+        if vehicle_type and vehicle_type in vehicle_type_mapping:
+            model_class = vehicle_type_mapping[vehicle_type]
+            vehicles = model_class.objects.filter(vehicle_query)
+            serializer = self.get_serializer_for_model(model_class)
+            result = serializer(vehicles, many=True).data
+        else:
+            result = []
+            for vehicle_type, model_class in vehicle_type_mapping.items():
+                vehicles = model_class.objects.filter(vehicle_query)
+                serializer = self.get_serializer_for_model(model_class)
+                result.extend(serializer(vehicles, many=True).data)
+
+        return Response({
+            'vehicles': result
+        })
