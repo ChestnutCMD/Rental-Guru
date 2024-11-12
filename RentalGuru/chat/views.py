@@ -422,8 +422,8 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             if new_status == 'accept':
                 if instance.owner != self.request.user:
                     raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
-                if not instance.deposit_paid:
-                    raise ValidationError("Депозит должен быть оплачен перед принятием заявки.")
+                # if not instance.deposit_cost:
+                #     raise ValidationError("Депозит должен быть оплачен перед принятием заявки.")
 
                 model = instance.content_type.model_class()
                 object_id = instance.object_id
