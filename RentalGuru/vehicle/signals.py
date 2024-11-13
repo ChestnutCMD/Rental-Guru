@@ -9,7 +9,7 @@ from vehicle.models import VehicleBrand, VehicleModel
 
 @receiver(post_save, sender=VehicleBrand)
 def update_brand_search_vector(sender, instance, **kwargs):
-    name_translit = translit(instance.name, 'ru', reversed=True)
+    name_translit = translit(instance.name, language_code='ru')
 
     instance.search_vector = (
             SearchVector(models.Value(instance.name), config='english') +
@@ -20,8 +20,8 @@ def update_brand_search_vector(sender, instance, **kwargs):
 
 @receiver(post_save, sender=VehicleModel)
 def update_model_search_vector(sender, instance, **kwargs):
-    model_name_translit = translit(instance.name, 'ru', reversed=True)
-    brand_name_translit = translit(instance.brand.name, 'ru', reversed=True)
+    model_name_translit = translit(instance.name, language_code='ru')
+    brand_name_translit = translit(instance.brand.name, language_code='ru')
 
     instance.search_vector = (
             SearchVector(models.Value(instance.name), config='english') +
