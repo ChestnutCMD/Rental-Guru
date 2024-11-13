@@ -1,46 +1,52 @@
 from django.core.management.base import BaseCommand
 from django.contrib.postgres.search import SearchVector
 from django.db import models
-from vehicle.models import VehicleBrand, VehicleModel
+from vehicle.models import VehicleModel, VehicleBrand
+from transliterate import translit
 
 
 class Command(BaseCommand):
     help = 'Updates search vectors for vehicle brands and models'
 
+    # def handle(self, *args, **kwargs):
+    #     """ Обновление вектороы поиска """
+    #     self.stdout.write('Updating search vectors...')
+    #
+    #     for model in VehicleModel.objects.select_related('brand').iterator():
+    #         combined_text = f"{model.name} {model.brand.name}"
+    #         VehicleModel.objects.filter(pk=model.pk).update(search_vector=SearchVector(
+    #                 models.Value(combined_text), config='russian'
+    #             )
+    #         )
+    #     model_count = VehicleModel.objects.count()
+    #
+    #     self.stdout.write(f'Updated {model_count} models')
+    #     self.stdout.write(self.style.SUCCESS('Successfully updated all search vectors'))
+
     def handle(self, *args, **kwargs):
+        """ Обновление векторов поиска с поддержкой русского языка """
         self.stdout.write('Updating search vectors...')
 
-        # # Обновляем вектора поиска для брендов
-        # brand_count = VehicleBrand.objects.update(
-        #     search_vector=SearchVector('name', config='russian')
-        # )
-        # self.stdout.write(f'Updated {brand_count} brands')
-        #
-        # # Обновляем вектора поиска для моделей
-        # # Вариант 1: Используя подзапрос
-        # model_count = VehicleModel.objects.annotate(
-        #     combined_text=Concat(
-        #         'name',
-        #         models.Value(' '),
-        #         'brand__name',
-        #         output_field=models.CharField()
-        #     )
-        # ).update(
-        #     search_vector=SearchVector('combined_text', config='russian')
-        # )
-
-        # Вариант 2: Через цикл (медленнее, но проще)
-
-        for model in VehicleModel.objects.select_related('brand').iterator():
-            combined_text = f"{model.name} {model.brand.name}"
-            VehicleModel.objects.filter(pk=model.pk).update(
-                search_vector=SearchVector(
-                    models.Value(combined_text),
-                    config='russian'
+        for brand in VehicleBrand.objects.all().iterator():
+            brand_en = f"{brand.name}"
+            brand_ru = translit(brand_en, language_code='ru')
+            VehicleBrand.objects.filter(pk=brand.pk).update(
+                search_vector=(
+                        SearchVector(models.Value(brand_en), config='english') +
+                        SearchVector(models.Value(brand_ru), config='russian')
                 )
             )
+
+        for model in VehicleModel.objects.select_related('brand').iterator():
+            combined_text_en = f"{model.name} {model.brand.name}"
+            combined_text_ru_translit = translit(combined_text_en, language_code='ru')
+
+            VehicleModel.objects.filter(pk=model.pk).update(
+                search_vector=(
+                        SearchVector(models.Value(combined_text_en), config='english') +
+                        SearchVector(models.Value(combined_text_ru_translit), config='russian')
+                    )
+            )
         model_count = VehicleModel.objects.count()
-
-
         self.stdout.write(f'Updated {model_count} models')
         self.stdout.write(self.style.SUCCESS('Successfully updated all search vectors'))

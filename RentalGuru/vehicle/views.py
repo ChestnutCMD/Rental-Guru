@@ -4,7 +4,9 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.db import models
 from django.db.models import F, Q
+from django.db.models.functions import Cast
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -90,8 +92,10 @@ class AutoViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Auto.objects.select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type', 'vehicle_class')
-                                .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos', 'features_additionally', 'availabilities', 'documents', 'rent_prices'))
+        queryset = (Auto.objects.select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type',
+                                                'vehicle_class')
+                    .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
+                                      'features_additionally', 'availabilities', 'documents', 'rent_prices'))
         is_renter = hasattr(user, 'renter')
         is_lessor = hasattr(user, 'lessor')
         if is_lessor:
@@ -382,13 +386,15 @@ class AutoFeaturesAdditionallyListView(ListAPIView):
     serializer_class = AutoFeaturesAdditionallySerializer
 
 
-@extend_schema(summary="Список дополнительных особенностей мотоциклов", description="Список дополнительных особенностей мотоциклов")
+@extend_schema(summary="Список дополнительных особенностей мотоциклов",
+               description="Список дополнительных особенностей мотоциклов")
 class BikeFeaturesAdditionallyListView(ListAPIView):
     queryset = BikeFeaturesAdditionally.objects.all()
     serializer_class = BikeFeaturesAdditionallySerializer
 
 
-@extend_schema(summary="Список дополнительных особенностей суден", description="Список дополнительных особенностей суден")
+@extend_schema(summary="Список дополнительных особенностей суден",
+               description="Список дополнительных особенностей суден")
 class ShipFeaturesAdditionallyListView(ListAPIView):
     queryset = ShipFeaturesAdditionally.objects.all()
     serializer_class = ShipFeaturesAdditionallySerializer
@@ -465,6 +471,10 @@ class AllVehiclesListView(APIView):
             OpenApiParameter("lat", type=OpenApiTypes.NUMBER, description="Широта"),
             OpenApiParameter("lon", type=OpenApiTypes.NUMBER, description="Долгота"),
             OpenApiParameter("radius", type=OpenApiTypes.NUMBER, description="Радиус в км"),
+            OpenApiParameter('limit', type=int, location=OpenApiParameter.QUERY,
+                             description='Number of results to return.'),
+            OpenApiParameter('offset', type=int, location=OpenApiParameter.QUERY,
+                             description='The initial index from which to return the results.')
         ]
     )
     def get(self, request):
@@ -519,12 +529,6 @@ class VehiclePhotoDeleteView(APIView):
         return Response({"detail": "Фото удалено"}, status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(summary="Поиск транспорта", description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
-                                                       Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
-                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
-                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
-                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
-                                                                                             /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
 class VehicleSearchViewSet(viewsets.ViewSet):
     def get_serializer_for_model(self, model_class):
         serializers = {
@@ -535,6 +539,64 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             SpecialTechnic: SpecialTechnicListSerializer,
         }
         return serializers.get(model_class, VehicleSerializer)
+
+    @extend_schema(summary="Поиск транспорта",
+                   parameters=[
+                       OpenApiParameter(name='limit', type=int, location=OpenApiParameter.QUERY,
+                                        description='Number of results to return.'),
+                       OpenApiParameter(name='offset', type=int, location=OpenApiParameter.QUERY,
+                                        description='The initial index from which to return the results.')
+                   ],
+                   description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
+                                                           Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
+                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
+                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
+                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
+                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
+    # @action(detail=False, methods=['get'])
+    # def search(self, request):
+    #     query = request.query_params.get('q', '')
+    #     vehicle_type = request.query_params.get('type', None)
+    #
+    #     if not query:
+    #         return Response({
+    #             'vehicles': []
+    #         })
+    #
+    #     matching_brands = VehicleBrand.objects.annotate(
+    #         similarity=TrigramSimilarity('name', query)
+    #     ).filter(similarity__gt=0.3).order_by('-similarity')
+    #
+    #     matching_models = VehicleModel.objects.annotate(
+    #         similarity=TrigramSimilarity('name', query)
+    #     ).filter(similarity__gt=0.3).order_by('-similarity')
+    #
+    #     vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
+    #
+    #     vehicle_type_mapping = {
+    #         'auto': Auto,
+    #         'bike': Bike,
+    #         'ship': Ship,
+    #         'helicopter': Helicopter,
+    #         'special_technic': SpecialTechnic
+    #     }
+    #
+    #     if vehicle_type and vehicle_type in vehicle_type_mapping:
+    #         model_class = vehicle_type_mapping[vehicle_type]
+    #         vehicles = model_class.objects.filter(vehicle_query)
+    #         serializer = self.get_serializer_for_model(model_class)
+    #         result = serializer(vehicles, many=True).data
+    #     else:
+    #         result = []
+    #         for vehicle_type, model_class in vehicle_type_mapping.items():
+    #             vehicles = model_class.objects.filter(vehicle_query)
+    #             serializer = self.get_serializer_for_model(model_class)
+    #             result.extend(serializer(vehicles, many=True).data)
+    #
+    #     return Response({
+    #         'vehicles': result
+    #     })
+
 
     @action(detail=False, methods=['get'])
     def search(self, request):
@@ -547,11 +609,11 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             })
 
         matching_brands = VehicleBrand.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
+            similarity=TrigramSimilarity(Cast('search_vector', models.TextField()), query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
         matching_models = VehicleModel.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
+            similarity=TrigramSimilarity(Cast('search_vector', models.TextField()), query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
         vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
@@ -579,3 +641,31 @@ class VehicleSearchViewSet(viewsets.ViewSet):
         return Response({
             'vehicles': result
         })
+
+    @extend_schema(summary="Автозаполнение поисковой строки", description="Автозаполнение поисковой строки")
+    @action(detail=False, methods=['get'])
+    def autocomplete(self, request):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response({"suggestions": []})
+
+        suggestions = []
+
+        if len(query) <= 3:
+            brands = VehicleBrand.objects.annotate(
+                similarity=TrigramSimilarity('name', query)
+            ).filter(similarity__gt=0.2).order_by('-similarity')[:5]
+
+            suggestions = [brand.name for brand in brands]
+
+        else:
+            matching_brands = VehicleBrand.objects.filter(name__icontains=query)
+            if matching_brands.exists():
+                for brand in matching_brands:
+                    models = VehicleModel.objects.filter(
+                        brand=brand,
+                        name__icontains=query
+                    )[:5]
+                    suggestions.extend([f"{brand.name} {model.name}" for model in models])
+
+        return Response({"suggestions": suggestions})

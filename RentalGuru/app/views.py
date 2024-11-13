@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, serializers, generics
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
@@ -286,7 +286,14 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-@extend_schema(summary="Списки избранного", description="Получение всех списков избранного пользователя")
+@extend_schema(summary="Списки избранного",
+               parameters=[
+                       OpenApiParameter(name='limit', type=int, location=OpenApiParameter.QUERY,
+                                        description='Number of results to return.'),
+                       OpenApiParameter(name='offset', type=int, location=OpenApiParameter.QUERY,
+                                        description='The initial index from which to return the results.')
+                   ],
+               description="Получение всех списков избранного пользователя")
 class FavoriteListView(ListAPIView, CreateAPIView):
     """Получить все списки избранного пользователя"""
     permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]

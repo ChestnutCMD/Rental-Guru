@@ -1,9 +1,12 @@
+from itertools import chain
+
+from asgiref.sync import sync_to_async
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
 from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel, \
-    BikeFeaturesAdditionally, ShipFeaturesAdditionally
+    BikeFeaturesAdditionally, ShipFeaturesAdditionally, FeaturesForChildren, VehicleFeaturesFunctions, FeaturesEquipment
 
 
 class BaseFilter(filters.FilterSet):
@@ -76,18 +79,29 @@ class AutoFilter(BaseFilter):
     seat_count = filters.RangeFilter(field_name='seats', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
     body_type = filters.CharFilter(field_name='body_type__slug', label='Тип кузова')
-    features = filters.ModelMultipleChoiceFilter(
+    features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__name',
         queryset=AutoFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
     )
-
+    features_for_children = filters.ModelMultipleChoiceFilter(
+        field_name='features_for_children__name',
+        queryset=FeaturesForChildren.objects.all(),
+        to_field_name='name',
+        label='Для детей'
+    )
+    features_functions = filters.ModelMultipleChoiceFilter(
+        field_name='features_functions__name',
+        queryset=VehicleFeaturesFunctions.objects.all(),
+        to_field_name='name',
+        label='Функции'
+    )
     class Meta:
         model = Auto
         fields = [
-            'day_price', 'verified_only', 'mileage_per_day', 'rental_date',
-            'vehicle_class', 'features', 'fuel_type', 'brand', 'seat_count', 'transmission', 'year', 'super_host'
+            'day_price', 'verified_only', 'mileage_per_day', 'rental_date', 'features_for_children', 'features_functions',
+            'vehicle_class', 'features_additionally', 'fuel_type', 'brand', 'seat_count', 'transmission', 'year', 'super_host'
         ]
 
 
@@ -97,18 +111,24 @@ class BikeFilter(BaseFilter):
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
-    features = filters.ModelMultipleChoiceFilter(
+    features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__name',
         queryset=BikeFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
     )
+    features_functions = filters.ModelMultipleChoiceFilter(
+        field_name='features_functions__name',
+        queryset=VehicleFeaturesFunctions.objects.all(),
+        to_field_name='name',
+        label='Функции'
+    )
 
     class Meta:
         model = Bike
         fields = [
-            'day_price', 'super_host', 'mileage_per_day', 'rental_date',
-            'vehicle_class', 'features', 'engine_capacity', 'brand',
+            'day_price', 'super_host', 'mileage_per_day', 'rental_date', 'features_functions',
+            'vehicle_class', 'features_additionally', 'engine_capacity', 'brand',
             'year', 'seat_count', 'transmission'
         ]
 
@@ -119,18 +139,30 @@ class ShipFilter(BaseFilter):
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
     grot = filters.CharFilter(field_name='grot', label='Грот')
-    features = filters.ModelMultipleChoiceFilter(
+    features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__name',
         queryset=ShipFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
     )
+    features_functions = filters.ModelMultipleChoiceFilter(
+        field_name='features_functions__name',
+        queryset=VehicleFeaturesFunctions.objects.all(),
+        to_field_name='name',
+        label='Функции'
+    )
+    features_equipment = filters.ModelMultipleChoiceFilter(
+        field_name='features_equipment__name',
+        queryset=FeaturesEquipment.objects.all(),
+        to_field_name='name',
+        label='Оборудование'
+    )
 
     class Meta:
         model = Ship
         fields = [
-            'day_price', 'super_host', 'mileage_per_day', 'rental_date',
-            'vehicle_class', 'features', 'engine_capacity', 'brand', 'year', 'type_ship', 'grot']
+            'day_price', 'super_host', 'mileage_per_day', 'rental_date', 'features_functions', 'features_equipment',
+            'vehicle_class', 'features_additionally', 'engine_capacity', 'brand', 'year', 'type_ship', 'grot']
 
 
 class HelicopterFilter(BaseFilter):
