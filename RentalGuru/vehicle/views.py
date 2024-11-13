@@ -5,9 +5,10 @@ from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import F, Q, TextField, Value, Func
 from django.db.models.functions import Cast
 from django_filters.rest_framework import DjangoFilterBackend
+from googletrans import Translator
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.decorators import api_view, permission_classes, action
@@ -17,6 +18,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from transliterate import translit
 
 from RentalGuru import settings
 from app.models import Lessor
@@ -553,51 +555,6 @@ class VehicleSearchViewSet(viewsets.ViewSet):
                                                                                                  /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
                                                                                                  /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
                                                                                                  /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
-    # @action(detail=False, methods=['get'])
-    # def search(self, request):
-    #     query = request.query_params.get('q', '')
-    #     vehicle_type = request.query_params.get('type', None)
-    #
-    #     if not query:
-    #         return Response({
-    #             'vehicles': []
-    #         })
-    #
-    #     matching_brands = VehicleBrand.objects.annotate(
-    #         similarity=TrigramSimilarity('name', query)
-    #     ).filter(similarity__gt=0.3).order_by('-similarity')
-    #
-    #     matching_models = VehicleModel.objects.annotate(
-    #         similarity=TrigramSimilarity('name', query)
-    #     ).filter(similarity__gt=0.3).order_by('-similarity')
-    #
-    #     vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
-    #
-    #     vehicle_type_mapping = {
-    #         'auto': Auto,
-    #         'bike': Bike,
-    #         'ship': Ship,
-    #         'helicopter': Helicopter,
-    #         'special_technic': SpecialTechnic
-    #     }
-    #
-    #     if vehicle_type and vehicle_type in vehicle_type_mapping:
-    #         model_class = vehicle_type_mapping[vehicle_type]
-    #         vehicles = model_class.objects.filter(vehicle_query)
-    #         serializer = self.get_serializer_for_model(model_class)
-    #         result = serializer(vehicles, many=True).data
-    #     else:
-    #         result = []
-    #         for vehicle_type, model_class in vehicle_type_mapping.items():
-    #             vehicles = model_class.objects.filter(vehicle_query)
-    #             serializer = self.get_serializer_for_model(model_class)
-    #             result.extend(serializer(vehicles, many=True).data)
-    #
-    #     return Response({
-    #         'vehicles': result
-    #     })
-
-
     @action(detail=False, methods=['get'])
     def search(self, request):
         query = request.query_params.get('q', '')
@@ -609,11 +566,11 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             })
 
         matching_brands = VehicleBrand.objects.annotate(
-            similarity=TrigramSimilarity(Cast('search_vector', models.TextField()), query)
+            similarity=TrigramSimilarity('name', query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
         matching_models = VehicleModel.objects.annotate(
-            similarity=TrigramSimilarity(Cast('search_vector', models.TextField()), query)
+            similarity=TrigramSimilarity('name', query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
         vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
