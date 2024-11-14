@@ -1,4 +1,5 @@
 import os
+from itertools import chain
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -14,6 +15,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import get_object_or_404, ListAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -499,7 +501,10 @@ class AllVehiclesListView(APIView):
             vehicles_data = serializer(filtered_queryset, many=True).data
             all_vehicles.extend(vehicles_data)
 
-        return Response(all_vehicles)
+        paginator = LimitOffsetPagination()
+        paginated_vehicles = paginator.paginate_queryset(all_vehicles, request)
+
+        return paginator.get_paginated_response(paginated_vehicles)
 
     def apply_filters(self, queryset, request):
         filtered_queryset = queryset
@@ -533,6 +538,7 @@ class VehiclePhotoDeleteView(APIView):
 
 class VehicleSearchViewSet(viewsets.ViewSet):
     pagination_class = LimitOffsetPagination
+
     def get_serializer_for_model(self, model_class):
         serializers = {
             Auto: AutoListSerializer,
@@ -551,11 +557,11 @@ class VehicleSearchViewSet(viewsets.ViewSet):
                                         description='The initial index from which to return the results.')
                    ],
                    description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
-                                                           Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
+                                                               Поиск по конкретному типу транспорта: /vehicle-search/search/?q=поисковый_запрос&type=auto\n
+                                                                                                     /vehicle-search/search/?q=поисковый_запрос&type=bike\n
+                                                                                                     /vehicle-search/search/?q=поисковый_запрос&type=ship\n
+                                                                                                     /vehicle-search/search/?q=поисковый_запрос&type=helicopter\n
+                                                                                                     /vehicle-search/search/?q=поисковый_запрос&type=special_technic\n""")
     @action(detail=False, methods=['get'])
     def search(self, request):
         query = request.query_params.get('q', '')
@@ -584,183 +590,29 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             'special_technic': SpecialTechnic
         }
 
-        ChatGPT
-
-Вы сказали:
-У меня не работает limit и offset в некоторых роутах на DRF. Его изначально там не было и я добавил его через декоратор с openapi. В остальных роутах он есть и сразу работает. 
-ChatGPT сказал:
-ChatGPT
-Память обновлена
-Если параметры limit и offset не работают в некоторых роутах, возможно, проблема связана с настройками пагинации или тем, что некоторые представления не используют пагинатор. Чтобы это исправить, убедитесь, что:
-
-Пагинация включена в настройках REST_FRAMEWORK для всех рутов:
-
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,  # или любое значение по умолчанию
-}
-ViewSet поддерживает пагинацию. Для некоторых кастомных запросов или действий нужно проверять, чтобы использовалась self.paginate_queryset, а не self.get_queryset. В кастомных методах, если используете get_queryset, добавьте:
-
-page = self.paginate_queryset(queryset)
-if page is not None:
-    return self.get_paginated_response(serializer.data)
-Декоратор с drf-spectacular корректно зарегистрировал параметры в документации, но функциональность может требовать, чтобы пагинация применялась в самом коде view. Если используете кастомные действия или декораторы, проверьте совместимость с пагинацией.
-
-
-
-
-
-
-Вы сказали:
-class VehicleSearchViewSet(viewsets.ViewSet):
-    def get_serializer_for_model(self, model_class):
-        serializers = {
-            Auto: AutoListSerializer,
-            Bike: BikeListSerializer,
-            Ship: ShipListSerializer,
-            Helicopter: HelicopterListSerializer,
-            SpecialTechnic: SpecialTechnicListSerializer,
-        }
-        return serializers.get(model_class, VehicleSerializer)
-
-    @extend_schema(summary="Поиск транспорта",
-                   parameters=[
-                       OpenApiParameter(name='limit', type=int, location=OpenApiParameter.QUERY,
-                                        description='Number of results to return.'),
-                       OpenApiParameter(name='offset', type=int, location=OpenApiParameter.QUERY,
-                                        description='The initial index from which to return the results.')
-                   ],
-                   description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
-                                                           Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
-    @action(detail=False, methods=['get'])
-    def search(self, request):
-        query = request.query_params.get('q', '')
-        vehicle_type = request.query_params.get('type', None)
-
-        if not query:
-            return Response({
-                'vehicles': []
-            })
-
-        matching_brands = VehicleBrand.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
-        ).filter(similarity__gt=0.3).order_by('-similarity')
-
-        matching_models = VehicleModel.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
-        ).filter(similarity__gt=0.3).order_by('-similarity')
-
-        vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
-
-        vehicle_type_mapping = {
-            'auto': Auto,
-            'bike': Bike,
-            'ship': Ship,
-            'helicopter': Helicopter,
-            'special_technic': SpecialTechnic
-        }
-
+        # Собираем QuerySet'ы по типам транспорта
+        all_vehicles = []
         if vehicle_type and vehicle_type in vehicle_type_mapping:
             model_class = vehicle_type_mapping[vehicle_type]
-            vehicles = model_class.objects.filter(vehicle_query)
-            serializer = self.get_serializer_for_model(model_class)
-            result = serializer(vehicles, many=True).data
-        else:
-            result = []
-            for vehicle_type, model_class in vehicle_type_mapping.items():
-                vehicles = model_class.objects.filter(vehicle_query)
-                serializer = self.get_serializer_for_model(model_class)
-                result.extend(serializer(vehicles, many=True).data)
-
-        return Response({
-            'vehicles': result
-        })
-ChatGPT сказал:
-ChatGPT
-Чтобы в VehicleSearchViewSet заработали limit и offset, нужно добавить в метод search обработку пагинации.
-
-Вот как можно адаптировать ваш код, чтобы добавить пагинацию:
-
-Использовать self.paginate_queryset для применения limit и offset к результатам.
-Вернуть результат через self.get_paginated_response.
-Измените метод search следующим образом:
-
-from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
-
-class VehicleSearchViewSet(viewsets.ViewSet):
-    pagination_class = LimitOffsetPagination
-
-    def get_serializer_for_model(self, model_class):
-        serializers = {
-            Auto: AutoListSerializer,
-            Bike: BikeListSerializer,
-            Ship: ShipListSerializer,
-            Helicopter: HelicopterListSerializer,
-            SpecialTechnic: SpecialTechnicListSerializer,
-        }
-        return serializers.get(model_class, VehicleSerializer)
-
-    @extend_schema(summary="Поиск транспорта",
-                   parameters=[
-                       OpenApiParameter(name='limit', type=int, location=OpenApiParameter.QUERY,
-                                        description='Number of results to return.'),
-                       OpenApiParameter(name='offset', type=int, location=OpenApiParameter.QUERY,
-                                        description='The initial index from which to return the results.')
-                   ],
-                   description="""Поиск по всем типам транспорта: /vehicle-search/search/?q=поисковый_запрос\n
-                                                           Поиск по конкретному типу транспорта: /vehicle-search/search/?q=ваш_поисковый_запрос&type=auto\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=bike\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=ship\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=helicopter\n
-                                                                                                 /vehicle-search/search/?q=ваш_поисковый_запрос&type=special_technic\n""")
-    @action(detail=False, methods=['get'])
-    def search(self, request):
-        query = request.query_params.get('q', '')
-        vehicle_type = request.query_params.get('type', None)
-
-        if not query:
-            return Response({
-                'vehicles': []
-            })
-
-        matching_brands = VehicleBrand.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
-        ).filter(similarity__gt=0.3).order_by('-similarity')
-
-        matching_models = VehicleModel.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
-        ).filter(similarity__gt=0.3).order_by('-similarity')
-
-        vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
-
-        vehicle_type_mapping = {
-            'auto': Auto,
-            'bike': Bike,
-            'ship': Ship,
-            'helicopter': Helicopter,
-            'special_technic': SpecialTechnic
-        }
-
-        result = []
-        if vehicle_type and vehicle_type in vehicle_type_mapping:
-            model_class = vehicle_type_mapping[vehicle_type]
-            vehicles = model_class.objects.filter(vehicle_query)
-            serializer = self.get_serializer_for_model(model_class)
-            result = serializer(vehicles, many=True).data
+            all_vehicles = model_class.objects.filter(vehicle_query)
         else:
             for model_class in vehicle_type_mapping.values():
-                vehicles = model_class.objects.filter(vehicle_query)
-                serializer = self.get_serializer_for_model(model_class)
-                result.extend(serializer(vehicles, many=True).data)
+                all_vehicles.extend(model_class.objects.filter(vehicle_query))
 
+        # Применяем пагинацию
         paginator = self.pagination_class()
-        paginated_result = paginator.paginate_queryset(result, request)
-        return paginator.get_paginated_response(paginated_result)
+        paginated_vehicles = paginator.paginate_queryset(all_vehicles, request)
+
+        if paginated_vehicles is None:
+            return Response({"vehicles": []})
+
+        # Сериализуем результаты пагинации
+        result = []
+        for vehicle in paginated_vehicles:
+            serializer = self.get_serializer_for_model(type(vehicle))
+            result.append(serializer(vehicle).data)
+
+        return paginator.get_paginated_response(result)
 
     @extend_schema(summary="Автозаполнение поисковой строки", description="Автозаполнение поисковой строки")
     @action(detail=False, methods=['get'])

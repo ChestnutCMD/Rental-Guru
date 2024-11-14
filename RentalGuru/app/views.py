@@ -13,6 +13,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, serializers, generics
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -298,6 +299,7 @@ class FavoriteListView(ListAPIView, CreateAPIView):
     """Получить все списки избранного пользователя"""
     permission_classes = [IsAuthenticated, HasRenter, IsAdminOrOwner]
     serializer_class = FavoriteListSerializer
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         return FavoriteList.objects.filter(renter=self.request.user.renter)

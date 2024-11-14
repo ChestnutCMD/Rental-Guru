@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Updates search vectors for vehicle brands and models'
 
     def handle(self, *args, **kwargs):
-        """ Обновление вектороы поиска """
+        """ Обновление вектороов поиска """
         self.stdout.write('Updating search vectors...')
 
         for model in VehicleModel.objects.select_related('brand').iterator():
