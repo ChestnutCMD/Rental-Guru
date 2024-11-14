@@ -419,9 +419,9 @@ class FavoriteListDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary="Обновление рейтинга арендатора", description="Выставляется владельцем транспорта, после "
-                                                                     "завершения поездки. Принимает JSON: {"
-                                                                     "'rating': 5}")
+@extend_schema(summary="Обновление рейтинга арендатора",
+               request=UpdateRatingSerializer,
+               description="Выставляется владельцем транспорта, после завершения поездки.")
 class UpdateRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
