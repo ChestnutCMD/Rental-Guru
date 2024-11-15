@@ -502,6 +502,7 @@ class AllVehiclesListView(APIView):
             all_vehicles.extend(vehicles_data)
 
         paginator = LimitOffsetPagination()
+        paginator.default_limit = 10
         paginated_vehicles = paginator.paginate_queryset(all_vehicles, request)
 
         return paginator.get_paginated_response(paginated_vehicles)
@@ -599,7 +600,6 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             for model_class in vehicle_type_mapping.values():
                 all_vehicles.extend(model_class.objects.filter(vehicle_query))
 
-        # Применяем пагинацию
         paginator = self.pagination_class()
         paginated_vehicles = paginator.paginate_queryset(all_vehicles, request)
 
