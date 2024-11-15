@@ -7,15 +7,21 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 
 
 class TripSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Trip
-        fields = ['id', 'organizer', 'content_type', 'object_id', 'start_date', 'start_date', 'end_time', 'end_date', 'total_cost']
-        read_only_fields = ['id', 'organizer', 'content_type', 'object_id', 'start_date', 'start_date', 'end_time', 'end_date', 'total_cost']
+        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status']
+        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status']
 
     def create(self, validated_data):
         request = self.context.get('request')
         validated_data['organizer'] = request.user
         return super().create(validated_data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['content_type'] = instance.content_type.model
+        return representation
 
 
 class RequestRentSerializer(serializers.ModelSerializer):

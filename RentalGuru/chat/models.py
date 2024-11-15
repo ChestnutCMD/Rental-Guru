@@ -99,6 +99,21 @@ class RequestRent(models.Model):
         verbose_name_plural = 'Заявки на аренду'
 
 
+class Chat(models.Model):
+    request_rent = models.ForeignKey(RequestRent, null=True, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
+
+    class Meta:
+        verbose_name = 'Чат'
+        verbose_name_plural = 'Чаты'
+
+    def __str__(self):
+        return f'chat_id_{self.pk}'
+
+
+def file_chat_upload_to(instance, filename):
+    return f'media/files/chat/{instance.chat}/{filename}'
+
 class Trip(models.Model):
     """ Поездки """
     STATUS_CHOICES = (
@@ -115,6 +130,8 @@ class Trip(models.Model):
 
     start_time = models.TimeField(null=True, blank=True, verbose_name='Время начала аренды')
     end_time = models.TimeField(null=True, blank=True, verbose_name='Время окончания аренды')
+
+    chat = models.ForeignKey(Chat, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     start_date = models.DateField(verbose_name='Начало поездки')
     end_date = models.DateField(verbose_name='Конец поездки')
@@ -145,20 +162,7 @@ class Trip(models.Model):
         verbose_name_plural = 'Поездки'
 
 
-class Chat(models.Model):
-    request_rent = models.ForeignKey(RequestRent, null=True, on_delete=models.DO_NOTHING, verbose_name='Заявка на аренду')
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
-    class Meta:
-        verbose_name = 'Чат'
-        verbose_name_plural = 'Чаты'
-
-    def __str__(self):
-        return f'chat_id_{self.pk}'
-
-
-def file_chat_upload_to(instance, filename):
-    return f'media/files/chat/{instance.chat}/{filename}'
 
 
 class Message(models.Model):
