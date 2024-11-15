@@ -78,13 +78,14 @@ class RequestRent(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        # Минимальные проверки и сохранение связанных полей
-        if not self.pk:  # Если объект создается, а не обновляется
+        if not self.pk:  # Если объект создается
             if self.vehicle and not self.deposit_cost:
                 self.deposit_cost = self.vehicle.price_deposit
             self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
+            # Рассчитываем итоговую стоимость при создании
+            self.total_cost = self.calculate_rent_price()
         else:
-            # Логика при обновлении статуса
+            # Логика при обновлении
             original = RequestRent.objects.get(pk=self.pk)
             if original.status != 'accept' and self.status == 'accept':
                 self.total_cost = self.calculate_rent_price()
