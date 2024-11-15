@@ -483,12 +483,25 @@ class AllVehiclesListView(APIView):
     )
     def get(self, request):
         all_vehicles = []
-
-        autos = Auto.objects.filter(verified=True)
-        bikes = Bike.objects.filter(verified=True)
-        ships = Ship.objects.filter(verified=True)
-        helicopters = Helicopter.objects.filter(verified=True)
-        special_technics = SpecialTechnic.objects.filter(verified=True)
+        user = request.user
+        if user.role == 'renter':
+            autos = Auto.objects.filter(verified=True)
+            bikes = Bike.objects.filter(verified=True)
+            ships = Ship.objects.filter(verified=True)
+            helicopters = Helicopter.objects.filter(verified=True)
+            special_technics = SpecialTechnic.objects.filter(verified=True)
+        elif user.role == 'lessor':
+            autos = Auto.objects.filter(owner=user)
+            bikes = Bike.objects.filter(owner=user)
+            ships = Ship.objects.filter(owner=user)
+            helicopters = Helicopter.objects.filter(owner=user)
+            special_technics = SpecialTechnic.objects.filter(owner=user)
+        else:
+            autos = Auto.objects.all()
+            bikes = Bike.objects.all()
+            ships = Ship.objects.all()
+            helicopters = Helicopter.objects.all()
+            special_technics = SpecialTechnic.objects.all()
 
         for queryset, serializer in [
             (autos, AutoListSerializer),

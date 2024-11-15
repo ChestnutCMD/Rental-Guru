@@ -93,7 +93,7 @@ class VehicleBrandSerializer(serializers.ModelSerializer):
 class VehicleModelGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleModel
-        fields = '__all__'
+        exclude = ['search_vector']
 
 
 class VehicleModelSerializer(serializers.ModelSerializer):
