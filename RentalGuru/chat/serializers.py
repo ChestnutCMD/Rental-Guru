@@ -11,7 +11,7 @@ class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
         fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status']
-        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status']
+        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost']
 
     def create(self, validated_data):
         request = self.context.get('request')

@@ -115,6 +115,7 @@ class Chat(models.Model):
 def file_chat_upload_to(instance, filename):
     return f'media/files/chat/{instance.chat}/{filename}'
 
+
 class Trip(models.Model):
     """ Поездки """
     STATUS_CHOICES = (
@@ -161,9 +162,6 @@ class Trip(models.Model):
     class Meta:
         verbose_name = 'Поездка'
         verbose_name_plural = 'Поездки'
-
-
-
 
 
 class Message(models.Model):
