@@ -565,36 +565,42 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return FeedbackSerializer
 
     def perform_create(self, serializer):
-        content_type_id = serializer.validated_data['content_type'].id
+        content_type = serializer.validated_data['content_type']
         object_id = serializer.validated_data['object_id']
 
-        # Проверка, оставлял ли уже пользователь отзыв для данного транспортного средства
+        # Проверка на существующий отзыв
         existing_feedback = Feedback.objects.filter(
             user=self.request.user,
-            content_type_id=content_type_id,
+            content_type=content_type,
             object_id=object_id
         ).exists()
-
         if existing_feedback:
             raise serializers.ValidationError("Вы уже оставили отзыв для данного транспортного средства.")
 
+        # Проверка на завершенную поездку
         try:
             trip = Trip.objects.get(
                 organizer=self.request.user,
-                content_type_id=content_type_id,
+                content_type=content_type,
                 object_id=object_id
             )
         except Trip.DoesNotExist:
             raise serializers.ValidationError(
-                "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом.")
+                "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом."
+            )
 
         if trip.status != 'finished':
             raise serializers.ValidationError("Поездка не была завершена.")
 
-        # Получение экземпляра транспортного средства
-        vehicle_instance = ContentType.objects.get_for_id(content_type_id).model_class().objects.get(id=object_id)
+        # Сохранение отзыва
+        serializer.save(user=self.request.user)
 
-        serializer.save(user=self.request.user, content_type_id=content_type_id, object_id=object_id)
+        # Получение транспортного средства
+        model_class = content_type.model_class()
+        try:
+            vehicle_instance = model_class.objects.get(id=object_id)
+        except model_class.DoesNotExist:
+            raise serializers.ValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
         # Отправка уведомлений
         content = f'Добавлен отзыв для транспорта {vehicle_instance}'

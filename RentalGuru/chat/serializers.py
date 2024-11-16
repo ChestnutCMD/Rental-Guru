@@ -228,8 +228,6 @@ class FeedbackCreateSerializer(serializers.ModelSerializer):
         return content_type
 
     def create(self, validated_data):
-        content_type = validated_data.pop('content_type')
-        validated_data['content_type'] = content_type
         return super().create(validated_data)
 
 
