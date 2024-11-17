@@ -16,12 +16,11 @@ from notification.models import Notification
 from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
-from .filters import FeedbackFilter, MessageFilter
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
+from .filters import  MessageFilter
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
-    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, FeedbackUpdateSerializer, \
-    FeedbackSerializer, FeedbackCreateSerializer
+    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied, ValidationError
 from .utils import is_period_contained, subtract_periods, calculate_age
 
@@ -543,79 +542,3 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
         message = MessageSupport.objects.create(support_chat=chat, sender=request.user, content=content)
         serializer = MessageSupportSerializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-@extend_schema(summary="Отзывы", description="Отзывы к транспорту может оставлять только пользователь, который "
-                                             "пользовался транспортом, только после завершения поездки и только один "
-                                             "отзыв к одному транспорту. Отвечать на отзывы может только хозяин "
-                                             "транспорта")
-class FeedbackViewSet(viewsets.ModelViewSet):
-    queryset = Feedback.objects.select_related('user', 'content_type').all()
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = FeedbackFilter
-    ordering_fields = ['timestamp']
-    ordering = ['-timestamp']
-
-    def get_serializer_class(self):
-        if self.action in ['create']:
-            return FeedbackCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return FeedbackUpdateSerializer
-        return FeedbackSerializer
-
-    def perform_create(self, serializer):
-        content_type = serializer.validated_data['content_type']
-        object_id = serializer.validated_data['object_id']
-
-        # Проверка на существующий отзыв
-        existing_feedback = Feedback.objects.filter(
-            user=self.request.user,
-            content_type=content_type,
-            object_id=object_id
-        ).exists()
-        if existing_feedback:
-            raise serializers.ValidationError("Вы уже оставили отзыв для данного транспортного средства.")
-
-        # Проверка на завершенную поездку
-        try:
-            trip = Trip.objects.get(
-                organizer=self.request.user,
-                content_type=content_type,
-                object_id=object_id
-            )
-        except Trip.DoesNotExist:
-            raise serializers.ValidationError(
-                "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом."
-            )
-
-        if trip.status != 'finished':
-            raise serializers.ValidationError("Поездка не была завершена.")
-
-        # Сохранение отзыва
-        serializer.save(user=self.request.user)
-
-        # Получение транспортного средства
-        model_class = content_type.model_class()
-        try:
-            vehicle_instance = model_class.objects.get(id=object_id)
-        except model_class.DoesNotExist:
-            raise serializers.ValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
-
-        # Отправка уведомлений
-        content = f'Добавлен отзыв для транспорта {vehicle_instance}'
-        url = f'{settings.HOST_URL}/chat/feedbacks/{object_id}'
-        Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if 'answer' in request.data:
-            if instance.vehicle.owner != request.user:
-                raise serializers.ValidationError("Только владелец транспорта может оставлять ответы на отзывы.")
-            instance.answer = request.data['answer']
-            instance.save()
-            return Response(FeedbackSerializer(instance).data)
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)

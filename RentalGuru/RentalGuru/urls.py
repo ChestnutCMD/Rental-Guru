@@ -24,6 +24,7 @@ urlpatterns = [
     path('firebase-messaging-sw.js', firebase_messaging_sw, name='firebase_messaging_sw'),
     path('payment/', include('payment.urls')),
     path('complaint/', include('complaint.urls')),
+    path('feedback/', include('feedback.urls')),
     #path('oauth/', include('social_django.urls', namespace='social')),
 ]
 

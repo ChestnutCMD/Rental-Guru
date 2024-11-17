@@ -180,7 +180,6 @@ class Message(models.Model):
         return self.content
 
 
-
 class TopicSupport(models.Model):
     name = models.CharField(null=False, verbose_name='Тема')
     count = models.IntegerField(default=0, verbose_name='Количество')
@@ -219,22 +218,3 @@ class MessageSupport(models.Model):
 
     def __str__(self):
         return self.content
-
-
-class Feedback(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name='Пользователь')
-    content = models.CharField(max_length=255, verbose_name='Отзыв')
-    answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
-
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
-        'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
-    object_id = models.PositiveIntegerField(verbose_name='id транспорта')
-    vehicle = GenericForeignKey('content_type', 'object_id')
-    timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
-
-    def __str__(self):
-        return self.content
-
-    class Meta:
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'

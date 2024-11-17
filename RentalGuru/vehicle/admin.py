@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
 from tornado.escape import linkify
 
-from chat.models import Feedback
+from feedback.models import Feedback
 from .models import *
 
 admin.site.site_header = "Rental Guru"

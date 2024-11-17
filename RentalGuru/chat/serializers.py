@@ -2,8 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from vehicle.models import RatingUpdateLog
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, Feedback
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -211,77 +210,3 @@ class VehicleRelatedField(serializers.Field):
             'type': value._meta.model_name,
             'name': str(value)
         }
-
-
-class FeedbackCreateSerializer(serializers.ModelSerializer):
-    content_type = serializers.CharField()
-
-    class Meta:
-        model = Feedback
-        fields = ['id', 'content', 'content_type', 'object_id']
-
-    def validate_content_type(self, value):
-        try:
-            content_type = ContentType.objects.get(model=value.lower())
-        except ContentType.DoesNotExist:
-            raise serializers.ValidationError("Указанный тип контента не существует.")
-        return content_type
-
-    def create(self, validated_data):
-        return super().create(validated_data)
-
-
-class FeedbackUpdateSerializer(serializers.ModelSerializer):
-    answer = serializers.CharField(required=True)
-
-    class Meta:
-        model = Feedback
-        fields = ['answer']
-
-    def validate_answer(self, value):
-        request = self.context.get('request')
-        if self.instance.vehicle.owner != request.user:
-            raise serializers.ValidationError("Только владелец транспорта может оставлять ответы на отзывы.")
-        return value
-
-
-class FeedbackSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    answer = serializers.CharField(required=False, allow_blank=True)
-    vehicle = VehicleRelatedField()
-    average_ratings = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Feedback
-        fields = ['id', 'user', 'content', 'answer', 'content_type', 'object_id', 'vehicle', 'average_ratings', 'timestamp']
-
-    def get_user(self, obj):
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "first_name": obj.user.first_name,
-                "avatar": obj.user.avatar.url if obj.user.avatar else None
-            }
-        return None
-
-    def get_average_ratings(self, obj):
-        content_type = ContentType.objects.get_for_model(obj.vehicle)
-
-        try:
-            log = RatingUpdateLog.objects.get(
-                user=obj.user,
-                content_type=content_type,
-                object_id=obj.vehicle.id
-            )
-
-            ratings_sum = (
-                (log.cleanliness or 0) +
-                (log.maintenance or 0) +
-                (log.communication or 0) +
-                (log.convenience or 0) +
-                (log.accuracy or 0)
-            )
-            average_rating = ratings_sum / 5
-            return round(average_rating, 2)
-        except RatingUpdateLog.DoesNotExist:
-            return None

@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'notification',
     'franchise',
     'influencer',
+    'feedback',
     'journal',
     'payment',
     'complaint',
