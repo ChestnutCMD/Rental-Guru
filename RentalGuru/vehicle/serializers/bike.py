@@ -52,6 +52,9 @@ class BikeCreateSerializer(BaseVehicleCreateSerializer):
 
         return vehicle
 
+    def validate(self, data):
+        return data
+
 
 class BikeUpdateSerializer(BaseVehicleUpdateSerializer):
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())

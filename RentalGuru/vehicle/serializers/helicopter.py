@@ -16,6 +16,8 @@ class HelicopterCreateSerializer(BaseVehicleCreateSerializer):
             raise serializers.ValidationError('Допустимый пробег должен быть в пределах от 10 до 100000')
         return value
 
+    def validate(self, data):
+        return data
 
 class HelicopterUpdateSerializer(BaseVehicleUpdateSerializer):
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())

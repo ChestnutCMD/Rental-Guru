@@ -38,6 +38,9 @@ class ShipCreateSerializer(BaseVehicleCreateSerializer):
 
         return vehicle
 
+    def validate(self, data):
+        return data
+
 
 class ShipUpdateSerializer(BaseVehicleUpdateSerializer):
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())

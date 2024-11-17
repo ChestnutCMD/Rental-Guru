@@ -6,6 +6,9 @@ class SpecialTechnicCreateSerializer(BaseVehicleCreateSerializer):
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = SpecialTechnic
 
+    def validate(self, data):
+        return data
+
 
 class SpecialTechnicUpdateSerializer(BaseVehicleUpdateSerializer):
     class Meta(BaseVehicleUpdateSerializer.Meta):

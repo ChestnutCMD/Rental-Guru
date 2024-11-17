@@ -4,7 +4,7 @@ from rest_framework import serializers
 from .base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
     BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer, VehicleClassSerializer
 from ..models import FeaturesForChildren, VehicleFeaturesFunctions, AutoFeaturesAdditionally, Auto, AutoFuelType, \
-    AutoTransmission, AutoBodyType, VehicleClass
+    AutoTransmission, AutoBodyType, VehicleClass, VehicleModel
 
 
 class AutoFuelTypeSerializer(serializers.ModelSerializer):
@@ -70,6 +70,9 @@ class AutoCreateSerializer(BaseVehicleCreateSerializer):
         vehicle.features_additionally.set(features_additionally_data)
 
         return vehicle
+
+    def validate(self, data):
+        return data
 
 
 class AutoUpdateSerializer(BaseVehicleUpdateSerializer):
