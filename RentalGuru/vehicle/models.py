@@ -13,6 +13,7 @@ from RentalGuru import settings
 from chat.models import RequestRent, Trip
 from franchise.models import VehiclePark, City
 from notification.models import Notification
+from vehicle.manager import RentPriceManager
 from vehicle.utils import merge_periods
 
 
@@ -242,6 +243,8 @@ class RentPrice(models.Model):
     price = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость')
     discount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(90)], verbose_name='Скидка')
     total = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='ИТОГО', editable=False)
+
+    objects = RentPriceManager()
 
     def save(self, *args, **kwargs):
         commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor') else 10.0
