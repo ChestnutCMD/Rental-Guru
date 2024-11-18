@@ -211,6 +211,7 @@ class MessageSupport(models.Model):
     content = models.TextField(verbose_name='Сообщение')
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
     file = models.FileField(upload_to='media/support_chat_files/', blank=True, null=True, verbose_name='Файл')
+    deleted = models.BooleanField(default=False, verbose_name='Удалено')
 
     class Meta:
         verbose_name = 'Сообщение чата техподдержки'

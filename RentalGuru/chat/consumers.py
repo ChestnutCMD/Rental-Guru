@@ -24,167 +24,6 @@ translator = Translator()
 logger = logging.getLogger(__name__)
 
 
-class BaseChatConsumerSupport(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.chat_id = self.scope['url_route']['kwargs']['chat_id']
-        self.chat_group_name = f'chat_{self.chat_id}'
-
-        query_params = dict(x.split('=') for x in self.scope['query_string'].decode().split('&'))
-        token = query_params.get('token')
-        self.language = query_params.get('lang', 'en')  # Default to English if no language is specified
-
-        try:
-            UntypedToken(token)
-        except (InvalidToken, TokenError):
-            await self.close()
-            return
-
-        self.scope['user'] = await self.get_user_from_token(token)
-
-        if not await self.user_has_access():
-            await self.close()
-            return
-
-        await self.channel_layer.group_add(
-            self.chat_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
-        await self.send_previous_messages()
-
-    @database_sync_to_async
-    def get_user_from_token(self, token):
-        validated_token = JWTAuthentication().get_validated_token(token)
-        return JWTAuthentication().get_user(validated_token)
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.chat_group_name,
-            self.channel_name
-        )
-
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message_content = text_data_json.get('message')
-        file = text_data_json.get('file')
-        user = self.scope['user']
-
-        # Log message content before translation
-        print(f"Original message: {message_content}")
-
-        # Translate message content
-        try:
-            translated_message_content = translator.translate(message_content, dest=self.language).text
-        except Exception as e:
-            print(f"Error during translation: {e}")
-            translated_message_content = message_content
-
-        # Log translated message content
-        print(f"Translated message: {translated_message_content}")
-
-        message = await self.save_message(user, translated_message_content, file)
-
-        await self.channel_layer.group_send(
-            self.chat_group_name,
-            {
-                'type': 'chat_message',
-                'message': self.format_message(message, user)
-            }
-        )
-
-    @database_sync_to_async
-    def save_message(self, user, message_content, file):
-        chat = self.get_chat_instance()
-        return self.create_message_instance(chat, user, message_content, file)
-
-    async def chat_message(self, event):
-        message = event['message']
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
-
-    @database_sync_to_async
-    def user_has_access(self):
-        user = self.scope['user']
-        if user.is_anonymous:
-            return False
-
-        try:
-            chat = self.get_chat_instance()
-        except self.get_chat_model().DoesNotExist:
-            return False
-
-        return self.check_user_access(user, chat)
-
-    @database_sync_to_async
-    def get_previous_messages(self):
-        chat = self.get_chat_instance()
-        user = self.scope['user']
-
-        show_all_messages = (
-                user.role in ['admin', 'manager'] or
-                (hasattr(chat.trip.vehicle, 'owner') and
-                 chat.trip.vehicle.owner.lessor.franchise and
-                 chat.trip.vehicle.owner.lessor.franchise.director == user)
-        )
-
-        if show_all_messages:
-            messages = self.get_messages_queryset(chat)
-        else:
-            messages = self.get_messages_queryset(chat).filter(deleted=False)
-
-        message_data_list = []
-
-        for message in messages:
-            message_data = self.format_message(message, message.sender)
-            message_data_list.append(message_data)
-
-            # Запускаем задачу перевода асинхронно
-            translate_message.delay(message.id, message.content, self.language, self.channel_name)
-
-        return message_data_list
-
-    async def send_previous_messages(self):
-        previous_messages = await self.get_previous_messages()
-        await self.send(text_data=json.dumps({
-            'type': 'previous_messages',
-            'messages': previous_messages
-        }))
-
-    def format_message(self, message, user):
-        message_data = {
-            'id': message.id,
-            'sender': {
-                'id': user.id,
-                'first_name': user.first_name,
-                'avatar': user.avatar.url if user.avatar else None,
-            },
-            'content': message.content,
-            'timestamp': message.timestamp.isoformat(),
-        }
-
-        if message.file:
-            message_data['file'] = message.file.url
-
-        return message_data
-
-    def get_chat_instance(self):
-        raise NotImplementedError
-
-    def get_chat_model(self):
-        raise NotImplementedError
-
-    def create_message_instance(self, chat, user, message_content, file):
-        raise NotImplementedError
-
-    def get_messages_queryset(self, chat):
-        raise NotImplementedError
-
-    def check_user_access(self, user, chat):
-        raise NotImplementedError
-
-
 class BaseChatConsumer(AsyncWebsocketConsumer):
     """ Базовый чат от кторого наследуются чат на аренду и чат с техподдержкой"""
     async def connect(self):
@@ -455,15 +294,20 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         chat = self.get_chat_instance()
         user = self.scope['user']
 
-        show_all_messages = (
-                user.role in ['admin', 'manager'] or
-                (hasattr(chat.request_rent.vehicle, 'owner') and
-                 chat.request_rent.vehicle.owner.lessor.franchise and
-                 chat.request_rent.vehicle.owner.lessor.franchise.director == user)
-        )
+        if hasattr(chat, 'request_rent'):
+            show_all_messages = (
+                    user.role in ['admin', 'manager'] or
+                    (hasattr(chat.request_rent.vehicle, 'owner') and
+                     chat.request_rent.vehicle.owner.lessor.franchise and
+                     chat.request_rent.vehicle.owner.lessor.franchise.director == user)
+            )
+        else:
+            show_all_messages = user.role in ['admin', 'manager']
+
+        messages_queryset = self.get_messages_queryset(chat)
 
         if show_all_messages:
-            messages = self.get_messages_queryset(chat)
+            return messages_queryset
         else:
             messages = self.get_messages_queryset(chat).filter(deleted=False)
 
@@ -735,7 +579,7 @@ class ChatConsumer(BaseChatConsumer):
         }, ensure_ascii=False))
 
 
-class ChatSupportConsumer(BaseChatConsumerSupport):
+class ChatSupportConsumer(BaseChatConsumer):
     """ Чат техподдержки """
     def get_chat_instance(self):
         return self.get_chat_model().objects.select_related('creator', 'topic').get(id=self.chat_id)
