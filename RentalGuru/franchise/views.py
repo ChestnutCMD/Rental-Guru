@@ -1,7 +1,5 @@
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Count, Prefetch, Subquery, OuterRef
+from django.db.models import Q
 from django.db.models.expressions import RawSQL
-from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view
@@ -11,7 +9,7 @@ from rest_framework.views import APIView
 
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
-from vehicle.models import Vehicle, Auto
+from vehicle.models import Vehicle
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
