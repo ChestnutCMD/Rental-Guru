@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from RentalGuru.settings import HOST_URL
+from app.models import Lessor
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
     VehicleBrand, VehicleFeaturesFunctions, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic, Vehicle
 from vehicle.utils import merge_periods
@@ -297,10 +298,11 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.SerializerMethodField()
     free_delivery = serializers.SerializerMethodField()
     free_deposit = serializers.SerializerMethodField()
+    is_super_host = serializers.SerializerMethodField()
 
     class Meta:
         fields = [
-            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities',
+            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
             'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude'
         ]
         read_only_fields = ['average_ratings']
@@ -335,6 +337,10 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.BooleanField())
     def get_free_deposit(self, obj):
         return obj.price_deposit == 0
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_super_host(self, obj):
+        return obj.owner.lessor.super_host
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):
