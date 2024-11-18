@@ -28,18 +28,22 @@ class BaseFilter(filters.FilterSet):
 
     def filter_by_rental_date(self, queryset, name, value):
         """
-        Фильтрация по диапазону дат аренды, чтобы начальная дата фильтра была позже или совпадала с
-        availabilities__start_date, а конечная дата была раньше или совпадала с availabilities__end_date.
+        Фильтрация по диапазону дат аренды, с добавлением объектов, у которых on_request=True.
         """
         if value.start and value.stop:
             queryset = queryset.filter(
-                Q(availabilities__start_date__lte=value.start) & Q(availabilities__end_date__gte=value.stop)
+                Q(availabilities__start_date__lte=value.start, availabilities__end_date__gte=value.stop) |
+                Q(availabilities__on_request=True)
             )
         elif value.start:
-            queryset = queryset.filter(availabilities__start_date__lte=value.start)
+            queryset = queryset.filter(
+                Q(availabilities__start_date__lte=value.start) | Q(availabilities__on_request=True)
+            )
         elif value.stop:
-            queryset = queryset.filter(availabilities__end_date__gte=value.stop)
-        return queryset
+            queryset = queryset.filter(
+                Q(availabilities__end_date__gte=value.stop) | Q(availabilities__on_request=True)
+            )
+        return queryset.distinct()
 
     def filter_by_brand(self, queryset, name, value):
         brand_names = value.split(",")
