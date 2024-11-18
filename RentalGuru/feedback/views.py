@@ -51,7 +51,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 
         # Проверка на завершенную поездку
         try:
-            trip = Trip.objects.get(
+            trips = Trip.objects.filter(
                 organizer=self.request.user,
                 content_type=content_type,
                 object_id=object_id
@@ -61,7 +61,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 "Для того чтобы оставить отзыв, нужно воспользоваться данным транспортом."
             )
 
-        if trip.status != 'finished':
+        if not trips.filter(status='finished').exists():
             raise serializers.ValidationError("Поездка не была завершена.")
 
         serializer.save(user=self.request.user)

@@ -38,7 +38,7 @@ class ComplaintViewSet(BaseComplaintViewSet):
         Notification.objects.create(user=user, content=content, url=url)
 
 
-@extend_schema(summary="Жалобы на отзывы", description="CRUD для жалоб на отзывы")
+@extend_schema(summary="Жалобы на отзывы арендодателей", description="CRUD для жалоб на отзывы")
 class ComplaintFeedbackViewSet(BaseComplaintViewSet):
     queryset = ComplaintForFeedback.objects.all()
     serializer_class = ComplaintFeedbackSerializer
