@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 class BaseChatConsumer(AsyncWebsocketConsumer):
     """ Базовый чат от кторого наследуются чат на аренду и чат с техподдержкой"""
     async def connect(self):
+        """ Обработка соединения с чатом """
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.chat_group_name = f'chat_{self.chat_id}'
 
@@ -56,30 +57,53 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_user_from_token(self, token):
+        """ Проверка токена """
         validated_token = JWTAuthentication().get_validated_token(token)
         return JWTAuthentication().get_user(validated_token)
 
     async def disconnect(self, close_code):
+        """ Отключение от чата """
         await self.channel_layer.group_discard(
             self.chat_group_name,
             self.channel_name
         )
 
+    async def fetch_messages(self, offset=0, limit=20):
+        """ Получение сообщений с пагинацией """
+        chat = self.get_chat_instance()
+        messages_queryset = self.get_messages_queryset(chat)
+
+        messages = await database_sync_to_async(lambda: list(
+            messages_queryset.order_by('-timestamp')[offset:offset + limit]
+        ))()
+
+        formatted_messages = [
+            self.format_message(message, self.scope['user']) for message in messages
+        ]
+        return formatted_messages
+
     async def receive(self, text_data):
+        """ Обработка сообщений в сокете """
         try:
             data = json.loads(text_data)
 
-            # Handle simple message format
+            if data['type'] == 'load_previous_messages':
+                offset = data.get('offset', 0)
+                limit = data.get('limit', 20)
+                previous_messages = await self.load_previous_messages(offset, limit)
+                await self.send(text_data=json.dumps({
+                    'type': 'previous_messages',
+                    'messages': previous_messages,
+                }))
+
             if 'message' in data and isinstance(data['message'], str):
                 await self.handle_send_message({'message': data['message']})
                 return
 
-            # Handle message with file
             if 'message' in data and isinstance(data['message'], dict):
                 await self.handle_send_message(data['message'])
                 return
 
-            # Handle message deletion
             if 'delete' in data:
                 success = await self.handle_delete_message({'message_id': data['delete']})
                 if not success:
@@ -89,7 +113,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     }))
                 return
 
-            # Handle message update
             if 'update' in data and 'content' in data:
                 success = await self.handle_update_message({
                     'message_id': data['update'],
@@ -102,7 +125,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     }))
                 return
 
-            # Legacy format support
             action = data.get('action')
             if action:
                 if action == 'send_message':
@@ -226,6 +248,12 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             logger.error(f"Error deleting message: {str(e)}")
             return False
 
+    async def load_previous_messages(self, offset, limit):
+        """Загрузка предыдущих сообщений с учетом offset и limit"""
+        logger.info(f"Loading previous messages with offset {offset} and limit {limit}")
+        messages = await self.get_previous_messages(offset, limit)
+        return messages
+
     @database_sync_to_async
     def save_message(self, user, message_content, file=None):
         chat = self.get_chat_instance()
@@ -290,7 +318,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         return self.check_user_access(user, chat)
 
     @database_sync_to_async
-    def get_previous_messages(self):
+    def get_previous_messages(self, offset=0, limit=20):
+        """Получение предыдущих сообщений с поддержкой пагинации"""
         chat = self.get_chat_instance()
         user = self.scope['user']
 
@@ -306,14 +335,14 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         messages_queryset = self.get_messages_queryset(chat)
 
-        if show_all_messages:
-            return messages_queryset
-        else:
-            messages = self.get_messages_queryset(chat).filter(deleted=False)
+        if not show_all_messages:
+            messages_queryset = messages_queryset.filter(deleted=False)
+
+        messages = messages_queryset.order_by('-timestamp')[offset:offset + limit]
 
         message_data_list = []
 
-        for message in messages:
+        for message in reversed(messages):
             message_data = self.format_message(message, message.sender)
             message_data_list.append(message_data)
 
@@ -329,6 +358,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         }, ensure_ascii=False))
 
     def format_message(self, message, user):
+        """ Форматирование сообщений """
         return {
             'id': message.id,
             'sender': {

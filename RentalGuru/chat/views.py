@@ -187,6 +187,7 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 при принятии заявки на аренду 
                                                                                 арендодателем. Чат доступен по адресу:\n 
                         wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                        Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                         Отправка простого сообщения: {"message": "Hello"}                        
                         Удаление сообщения: {"delete": message_id}
                         Обновление сообщения: {"update": message_id, "content": "New content"}\n
@@ -483,6 +484,7 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
 
 @extend_schema(summary="Чат с техподдержкой", description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка простого сообщения: {"message": "Hello"}
                     Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
                     Удаление сообщения: {"delete": message_id}
