@@ -101,6 +101,7 @@ class AutoFilter(BaseFilter):
         to_field_name='name',
         label='Функции'
     )
+
     class Meta:
         model = Auto
         fields = [
