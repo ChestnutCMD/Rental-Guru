@@ -128,9 +128,9 @@ class RentPriceInline(admin.TabularInline):
 
 
 class BaseVehicleAdmin(admin.ModelAdmin):
-    list_display = (linkify('brand'), linkify('model'), 'year', linkify('owner'), 'get_vehicle_type', 'get_average_rating')
-    search_fields = ('brand__name', 'model__name', 'year', 'owner__email')
-    list_filter = ('brand', 'model', 'year', 'owner')
+    list_display = (linkify('brand'), linkify('model'), 'year', linkify('owner'), linkify('city'), 'id', 'get_average_rating')
+    search_fields = ('brand__name', 'model__name', 'year', 'owner__email', 'city__title')
+    list_filter = ('brand', 'model', 'year', 'owner', 'city__title')
     ordering = ('-year',)
     list_per_page = 20
     readonly_fields = ('get_average_rating',)
@@ -202,7 +202,7 @@ class AutoAdmin(BaseVehicleAdmin):
             'fields': ('payment_method',)
         }),
         ('Местоположение', {
-            'fields': ('location', )
+            'fields': ('city', 'location', 'latitude', 'longitude')
         })
     )
 
@@ -229,7 +229,7 @@ class BikeAdmin(BaseVehicleAdmin):
             'fields': ('payment_method',)
         }),
         ('Местоположение', {
-            'fields': ('location',)
+            'fields': ('city', 'location', 'latitude', 'longitude')
         })
     )
 
@@ -258,7 +258,7 @@ class ShipAdmin(BaseVehicleAdmin):
             'fields': ('payment_method',)
         }),
         ('Местоположение', {
-            'fields': ('location',)
+            'fields': ('city', 'location', 'latitude', 'longitude')
         })
     )
 
@@ -284,7 +284,7 @@ class HelicopterAdmin(BaseVehicleAdmin):
             'fields': ('payment_method',)
         }),
         ('Местоположение', {
-            'fields': ('location',)
+            'fields': ('city', 'location', 'latitude', 'longitude')
         })
     )
 
@@ -308,7 +308,7 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
             'fields': ('payment_method',)
         }),
         ('Местоположение', {
-            'fields': ('location',)
+            'fields': ('city', 'location', 'latitude', 'longitude')
         })
     )
 

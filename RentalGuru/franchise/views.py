@@ -1,4 +1,6 @@
-from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q, Count, Prefetch
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view
@@ -8,7 +10,7 @@ from rest_framework.views import APIView
 
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
-from vehicle.models import Vehicle
+from vehicle.models import Vehicle, Auto
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
@@ -333,6 +335,18 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
 
 @extend_schema(summary="Список городов", description="Список городов")
 class CityView(generics.ListAPIView):
-    queryset = City.objects.all()
     serializer_class = CitySerializer
 
+    def get_queryset(self):
+        finished_trips = Trip.objects.filter(status='finished')
+
+        queryset = City.objects.annotate(
+            finished_trips_count=Count(
+                'vehicle__trips',
+                filter=Q(vehicle__trips__status='finished')
+            )
+        ).order_by('-finished_trips_count')
+
+        queryset = queryset.prefetch_related(Prefetch('vehicle__trips', queryset=finished_trips))
+
+        return queryset

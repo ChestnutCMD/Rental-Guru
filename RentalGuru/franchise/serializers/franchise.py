@@ -195,6 +195,8 @@ class RequestFranchiseSerializer(serializers.ModelSerializer):
 
 
 class CitySerializer(serializers.ModelSerializer):
+    finished_trips_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = City
-        fields = '__all__'
+        fields = ['id', 'title', 'finished_trips_count']

@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.db import models
 
 from RentalGuru import settings
@@ -120,6 +119,7 @@ class Trip(models.Model):
     """ Поездки """
     STATUS_CHOICES = (
         ('current', 'Текущая поездка'),
+        ('started', 'В процессе'),
         ('finished', 'Завершить'),
         ('canceled', 'Отменить')
     )
