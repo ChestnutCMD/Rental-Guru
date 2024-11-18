@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Count, Prefetch
+from django.db.models import Q, Count, Prefetch, Subquery, OuterRef
+from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
@@ -336,17 +337,14 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
 @extend_schema(summary="Список городов", description="Список городов")
 class CityView(generics.ListAPIView):
     serializer_class = CitySerializer
+    queryset = City.objects.annotate(
+        finished_trips_count=RawSQL("""
+                SELECT COUNT(DISTINCT t.id)
+                FROM public.vehicle_vehicle v
+                JOIN django_content_type ct ON v.polymorphic_ctype_id = ct.id
+                JOIN public.chat_trip t ON t.object_id = v.id AND t.content_type_id = ct.id
+                WHERE v.city_id = public.franchise_city.id AND t.status = 'finished'
+            """, [])
+    ).order_by('-finished_trips_count')
 
-    def get_queryset(self):
-        finished_trips = Trip.objects.filter(status='finished')
 
-        queryset = City.objects.annotate(
-            finished_trips_count=Count(
-                'vehicle__trips',
-                filter=Q(vehicle__trips__status='finished')
-            )
-        ).order_by('-finished_trips_count')
-
-        queryset = queryset.prefetch_related(Prefetch('vehicle__trips', queryset=finished_trips))
-
-        return queryset
