@@ -16,7 +16,7 @@ class Feedback(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
 
     def __str__(self):
-        return self.content
+        return f"Отзыв от {self.user} к {self.vehicle}"
 
     class Meta:
         verbose_name = 'Отзыв о транспорте'
