@@ -40,7 +40,6 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         content_type = serializer.validated_data['content_type']
         object_id = serializer.validated_data['object_id']
 
-        # Проверка на существующий отзыв
         existing_feedback = Feedback.objects.filter(
             user=self.request.user,
             content_type=content_type,
@@ -49,7 +48,6 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         if existing_feedback:
             raise serializers.ValidationError("Вы уже оставили отзыв для данного транспортного средства.")
 
-        # Проверка на завершенную поездку
         try:
             trips = Trip.objects.filter(
                 organizer=self.request.user,

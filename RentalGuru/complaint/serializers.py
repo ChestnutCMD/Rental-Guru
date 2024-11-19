@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+
 from .models import Complaint, ComplaintForFeedback, ComplaintForFeedbackRenter
 
 
@@ -32,7 +34,32 @@ class ComplaintFeedbackSerializer(BaseComplaintSerializer):
     class Meta:
         model = ComplaintForFeedback
         fields = ['id', 'user', 'feedback', 'topic', 'description']
+        read_only_fields = ['user']
         unique_fields = ['feedback']
+
+    def validate(self, attrs):
+        """
+        Проверяем, что жалобу может создать только владелец транспорта.
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            raise PermissionDenied("Анонимные пользователи не могут создавать жалобы.")
+
+        feedback = attrs.get('feedback')
+        if not feedback:
+            raise serializers.ValidationError("Поле feedback обязательно.")
+
+        if feedback.vehicle.owner != request.user:
+            raise PermissionDenied("Вы не являетесь владельцем транспортного средства, связанного с этим отзывом.")
+
+        return attrs
+
+    def create(self, validated_data):
+        """
+        Переопределяем метод create для автоматического заполнения user.
+        """
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
 
 
 class ComplaintFeedbackRenterSerializer(BaseComplaintSerializer):
@@ -40,3 +67,21 @@ class ComplaintFeedbackRenterSerializer(BaseComplaintSerializer):
         model = ComplaintForFeedbackRenter
         fields = ['id', 'user', 'feedback', 'topic', 'description']
         unique_fields = ['feedback']
+        read_only_fields = ['user']
+
+    def validate(self, attrs):
+        """
+        Проверяем, что жалобу может создать только владелец транспорта.
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            raise PermissionDenied("Анонимные пользователи не могут создавать жалобы.")
+
+        feedback = attrs.get('feedback')
+        if not feedback:
+            raise serializers.ValidationError("Поле feedback обязательно.")
+
+        if feedback.renter != request.user:
+            raise PermissionDenied("Вы не являетесь арендатором, связанным с этим отзывом.")
+
+        return attrs

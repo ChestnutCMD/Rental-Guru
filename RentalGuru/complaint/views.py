@@ -6,16 +6,16 @@ from rest_framework.viewsets import ModelViewSet
 from RentalGuru import settings
 from notification.models import Notification
 from .models import Complaint, ComplaintForFeedback, ComplaintForFeedbackRenter
-from .permissions import IsMemberOrManagerAdmin
+from .permissions import PermissionVehicle
 from .serializers import ComplaintSerializer, ComplaintFeedbackSerializer, ComplaintFeedbackRenterSerializer
 
 
 class BaseComplaintViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsMemberOrManagerAdmin]
     filter_backends = [DjangoFilterBackend]
 
     def perform_create(self, serializer):
-        complaint = serializer.save()
+        serializer.save(user=self.request.user)
+        complaint = serializer.instance
         self.create_notification(complaint)
 
     def create_notification(self, complaint):
@@ -30,6 +30,7 @@ class ComplaintViewSet(BaseComplaintViewSet):
     queryset = Complaint.objects.all()
     serializer_class = ComplaintSerializer
     filterset_fields = ['vehicle']
+    permission_classes = [IsAuthenticated, PermissionVehicle]
 
     def create_notification(self, complaint):
         user = complaint.vehicle.owner
