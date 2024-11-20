@@ -186,7 +186,7 @@ class HelicopterFilter(BaseFilter):
 
 
 class SpecialTechnicFilter(BaseFilter):
-    type_technic = filters.RangeFilter(field_name='type_technic', label='Тип техники')
+    type_technic = filters.CharFilter(field_name='type_technic', label='Тип техники')
     engine_power = filters.RangeFilter(field_name='engine_power', label='Мощность двигателя, л.с.')
     operating_weight = filters.RangeFilter(field_name='operating_weight', label='Эксплутационная масса, кг')
 
