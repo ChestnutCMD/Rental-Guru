@@ -627,3 +627,14 @@ class ChatSupportConsumer(BaseChatConsumer):
         if user.is_superuser or user.is_staff:
             return True
         return chat.creator == user
+
+    async def chat_message_translated(self, event):
+        """ Обработчик для переведенных сообщений """
+        message_id = event['message_id']
+        translated_content = event['translated_content']
+
+        await self.send(text_data=json.dumps({
+            'type': 'message_translated',
+            'message_id': message_id,
+            'translated_content': translated_content
+        }, ensure_ascii=False))
