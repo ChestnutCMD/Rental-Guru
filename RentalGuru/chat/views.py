@@ -9,6 +9,7 @@ from rest_framework import viewsets, permissions, status, serializers, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from RentalGuru import settings
 from app.models import User, RenterDocuments
@@ -17,10 +18,11 @@ from payment.models import Transaction, PaymentSetting
 from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .filters import  MessageFilter
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
-    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer
+    TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, IssueSupportSerializer, \
+    ChatSupportRetrieveSerializer
 from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied, ValidationError
 from .utils import is_period_contained, subtract_periods, calculate_age
 
@@ -188,7 +190,7 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 арендодателем. Чат доступен по адресу:\n 
                         wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                         Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
-                        Отправка простого сообщения: {"message": "Hello"}                        
+                        Отправка сообщения: {"type": "send_message", "message": "hello"}                     
                         Удаление сообщения: {"delete": message_id}
                         Обновление сообщения: {"update": message_id, "content": "New content"}\n
                         Отправка сообщения с файлом: {
@@ -482,65 +484,74 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
     permissions = [IsAuthenticated]
 
 
-@extend_schema(summary="Чат с техподдержкой", description="""\nЧат с техподдержкой. Доступен по адресу:\n
+@extend_schema(summary="Список чатов техподдержки", description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Чат создается при создании обращения\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
-                    Отправка простого сообщения: {"message": "Hello"}
+                    Отправка сообщения: {"type": "send_message", "message": "hello"}
                     Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
                     Удаление сообщения: {"delete": message_id}
                     Обновление сообщения: {"update": message_id, "content": "New content"}""")
-class ChatSupportViewSet(viewsets.ModelViewSet):
+class ChatSupportListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    serializer_class = ChatSupportSerializer
-    permission_classes = [IsAuthenticated, IsChatCreatorOrAdmin]
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.role in ['admin', 'manager']:
+            chats = ChatSupport.objects.all()
+        else:
+            chats = ChatSupport.objects.filter(creator=user)
+
+        serializer = ChatSupportSerializer(chats, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Детальное отображение чата", description="""\nЧат с техподдержкой. Доступен по адресу:\n
+                    wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
+                    Отправка сообщения: {"type": "send_message", "message": "hello"}
+                    Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
+                    Удаление сообщения: {"delete": message_id}
+                    Обновление сообщения: {"update": message_id, "content": "New content"}""")
+class ChatSupportRetrieveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            chat = ChatSupport.objects.get(pk=pk)
+            if request.user.role not in ['admin', 'manager'] and chat.creator != request.user:
+                return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = ChatSupportRetrieveSerializer(chat)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ChatSupport.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@extend_schema(summary="Обращение в техподдержку", description="""\nЧат с техподдержкой. Доступен по адресу:\n
+                    wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
+                    Отправка сообщения: {"type": "send_message", "message": "hello"}
+                    Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
+                    Удаление сообщения: {"delete": message_id}
+                    Обновление сообщения: {"update": message_id, "content": "New content"}""")
+class IssueSupportViewSet(viewsets.ModelViewSet):
+    queryset = IssueSupport.objects.all()
+    serializer_class = IssueSupportSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
-            return ChatSupport.objects.all()
-        else:
-            return ChatSupport.objects.filter(creator=user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        data = serializer.data
-
-        messages = MessageSupport.objects.filter(support_chat=instance)
-        message_serializer = MessageSupportSerializer(messages, many=True)
-        data['messages'] = message_serializer.data
-
-        data['topic_name'] = instance.topic.name if instance.topic else None
-        return Response(data)
+        if user.is_staff:
+            return IssueSupport.objects.all()
+        return IssueSupport.objects.filter(chat__creator=user)
 
 
 @extend_schema(summary="Сообщения чата техподдержки", description="Сообщения чата техподдержки")
 class MessageSupportViewSet(viewsets.ModelViewSet):
     queryset = MessageSupport.objects.all()
     serializer_class = MessageSupportSerializer
-    permission_classes = [IsParticipantOrAdmin]
+    permission_classes = [IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        chat = self.get_object()
-        content = request.data.get('content')
-        message = MessageSupport.objects.create(support_chat=chat, sender=request.user, content=content)
-        serializer = MessageSupportSerializer(message)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)

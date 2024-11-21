@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport
+from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -159,64 +159,68 @@ class MessageSerializer(BaseMessageSerializer):
 
 # Чат с техподдержкой
 
-class MessageSupportSerializer(BaseMessageSerializer):
+class MessageSupportSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source='sender.username', read_only=True)
+
     class Meta:
         model = MessageSupport
-        fields = '__all__'
-        read_only_fields = ['sender']
+        fields = ['id', 'support_chat', 'sender', 'sender_name', 'content', 'timestamp', 'file', 'deleted']
+        read_only_fields = ['id', 'timestamp']
 
 
 class TopicSupportSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopicSupport
         fields = ['id', 'name', 'count']
+        read_only_fields = ['id', 'count']
+
+
+class IssueSupportSerializer(serializers.ModelSerializer):
+    topic_name = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = IssueSupport
+        fields = ['topic_name', 'description']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        chat, created = ChatSupport.objects.get_or_create(creator=user)
+        topic_name = validated_data.pop('topic_name')
+        topic, created = TopicSupport.objects.get_or_create(name=topic_name)
+
+        if created:
+            topic.count = 1
+        else:
+            topic.count += 1
+        topic.save()
+
+        issue = IssueSupport.objects.create(chat=chat, topic=topic, **validated_data)
+
+        return issue
 
 
 class ChatSupportSerializer(serializers.ModelSerializer):
-    topic_name = serializers.CharField(write_only=True, required=False)
-    message = serializers.CharField(write_only=True)
-    creator = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
-    class Meta:
-        model = ChatSupport
-        fields = ['id', 'topic_name', 'message', 'creator']
-        read_only_fields = ['id', 'creator']
-
-    def validate(self, attrs):
-        if not attrs.get('topic') and not attrs.get('topic_name'):
-            raise serializers.ValidationError("Either topic or topic_name must be provided.")
-        return attrs
-
-    def create(self, validated_data):
-        topic_name = validated_data.pop('topic_name', None)
-        message_content = validated_data.pop('message')
-        creator = validated_data.pop('creator')
-
-        if topic_name:
-            topic, created = TopicSupport.objects.get_or_create(name=topic_name)
-            if created:
-                topic.count = 1
-            else:
-                topic.count += 1
-            topic.save()
-            validated_data['topic'] = topic
-
-        chat = ChatSupport.objects.create(creator=creator, **validated_data)
-        chat.participants.add(creator)
-
-        MessageSupport.objects.create(support_chat=chat, sender=creator, content=message_content)
-
-        return chat
-
-
-class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
-    topic = TopicSupportSerializer()
+    issues = IssueSupportSerializer(many=True, read_only=True)
     messages = MessageSupportSerializer(many=True, read_only=True)
 
     class Meta:
         model = ChatSupport
-        fields = ['id', 'topic', 'participants', 'messages']
-        read_only_fields = ['id', 'participants']
+        fields = ['id', 'creator', 'issues', 'messages']
+
+
+class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
+    last_issue = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatSupport
+        fields = ['id', 'creator', 'last_issue']
+
+    def get_last_issue(self, obj):
+        """ Возвращает последнее обращение для чата. """
+        last_issue = IssueSupport.objects.filter(chat=obj).order_by('-created_at').first()
+        if last_issue:
+            return IssueSupportSerializer(last_issue).data
+        return None
 
 
 class VehicleRelatedField(serializers.Field):

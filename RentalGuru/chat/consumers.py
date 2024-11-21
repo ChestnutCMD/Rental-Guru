@@ -87,6 +87,14 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
 
+            # Проверяем наличие типа сообщения
+            if 'type' not in data:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Missing "type" field in message'
+                }))
+                return
+
             if data['type'] == 'load_previous_messages':
                 offset = data.get('offset', 0)
                 limit = data.get('limit', 20)
@@ -96,15 +104,15 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     'messages': previous_messages,
                 }))
 
-            if 'message' in data and isinstance(data['message'], str):
+            elif 'message' in data and isinstance(data['message'], str):
                 await self.handle_send_message({'message': data['message']})
                 return
 
-            if 'message' in data and isinstance(data['message'], dict):
+            elif 'message' in data and isinstance(data['message'], dict):
                 await self.handle_send_message(data['message'])
                 return
 
-            if 'delete' in data:
+            elif 'delete' in data:
                 success = await self.handle_delete_message({'message_id': data['delete']})
                 if not success:
                     await self.send(text_data=json.dumps({
@@ -113,7 +121,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     }))
                 return
 
-            if 'update' in data and 'content' in data:
+            elif 'update' in data and 'content' in data:
                 success = await self.handle_update_message({
                     'message_id': data['update'],
                     'new_content': data['content']
@@ -612,7 +620,7 @@ class ChatConsumer(BaseChatConsumer):
 class ChatSupportConsumer(BaseChatConsumer):
     """ Чат техподдержки """
     def get_chat_instance(self):
-        return self.get_chat_model().objects.select_related('creator', 'topic').get(id=self.chat_id)
+        return self.get_chat_model().objects.select_related('creator').get(id=self.chat_id)
 
     def get_chat_model(self):
         return ChatSupport

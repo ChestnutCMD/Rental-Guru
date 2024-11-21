@@ -77,14 +77,13 @@ class RequestRent(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Если объект создается
+        if not self.pk:
             if self.vehicle and not self.deposit_cost:
                 self.deposit_cost = self.vehicle.price_deposit
             self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
             # Рассчитываем итоговую стоимость при создании
             self.total_cost = self.calculate_rent_price()
         else:
-            # Логика при обновлении
             original = RequestRent.objects.get(pk=self.pk)
             if original.status != 'accept' and self.status == 'accept':
                 self.total_cost = self.calculate_rent_price()
@@ -151,7 +150,6 @@ class Trip(models.Model):
 
         super(Trip, self).save(*args, **kwargs)
 
-        # Увеличение счетчика поездок при изменении статуса на "finished"
         if previous_trip and previous_trip.status != 'finished' and self.status == 'finished':
             self.owner.lessor.count_trip += 1
             self.owner.lessor.save(update_fields=['count_trip'])
@@ -190,12 +188,11 @@ class TopicSupport(models.Model):
     class Meta:
         verbose_name = 'Тема чата с техподдержкой'
         verbose_name_plural = 'Темы чатов с техподдержкой'
+        ordering = ['-count']
 
 
 class ChatSupport(models.Model):
-    topic = models.ForeignKey(TopicSupport, null=False, related_name='chat_support', on_delete=models.CASCADE, verbose_name='Тема')
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_chats', on_delete=models.CASCADE, verbose_name='Создатель')
+    creator = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='created_chats', on_delete=models.CASCADE, verbose_name='Создатель')
 
     class Meta:
         verbose_name = 'Чат с техподдержкой'
@@ -203,6 +200,25 @@ class ChatSupport(models.Model):
 
     def __str__(self):
         return f'support_chat_id_{self.pk}'
+
+
+class IssueSupport(models.Model):
+    chat = models.ForeignKey(ChatSupport, null=False, on_delete=models.CASCADE, related_name='issue_chat', verbose_name='Чат техподдержки')
+    topic = models.ForeignKey(TopicSupport, null=False, related_name='chat_support', on_delete=models.CASCADE, verbose_name='Тема')
+    description = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Время создания')
+
+    class Meta:
+        verbose_name = 'Обращение в техподдержку'
+        verbose_name_plural = 'Обращения в техподдержку'
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new:
+            from .tasks import send_issue_email
+            send_issue_email.delay(self.id)
 
 
 class MessageSupport(models.Model):

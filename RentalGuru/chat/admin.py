@@ -33,9 +33,6 @@ class MessageSupportInline(admin.TabularInline):
 
 @admin.register(ChatSupport)
 class ChatSupportAdmin(admin.ModelAdmin):
-    list_display = ('id', 'topic', 'creator', 'participants_list')
-    search_fields = ('topic__name', 'creator__first_name', 'participants__first_name')
+    list_display = ('id', 'creator')
+    search_fields = ('creator__first_name',)
     inlines = [MessageSupportInline]
-
-    def participants_list(self, obj):
-        return ", ".join([p.username for p in obj.participants.all()])
