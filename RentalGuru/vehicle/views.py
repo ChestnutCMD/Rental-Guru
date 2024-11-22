@@ -361,7 +361,7 @@ def update_gps_location(request):
 def gps_tracking_view(request, vehicle_id):
     vehicle = get_object_or_404(Vehicle, id=vehicle_id)
 
-    # Проверка прав доступа. следует добавить еще пользователей
+    # Проверка прав доступа. следует добавить еще пользователей. Пока непонятно каких
     if not request.user != vehicle.owner:
         return Response({"error": "You don't have permission to track this vehicle"}, status=403)
 

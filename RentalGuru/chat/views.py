@@ -542,7 +542,7 @@ class IssueSupportViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.role in ['admin', 'manager']:
             return IssueSupport.objects.all()
         return IssueSupport.objects.filter(chat__creator=user)
 
