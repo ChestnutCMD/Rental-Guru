@@ -88,19 +88,19 @@ class AutoFilter(BaseFilter):
         queryset=AutoFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
-    ).distinct()
+    )
     features_for_children = filters.ModelMultipleChoiceFilter(
         field_name='features_for_children__name',
         queryset=FeaturesForChildren.objects.all(),
         to_field_name='name',
         label='Для детей'
-    ).distinct()
+    )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
         queryset=VehicleFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
-    ).distinct()
+    )
 
     class Meta:
         model = Auto
@@ -122,13 +122,13 @@ class BikeFilter(BaseFilter):
         queryset=BikeFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
-    ).distinct()
+    )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
         queryset=VehicleFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
-    ).distinct()
+    )
 
     class Meta:
         model = Bike
@@ -150,19 +150,19 @@ class ShipFilter(BaseFilter):
         queryset=ShipFeaturesAdditionally.objects.all(),
         to_field_name='name',
         label='Выбор особенностей'
-    ).distinct()
+    )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
         queryset=VehicleFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
-    ).distinct()
+    )
     features_equipment = filters.ModelMultipleChoiceFilter(
         field_name='features_equipment__name',
         queryset=FeaturesEquipment.objects.all(),
         to_field_name='name',
         label='Оборудование'
-    ).distinct()
+    )
 
     class Meta:
         model = Ship
