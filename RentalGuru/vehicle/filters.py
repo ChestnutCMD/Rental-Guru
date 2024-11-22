@@ -138,6 +138,10 @@ class BikeFilter(BaseFilter):
             'year', 'seat_count', 'transmission'
         ]
 
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        return queryset.distinct()
+
 
 class ShipFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
