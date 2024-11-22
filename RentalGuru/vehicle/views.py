@@ -106,7 +106,7 @@ class AutoViewSet(BaseViewSet):
             queryset = queryset.filter(owner=user)
         elif is_renter:
             queryset = queryset.filter(verified=True)
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -136,7 +136,7 @@ class BikeViewSet(BaseViewSet):
             queryset = queryset.filter(owner=user)
         elif is_renter:
             queryset = queryset.filter(verified=True)
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -167,7 +167,7 @@ class ShipViewSet(BaseViewSet):
             queryset = queryset.filter(owner=user)
         elif is_renter:
             queryset = queryset.filter(verified=True)
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -196,7 +196,7 @@ class HelicopterViewSet(BaseViewSet):
             queryset = queryset.filter(owner=user)
         elif is_renter:
             queryset = queryset.filter(verified=True)
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -225,7 +225,7 @@ class SpecialTechnicViewSet(BaseViewSet):
             queryset = queryset.filter(owner=user)
         elif is_renter:
             queryset = queryset.filter(verified=True)
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
