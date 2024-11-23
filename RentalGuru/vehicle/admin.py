@@ -128,7 +128,8 @@ class RentPriceInline(admin.TabularInline):
 
 
 class BaseVehicleAdmin(admin.ModelAdmin):
-    list_display = (linkify('brand'), linkify('model'), 'year', linkify('owner'), linkify('city'), 'id', 'get_average_rating')
+    list_display = ('brand', 'model', 'year', 'owner', 'city', 'id', 'get_average_rating')
+    list_display_links = ('brand', 'model', 'owner', 'city',)
     search_fields = ('brand__name', 'model__name', 'year', 'owner__email', 'city__title')
     list_filter = ('brand', 'model', 'year', 'owner', 'city__title')
     ordering = ('-year',)
@@ -165,10 +166,8 @@ class BaseVehicleAdmin(admin.ModelAdmin):
         if availabilities:
             merged_availabilities = merge_periods(availabilities)
 
-            # Удаление всех текущих записей доступности
             form.instance.availabilities.all().delete()
 
-            # Сохранение объединенных периодов доступности
             for availability in merged_availabilities:
                 Availability.objects.create(vehicle=form.instance, **availability)
 

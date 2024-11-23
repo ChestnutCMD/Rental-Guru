@@ -88,36 +88,29 @@ class FeedbackRenterCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'renter', 'content']
 
     def validate_renter(self, value):
-        if value == self.context['request'].user:
+        if value.user == self.context['request'].user:
             raise serializers.ValidationError("Нельзя оставить отзыв самому себе.")
         return value
 
     def create(self, validated_data):
         user = self.context['request'].user
-        renter = validated_data['renter']
-        try:
-            renter_instance = Renter.objects.get(user=renter)
-        except Renter.DoesNotExist:
-            raise serializers.ValidationError("Указанный пользователь не является арендатором.")
+        renter_instance = validated_data['renter']
 
-        trips = Trip.objects.filter(organizer=renter, status='finished')
+        trips = Trip.objects.filter(organizer=renter_instance.user, status='finished')
         if not trips.exists():
             raise serializers.ValidationError(
                 "Для того чтобы оставить отзыв, необходимо, чтобы поездка была завершена."
             )
-        trip_found = False
-        for trip in trips:
-            if trip.vehicle and trip.vehicle.owner == user:
-                trip_found = True
-                break
+
+        trip_found = any(trip.vehicle and trip.vehicle.owner == user for trip in trips)
 
         if not trip_found:
             raise serializers.ValidationError("Вы не являетесь владельцем транспортного средства в завершенной поездке.")
 
-        if FeedbackRenter.objects.filter(user=user, renter=renter).exists():
+        if FeedbackRenter.objects.filter(user=user, renter=renter_instance).exists():
             raise serializers.ValidationError("Вы уже оставили отзыв этому арендатору.")
-        validated_data['user'] = user
 
+        validated_data['user'] = user
         return FeedbackRenter.objects.create(**validated_data)
 
 
@@ -137,10 +130,11 @@ class FeedbackRenterSerializer(serializers.ModelSerializer):
         }
 
     def get_renter(self, obj):
+        renter_user = obj.renter.user
         return {
             'id': obj.renter.id,
-            'first_name': obj.renter.first_name,
-            'avatar': obj.renter.avatar.url if obj.renter.avatar else None
+            'first_name': renter_user.first_name,
+            'avatar': renter_user.avatar.url if renter_user.avatar else None
         }
 
 
@@ -153,7 +147,7 @@ class FeedbackRenterUpdateSerializer(serializers.ModelSerializer):
 
     def validate_answer(self, value):
         request = self.context.get('request')
-        if self.instance.renter != request.user:
+        if self.instance.renter.user != request.user:
             raise serializers.ValidationError("Только арендатор может ответить на отзыв.")
         return value
 

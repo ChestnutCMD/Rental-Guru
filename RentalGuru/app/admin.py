@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib import admin, messages
+
+from feedback.models import FeedbackRenter
 from .models import User, Lessor, Renter, Currency, Language, RenterDocuments
 
 
@@ -112,15 +114,24 @@ class LessorAdmin(BaseUserRelatedAdmin):
 class RenterDocumentsInline(admin.TabularInline):
     model = RenterDocuments
     extra = 0
-    fields = ['title', 'number', 'photo', 'status', 'issue_date']
-    readonly_fields = ['photo']  # Делаем поле фото только для чтения в инлайн форме
+    fields = ('title', 'number', 'photo', 'status', 'issue_date')
+    readonly_fields = ('photo',)
     can_delete = True
-    show_change_link = True  # Добавляем ссылку на редактирование документа
+    show_change_link = True
+
+
+class FeedbackRenterInline(admin.TabularInline):
+    model = FeedbackRenter
+    extra = 0
+    fields = ('content', 'answer', 'user',  'timestamp')
+    readonly_fields = ('content', 'user', 'timestamp')
+    can_delete = True
+    show_change_link = True
 
 
 class RenterAdmin(BaseUserRelatedAdmin):
     form = RenterAdminForm
-    inlines = [RenterDocumentsInline]
+    inlines = [RenterDocumentsInline, FeedbackRenterInline]
     list_display = (
         'user', 'verification', 'get_average_rating'
     )

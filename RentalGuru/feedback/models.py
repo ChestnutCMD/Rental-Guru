@@ -2,10 +2,11 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from RentalGuru import settings
+from app.models import Renter
 
 
 class Feedback(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name='Пользователь')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     content = models.CharField(max_length=255, verbose_name='Отзыв')
     answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
 
@@ -25,7 +26,7 @@ class Feedback(models.Model):
 
 class FeedbackRenter(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='given_feedbacks', verbose_name='Арендодатель')
-    renter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_feedbacks', verbose_name='Арендатор')
+    renter = models.ForeignKey(Renter, on_delete=models.CASCADE, related_name='received_feedbacks', verbose_name='Арендатор')
     content = models.CharField(max_length=255, verbose_name='Отзыв')
     answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')

@@ -81,7 +81,7 @@ class ComplaintFeedbackRenterSerializer(BaseComplaintSerializer):
         if not feedback:
             raise serializers.ValidationError("Поле feedback обязательно.")
 
-        if feedback.renter != request.user:
+        if feedback.renter.user != request.user:
             raise PermissionDenied("Вы не являетесь арендатором, связанным с этим отзывом.")
 
         return attrs

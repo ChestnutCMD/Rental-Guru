@@ -21,7 +21,7 @@ class FeedbackFilter(django_filters.FilterSet):
 
 
 class FeedbackRenterFilter(django_filters.FilterSet):
-    renter_id = django_filters.NumberFilter(field_name='renter__id', lookup_expr='exact', label="User ID")
+    renter_id = django_filters.NumberFilter(field_name='renter__id', lookup_expr='exact', label="Renter ID")
 
     class Meta:
         model = FeedbackRenter

@@ -120,35 +120,33 @@ class FeedbackRenterViewSet(viewsets.ModelViewSet):
         return FeedbackRenterSerializer
 
     def perform_create(self, serializer):
-        renter = serializer.validated_data['renter']
-        try:
-            renter_instance = Renter.objects.get(user=renter)
-        except Renter.DoesNotExist:
-            raise serializers.ValidationError("Указанный пользователь не является арендатором.")
+        renter_instance = serializer.validated_data.get('renter')
+        if not renter_instance:
+            raise serializers.ValidationError("Необходимо указать арендатора.")
 
-        if FeedbackRenter.objects.filter(user=self.request.user, renter=renter).exists():
+        if FeedbackRenter.objects.filter(user=self.request.user, renter=renter_instance).exists():
             raise serializers.ValidationError("Вы уже оставили отзыв этому арендатору.")
 
         feedback = serializer.save(user=self.request.user)
 
-        content = f'Добавлен отзыв'
+        content = 'Добавлен отзыв'
         url = f'{settings.HOST_URL}/feedback/feedbacks_renter/{feedback.id}'
-        Notification.objects.create(user=renter, content=content, url=url)
+        Notification.objects.create(user=renter_instance.renter.user, content=content, url=url)
 
     def update(self, request, *args, **kwargs):
-            instance = self.get_object()
-            if 'answer' in request.data:
-                if instance.renter != request.user:
-                    raise serializers.ValidationError("Только арендатор может ответить на отзыв.")
-                instance.answer = request.data['answer']
-                instance.save()
+        instance = self.get_object()
+        if 'answer' in request.data:
+            if instance.renter.user != request.user:
+                raise serializers.ValidationError("Только арендатор может ответить на отзыв.")
+            instance.answer = request.data['answer']
+            instance.save()
 
-                content = f'Добавлен ответ на отзыв'
-                url = f'{settings.HOST_URL}/feedback/feedbacks_renter/{instance.id}'
-                Notification.objects.create(user=instance.user, content=content, url=url)
+            content = 'Добавлен ответ на отзыв'
+            url = f'{settings.HOST_URL}/feedback/feedbacks_renter/{instance.id}'
+            Notification.objects.create(user=instance.user, content=content, url=url)
 
-                return Response(FeedbackRenterSerializer(instance).data)
-            return super().update(request, *args, **kwargs)
+            return Response(FeedbackRenterSerializer(instance).data)
+        return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
