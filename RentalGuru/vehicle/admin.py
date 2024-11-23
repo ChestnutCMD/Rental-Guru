@@ -71,8 +71,8 @@ class VehicleBrandAdmin(BaseFeatures):
 @admin.register(VehicleModel)
 class VehicleModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'vehicle_type', 'brand')
-    search_fields = ('name', )
-    list_filter = ('name', 'vehicle_type', 'brand')
+    search_fields = ('name',)
+    list_filter = ('vehicle_type', 'brand')
     ordering = ('name',)
 
 

@@ -20,6 +20,13 @@ class Command(BaseCommand):
             )
         model_count = VehicleModel.objects.count()
 
+        for brand in VehicleBrand.objects.all().iterator():
+            text = brand.name
+            VehicleBrand.objects.filter(pk=brand.pk).update(search_vector=SearchVector(
+                    models.Value(text), config='russian'
+                )
+            )
+
         self.stdout.write(f'Updated {model_count} models')
         self.stdout.write(self.style.SUCCESS('Successfully updated all search vectors'))
 

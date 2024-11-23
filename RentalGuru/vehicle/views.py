@@ -552,6 +552,7 @@ class VehiclePhotoDeleteView(APIView):
 
 class VehicleSearchViewSet(viewsets.ViewSet):
     pagination_class = LimitOffsetPagination
+    pagination_class.default_limit = 10
 
     def get_serializer_for_model(self, model_class):
         serializers = {
@@ -586,15 +587,25 @@ class VehicleSearchViewSet(viewsets.ViewSet):
                 'vehicles': []
             })
 
+        query_parts = query.split()
+        brand_query = query_parts[0]
+        model_query = " ".join(query_parts[1:])
+
         matching_brands = VehicleBrand.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
+            similarity=TrigramSimilarity('name', brand_query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
         matching_models = VehicleModel.objects.annotate(
-            similarity=TrigramSimilarity('name', query)
+            similarity=TrigramSimilarity('name', model_query)
         ).filter(similarity__gt=0.3).order_by('-similarity')
 
-        vehicle_query = Q(brand__in=matching_brands) | Q(model__in=matching_models)
+        if matching_models.exists():
+            model_ids = matching_models.values_list('id', flat=True)
+            vehicle_query = Q(brand__in=matching_brands) & Q(model__in=matching_models)
+        else:
+            vehicle_query = Q(brand__in=matching_brands)
+
+        vehicle_query &= Q(verified=True)
 
         vehicle_type_mapping = {
             'auto': Auto,
@@ -604,7 +615,6 @@ class VehicleSearchViewSet(viewsets.ViewSet):
             'special_technic': SpecialTechnic
         }
 
-        # Собираем QuerySet'ы по типам транспорта
         all_vehicles = []
         if vehicle_type and vehicle_type in vehicle_type_mapping:
             model_class = vehicle_type_mapping[vehicle_type]
@@ -619,7 +629,6 @@ class VehicleSearchViewSet(viewsets.ViewSet):
         if paginated_vehicles is None:
             return Response({"vehicles": []})
 
-        # Сериализуем результаты пагинации
         result = []
         for vehicle in paginated_vehicles:
             serializer = self.get_serializer_for_model(type(vehicle))
@@ -634,23 +643,14 @@ class VehicleSearchViewSet(viewsets.ViewSet):
         if not query:
             return Response({"suggestions": []})
 
-        suggestions = []
+        exact_brand = VehicleBrand.objects.filter(name__iexact=query).first()
+        if exact_brand:
+            models = VehicleModel.objects.filter(brand=exact_brand).values_list('name', flat=True)
+            return Response({"suggestions": [f"{exact_brand.name} {model}" for model in models]})
 
-        if len(query) <= 3:
-            brands = VehicleBrand.objects.annotate(
-                similarity=TrigramSimilarity('name', query)
-            ).filter(similarity__gt=0.2).order_by('-similarity')[:5]
+        matching_brands = VehicleBrand.objects.annotate(
+            similarity=TrigramSimilarity('name', query)
+        ).filter(similarity__gt=0.3).order_by('-similarity')[:5]
 
-            suggestions = [brand.name for brand in brands]
-
-        else:
-            matching_brands = VehicleBrand.objects.filter(name__icontains=query)
-            if matching_brands.exists():
-                for brand in matching_brands:
-                    models = VehicleModel.objects.filter(
-                        brand=brand,
-                        name__icontains=query
-                    )[:5]
-                    suggestions.extend([f"{brand.name} {model.name}" for model in models])
-
+        suggestions = [brand.name for brand in matching_brands]
         return Response({"suggestions": suggestions})

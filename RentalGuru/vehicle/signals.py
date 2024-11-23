@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.postgres.search import SearchVector
@@ -31,15 +32,36 @@ from vehicle.models import VehicleBrand, VehicleModel
 #     )
 #     instance.save(update_fields=['search_vector'])
 
+_is_updating_search_vector = False
+
+
 @receiver(post_save, sender=VehicleBrand)
 def update_brand_search_vector(sender, instance, **kwargs):
-    VehicleBrand.objects.filter(pk=instance.pk).update(
-        search_vector=SearchVector('name', config='russian')
-    )
+    global _is_updating_search_vector
+    if _is_updating_search_vector:
+        return
+    _is_updating_search_vector = True
+    try:
+        instance.search_vector = SearchVector('name', config='english')
+        instance.save()
+    finally:
+        _is_updating_search_vector = False
+
+
+processed_objects = set()
 
 
 @receiver(post_save, sender=VehicleModel)
 def update_model_search_vector(sender, instance, **kwargs):
-    VehicleModel.objects.filter(pk=instance.pk).update(
-        search_vector=SearchVector('name', 'brand__name', config='russian')
-    )
+    if instance.pk in processed_objects:
+        return
+    processed_objects.add(instance.pk)
+    model_instance = VehicleModel.objects.annotate(
+        combined_search=SearchVector('name', config='english') +
+                        SearchVector('brand__name', config='english')
+    ).get(pk=instance.pk)
+
+    model_instance.search_vector = model_instance.combined_search
+    model_instance.save()
+
+    transaction.on_commit(lambda: processed_objects.discard(instance.pk))
