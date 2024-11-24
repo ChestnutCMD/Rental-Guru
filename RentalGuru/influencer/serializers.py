@@ -2,7 +2,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from chat.models import Trip
-from influencer.models import Influencer, ReferralLink
+from influencer.models import Influencer, ReferralLink, InfluencerRequest
 
 
 class InfluencerSerializer(serializers.ModelSerializer):
@@ -61,3 +61,15 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
         renter_users = obj.renters.values_list('user_id', flat=True)
         total_income = Trip.objects.filter(organizer_id__in=renter_users, status='finished').aggregate(total_cost=Sum('total_cost'))
         return total_income['total_cost'] or 0.00
+
+
+class InfluencerRequestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InfluencerRequest
+        fields = ['name', 'city', 'telephone', 'email', 'social', 'description']
+
+
+class InfluencerRequestListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InfluencerRequest
+        fields = ['id', 'name', 'city', 'telephone', 'email', 'social', 'description', 'created_at']

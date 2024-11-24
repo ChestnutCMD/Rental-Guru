@@ -3,11 +3,12 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, DestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from influencer.models import Influencer, ReferralLink
-from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer
-from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer
+from influencer.models import Influencer, ReferralLink, InfluencerRequest
+from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
+from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
+    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer
 
 
 @extend_schema(summary="Список инфлюенсеров", description="Список инфлюенсеров, доступен только для администраторов.")
@@ -50,3 +51,24 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(influencer=self.request.user.influencer)
+
+
+@extend_schema(summary="Заявка на создание инфлюенсера", description="Заявка на создание инфлюенсера")
+class InfluencerRequestCreateView(CreateAPIView):
+    queryset = InfluencerRequest.objects.all()
+    serializer_class = InfluencerRequestCreateSerializer
+    permission_classes = [AllowAny]
+
+
+@extend_schema(summary="Список заявок", description="Возвращает список заявок на создание инфлюенсеров")
+class InfluencerRequestListView(ListAPIView):
+    queryset = InfluencerRequest.objects.all()
+    serializer_class = InfluencerRequestListSerializer
+    permission_classes = [IsAdminOrManagerForRequest]
+
+
+@extend_schema(summary="Удаление заявки", description="Удаление заявки")
+class InfluencerRequestDeleteView(DestroyAPIView):
+    queryset = InfluencerRequest.objects.all()
+    serializer_class = InfluencerRequestListSerializer
+    permission_classes = [IsAdminOrManagerForRequest]

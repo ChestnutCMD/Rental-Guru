@@ -2,6 +2,7 @@ import string
 import random
 from django.db import models
 from RentalGuru import settings
+from franchise.models import City
 
 
 class Influencer(models.Model):
@@ -52,3 +53,17 @@ class ReferralLink(models.Model):
     class Meta:
         verbose_name = 'Реферальная ссылка'
         verbose_name_plural = 'Реферальные ссылки'
+
+
+class InfluencerRequest(models.Model):
+    name = models.CharField(max_length=50, verbose_name='Имя')
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Город')
+    telephone = models.CharField(max_length=15, null=True, blank=True, verbose_name='Телефон')
+    email = models.EmailField(verbose_name='Email')
+    social = models.CharField(max_length=250, verbose_name='Сайт или соцсеть')
+    description = models.CharField(max_length=250, verbose_name='Чем вы занимаетесь')
+    created_at = models.DateField(auto_now_add=True, verbose_name='Дата создания')
+
+    class Meta:
+        verbose_name = 'Заявка на создание инфлюенсера'
+        verbose_name_plural = 'Заявки на создание инфлюенсеров'
