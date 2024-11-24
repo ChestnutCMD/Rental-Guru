@@ -175,11 +175,8 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
             ])
 
         if photos_data:
-            instance.photos.all().delete()
-            VehiclePhoto.objects.bulk_create([
-                VehiclePhoto(vehicle=instance, **photo_data)
-                for photo_data in photos_data
-            ])
+            for photo_data in photos_data:
+                VehiclePhoto.objects.create(vehicle=instance, **photo_data)
 
         return instance
 
