@@ -162,14 +162,17 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
 
-        availabilities = list(form.instance.availabilities.values('start_date', 'end_date'))
-        if availabilities:
-            merged_availabilities = merge_periods(availabilities)
+        availabilities = list(form.instance.availabilities.values('start_date', 'end_date', 'on_request'))
 
-            form.instance.availabilities.all().delete()
+        if any(avail['on_request'] for avail in availabilities):
+            form.instance.availabilities.exclude(on_request=True).delete()
+        else:
+            if availabilities:
+                merged_availabilities = merge_periods(availabilities)
+                form.instance.availabilities.all().delete()
 
-            for availability in merged_availabilities:
-                Availability.objects.create(vehicle=form.instance, **availability)
+                for availability in merged_availabilities:
+                    Availability.objects.create(vehicle=form.instance, **availability)
 
     def get_inline_instances(self, request, obj=None):
         inline_instances = super().get_inline_instances(request, obj)

@@ -212,7 +212,6 @@ class Vehicle(PolymorphicModel):
             model_name = real_instance_class.__name__.lower()
             vehicle_url = f'{settings.HOST_URL}/vehicles/{model_name}/{self.pk}/'
 
-            # Отправка уведомлений
             Notification.objects.create(
                 user=self.owner,
                 content=f'Ваше транспортное средство {self} было верифицировано!',
@@ -220,10 +219,17 @@ class Vehicle(PolymorphicModel):
             )
 
         # Логика обработки периодов доступности
+        on_request_availability = self.availabilities.filter(on_request=True).first()
+
         availabilities = list(self.availabilities.values('start_date', 'end_date'))
         if availabilities:
             merged_availabilities = merge_periods(availabilities)
             self.availabilities.all().delete()
+
+            if on_request_availability:
+                on_request_availability.pk = None
+                on_request_availability.save()
+
             for availability in merged_availabilities:
                 Availability.objects.create(vehicle=self, **availability)
 
@@ -282,9 +288,9 @@ class Availability(models.Model):
                 raise ValidationError('Поля start_date и end_date не должны быть заполнены, если on_request=True.')
 
     def save(self, *args, **kwargs):
-        if self.on_request or (not self.start_date and not self.end_date):
-            self.on_request = True
-            self.start_date, self.end_date = None, None
+        if self.on_request:
+            self.start_date = None
+            self.end_date = None
 
         super().save(*args, **kwargs)
 
