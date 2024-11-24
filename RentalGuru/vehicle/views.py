@@ -552,7 +552,6 @@ class VehiclePhotoDeleteView(APIView):
 
 class VehicleSearchViewSet(viewsets.ViewSet):
     pagination_class = LimitOffsetPagination
-    pagination_class.default_limit = 10
 
     def get_serializer_for_model(self, model_class):
         serializers = {
