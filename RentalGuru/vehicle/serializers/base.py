@@ -50,7 +50,7 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 class VehicleDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleDocument
-        fields = ['name', 'image', 'number']
+        fields = ['id', 'name', 'image', 'number']
         extra_kwargs = {
             'vehicle': {'required': False}
         }
@@ -161,7 +161,6 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
             ])
 
         if documents_data:
-            instance.documents.all().delete()
             VehicleDocument.objects.bulk_create([
                 VehicleDocument(vehicle=instance, **document_data)
                 for document_data in documents_data
@@ -175,8 +174,10 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
             ])
 
         if photos_data:
-            for photo_data in photos_data:
-                VehiclePhoto.objects.create(vehicle=instance, **photo_data)
+            VehiclePhoto.objects.bulk_create([
+                VehiclePhoto(vehicle=instance, **photo_data)
+                for photo_data in photos_data
+            ])
 
         return instance
 

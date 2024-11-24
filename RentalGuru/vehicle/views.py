@@ -31,7 +31,7 @@ from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, Speci
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
-    BikeTransmission, VehicleClass, VehiclePhoto
+    BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
     PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer
@@ -653,3 +653,20 @@ class VehicleSearchViewSet(viewsets.ViewSet):
 
         suggestions = [brand.name for brand in matching_brands]
         return Response({"suggestions": suggestions})
+
+
+@extend_schema(summary="Удаление документа", description="Удаление документа")
+class DeleteVehicleDocumentView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+
+    def delete(self, request, document_id):
+        document = VehicleDocument.objects.filter(id=document_id).first()
+
+        if not document:
+            return Response({'detail': 'Документ не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if document.vehicle.owner != request.user and request.user.role not in ['administrator', 'manager']:
+            return Response({'detail': 'У вас нет прав для удаления этого документа.'}, status=status.HTTP_403_FORBIDDEN)
+
+        document.delete()
+        return Response({'detail': 'Документ успешно удален.'}, status=status.HTTP_204_NO_CONTENT)
