@@ -164,7 +164,7 @@ class MessageSupportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MessageSupport
-        fields = ['id', 'support_chat', 'sender', 'sender_name', 'content', 'timestamp', 'file', 'deleted']
+        fields = ['id', 'chat', 'sender', 'sender_name', 'content', 'timestamp', 'file', 'deleted']
         read_only_fields = ['id', 'timestamp']
 
 

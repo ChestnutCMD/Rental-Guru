@@ -221,12 +221,16 @@ class IssueSupport(models.Model):
             send_issue_email.delay(self.id)
 
 
+def file_support_chat_upload_to(instance, filename):
+    return f'media/files/chat_support/{instance.chat}/{filename}'
+
+
 class MessageSupport(models.Model):
-    support_chat = models.ForeignKey(ChatSupport, related_name='message_support', on_delete=models.CASCADE, verbose_name='Чат')
+    chat = models.ForeignKey(ChatSupport, related_name='message_support', on_delete=models.CASCADE, verbose_name='Чат')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Отправитель')
     content = models.TextField(verbose_name='Сообщение')
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
-    file = models.FileField(upload_to='media/support_chat_files/', blank=True, null=True, verbose_name='Файл')
+    file = models.FileField(upload_to=file_support_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
 
     class Meta:

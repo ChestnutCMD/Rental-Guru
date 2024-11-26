@@ -156,15 +156,17 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_send_message(self, data):
         message_content = data.get('message') if isinstance(data.get('message'), str) else data.get('content', '')
-        base64_file = data.get('file')
         user = self.scope['user']
 
+        base64_file = data.get('file')
         file = None
         if base64_file:
+            logger.info(f"Received data: {data}")
             try:
-                file_data = base64.b64decode(base64_file.get('data', '').split(',')[1])
-                file_name = base64_file.get('name', 'unnamed_file')
-                content_type = base64_file.get('type', 'application/octet-stream')
+                file_data = base64.b64decode(
+                    base64_file.split(',')[-1])  # Используйте split(',')[-1] для удаления префикса
+                file_name = data.get('name', 'unnamed_file')
+                content_type = data.get('type', 'application/octet-stream')
 
                 file = InMemoryUploadedFile(
                     file=io.BytesIO(file_data),
@@ -174,6 +176,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     size=len(file_data),
                     charset=None
                 )
+                logger.info(f"File name: {file_name}, size: {len(file_data)}, type: {content_type}")
             except Exception as e:
                 logger.error(f"Error decoding base64 file: {e}")
                 await self.send(text_data=json.dumps({
@@ -239,6 +242,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, data):
         try:
             message_id = data.get('message_id')
+            print(message_id)
             user = self.scope['user']
 
             if await self.delete_message(message_id, user):
@@ -258,21 +262,26 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def load_previous_messages(self, offset, limit):
         """Загрузка предыдущих сообщений с учетом offset и limit"""
-        logger.info(f"Loading previous messages with offset {offset} and limit {limit}")
         messages = await self.get_previous_messages(offset, limit)
         return messages
 
     @database_sync_to_async
     def save_message(self, user, message_content, file=None):
         chat = self.get_chat_instance()
+        logger.info(f"Chat instance: {chat}")
+        logger.info(f"Chat type: {type(chat)}")
+        logger.info(f"User: {user}")
+        logger.info(f"Message content: {message_content}")
+        logger.info(f"File: {file}")
         message = self.create_message_instance(chat, user, message_content, file)
+        logger.info(f"Created message: {message}")
         return message
 
     @database_sync_to_async
     def update_message(self, message_id, user, new_content):
         with transaction.atomic():
             try:
-                message = Message.objects.select_for_update().get(
+                message = self.get_messages_objects().objects.select_for_update().get(
                     id=message_id,
                     sender=user,
                     deleted=False
@@ -280,14 +289,15 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 message.content = new_content
                 message.save()
                 return message
-            except Message.DoesNotExist:
+            except self.get_messages_objects().DoesNotExist:
                 return None
 
     @database_sync_to_async
     def delete_message(self, message_id, user):
         with transaction.atomic():
+
             try:
-                message = Message.objects.select_for_update().get(
+                message = self.get_messages_objects().objects.select_for_update().get(
                     id=message_id,
                     sender=user,
                     deleted=False
@@ -295,7 +305,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 message.deleted = True
                 message.save()
                 return True
-            except Message.DoesNotExist:
+            except self.get_messages_objects().DoesNotExist:
                 return False
 
     async def chat_message(self, event):
@@ -395,6 +405,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     def check_user_access(self, user, chat):
         raise NotImplementedError
 
+    def get_messages_objects(self):
+        raise NotImplementedError
 
 class ChatConsumer(BaseChatConsumer):
     """ Чат по аренде """
@@ -616,6 +628,9 @@ class ChatConsumer(BaseChatConsumer):
             'translated_content': translated_content
         }, ensure_ascii=False))
 
+    def get_messages_objects(self):
+        return Message
+
 
 class ChatSupportConsumer(BaseChatConsumer):
     """ Чат техподдержки """
@@ -625,8 +640,11 @@ class ChatSupportConsumer(BaseChatConsumer):
     def get_chat_model(self):
         return ChatSupport
 
+    def get_messages_objects(self):
+        return MessageSupport
+
     def create_message_instance(self, chat, user, message_content, file):
-        return MessageSupport.objects.create(support_chat=chat, sender=user, content=message_content, file=file)
+        return MessageSupport.objects.create(chat=chat, sender=user, content=message_content, file=file)
 
     def get_messages_queryset(self, chat):
         return chat.message_support.select_related('sender').order_by('timestamp')

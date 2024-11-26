@@ -188,21 +188,18 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 заявки на аренду с открытой датой, либо 
                                                                                 при принятии заявки на аренду 
                                                                                 арендодателем. Чат доступен по адресу:\n 
-                        wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
-                        Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
-                        Отправка сообщения: {"type": "send_message", "message": "hello"}                     
-                        Удаление сообщения: {"delete": message_id}
-                        Обновление сообщения: {"update": message_id, "content": "New content"}\n
-                        Отправка сообщения с файлом: {
-                                                      "message": {
-                                                                  "content": "текст сообщения", 
-                                                                  "file": {
-                                                                           "data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/...", 
-                                                                           "name": "example.jpg", 
-                                                                           "type": "image/jpeg"
-                                                                          }
-                                                                 }
-                                                     }
+                    wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
+                    Отправка сообщения: {"type": "send_message", "message": "hello"}
+                    Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
+                    Удаление сообщения: {"type": "delete_message", "delete": 74}
+                    Отправка сообщения с файлом: {"type": "send_message", 
+                                                  "message": {
+                                                              "content": "Hello!",
+                                                              "file": "data:image/jpeg;base64,/9j/4AAQS..."
+                                                              "name": "example.jpg"                                                              
+                                                             }
+                                                  }  
                         
                         Обновление заявки со стороны арендодателя: {
                                                                     "update_request_rent": {
@@ -489,9 +486,16 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
                     Чат создается при создании обращения\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
-                    Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
-                    Удаление сообщения: {"delete": message_id}
-                    Обновление сообщения: {"update": message_id, "content": "New content"}""")
+                    Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
+                    Удаление сообщения: {"type": "delete_message", "delete": 74}
+                    Отправка сообщения с файлом: {"type": "send_message", 
+                                                  "message": {
+                                                              "content": "Hello!",
+                                                              "file": "data:image/jpeg;base64,/9j/4AAQS..."
+                                                              "name": "example.jpg"                                                              
+                                                             }
+                                                  }  
+                    """)
 class ChatSupportListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -510,9 +514,16 @@ class ChatSupportListView(APIView):
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
-                    Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
-                    Удаление сообщения: {"delete": message_id}
-                    Обновление сообщения: {"update": message_id, "content": "New content"}""")
+                    Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
+                    Удаление сообщения: {"type": "delete_message", "delete": 74}
+                    Отправка сообщения с файлом: {"type": "send_message", 
+                                                  "message": {
+                                                              "content": "Hello!",
+                                                              "file": "data:image/jpeg;base64,/9j/4AAQS..."
+                                                              "name": "example.jpg"                                                              
+                                                             }
+                                                  }
+                    """)
 class ChatSupportRetrieveView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -532,9 +543,16 @@ class ChatSupportRetrieveView(APIView):
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
-                    Отправка сообщения с файлом: {"message": {"content": "Hello", "file": file_data}}
-                    Удаление сообщения: {"delete": message_id}
-                    Обновление сообщения: {"update": message_id, "content": "New content"}""")
+                    Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
+                    Удаление сообщения: {"type": "delete_message", "delete": 74}
+                    Отправка сообщения с файлом: {"type": "send_message", 
+                                                  "message": {
+                                                              "content": "Hello!",
+                                                              "file": "data:image/jpeg;base64,/9j/4AAQS..."
+                                                              "name": "example.jpg"                                                              
+                                                             }
+                                                  }                
+                    """)
 class IssueSupportViewSet(viewsets.ModelViewSet):
     queryset = IssueSupport.objects.all()
     serializer_class = IssueSupportSerializer
