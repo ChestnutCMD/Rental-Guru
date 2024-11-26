@@ -491,6 +491,12 @@ class SocialAuthView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            if not user_social_auth.email:
+                return Response(
+                    {"error": "Email is required but was not provided by the social provider"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             if user_social_auth.is_new:
                 Renter.objects.create(user=user_social_auth.user)
 
