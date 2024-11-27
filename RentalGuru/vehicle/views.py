@@ -87,12 +87,14 @@ class BaseViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Автомобиль CRUD", description="""Сортировка по цене от меньшего к большему:\n
                                                   URL: ?ordering=price
                                                   \nСортировка по цене от большего к меньшему:\n
-                                                  URL: ?ordering=-price""")
+                                                  URL: ?ordering=-price
+                                                  \nСортировка по популярности:\n
+                                                  URL: ?ordering=count_trip""")
 class AutoViewSet(BaseViewSet):
     queryset = Auto.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = AutoFilter
-    ordering_fields = ['price']
+    ordering_fields = ['price', 'count_trip']
 
     def get_queryset(self):
         user = self.request.user
@@ -125,7 +127,7 @@ class BikeViewSet(BaseViewSet):
     queryset = Bike.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BikeFilter
-    ordering_fields = ['price']
+    ordering_fields = ['price', 'count_trip']
 
     def get_queryset(self):
         user = self.request.user
@@ -155,7 +157,7 @@ class ShipViewSet(BaseViewSet):
     queryset = Ship.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = ShipFilter
-    ordering_fields = ['price']
+    ordering_fields = ['price', 'count_trip']
 
     def get_queryset(self):
         user = self.request.user
@@ -186,7 +188,7 @@ class HelicopterViewSet(BaseViewSet):
     queryset = Helicopter.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = HelicopterFilter
-    ordering_fields = ['price']
+    ordering_fields = ['price', 'count_trip']
 
     def get_queryset(self):
         user = self.request.user
@@ -215,7 +217,7 @@ class SpecialTechnicViewSet(BaseViewSet):
     queryset = SpecialTechnic.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = SpecialTechnicFilter
-    ordering_fields = ['price']
+    ordering_fields = ['price', 'count_trip']
 
     def get_queryset(self):
         user = self.request.user
@@ -459,7 +461,7 @@ class AllVehiclesListView(APIView):
     permission_classes = [AllowAny]
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BaseFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price', 'count_trip']
 
     @extend_schema(
         summary="Общий список всех видов транспорта",
@@ -487,23 +489,23 @@ class AllVehiclesListView(APIView):
         all_vehicles = []
         user = request.user
         if user.role == 'renter':
-            autos = Auto.objects.filter(verified=True)
-            bikes = Bike.objects.filter(verified=True)
-            ships = Ship.objects.filter(verified=True)
-            helicopters = Helicopter.objects.filter(verified=True)
-            special_technics = SpecialTechnic.objects.filter(verified=True)
+            autos = Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
+            bikes = Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
+            ships = Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
+            helicopters = Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
+            special_technics = SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
         elif user.role == 'lessor':
-            autos = Auto.objects.filter(owner=user)
-            bikes = Bike.objects.filter(owner=user)
-            ships = Ship.objects.filter(owner=user)
-            helicopters = Helicopter.objects.filter(owner=user)
-            special_technics = SpecialTechnic.objects.filter(owner=user)
+            autos = Auto.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
+            bikes = Bike.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
+            ships = Ship.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
+            helicopters = Helicopter.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
+            special_technics = SpecialTechnic.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
         else:
-            autos = Auto.objects.all()
-            bikes = Bike.objects.all()
-            ships = Ship.objects.all()
-            helicopters = Helicopter.objects.all()
-            special_technics = SpecialTechnic.objects.all()
+            autos = Auto.objects.all().annotate(price=Min('rent_prices__price'))
+            bikes = Bike.objects.all().annotate(price=Min('rent_prices__price'))
+            ships = Ship.objects.all().annotate(price=Min('rent_prices__price'))
+            helicopters = Helicopter.objects.all().annotate(price=Min('rent_prices__price'))
+            special_technics = SpecialTechnic.objects.all().annotate(price=Min('rent_prices__price'))
 
         for queryset, serializer in [
             (autos, AutoListSerializer),

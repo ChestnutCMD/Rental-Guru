@@ -142,7 +142,7 @@ class BaseVehicleSerializer(serializers.ModelSerializer):
 class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
     class Meta:
         fields = '__all__'
-        read_only_fields = ['owner', 'ratings', 'average_ratings']
+        read_only_fields = ['owner', 'ratings', 'average_ratings', 'count_trip']
 
     def update(self, instance, validated_data):
         instance.verified = False
@@ -185,7 +185,7 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
 class BaseVehicleCreateSerializer(BaseVehicleSerializer):
     class Meta:
         fields = '__all__'
-        read_only_fields = ['owner', 'ratings', 'average_ratings', 'verified']
+        read_only_fields = ['owner', 'ratings', 'average_ratings', 'verified', 'count_trip']
 
     def validate_year(self, value):
         current_year = timezone.now().year

@@ -183,6 +183,7 @@ class Vehicle(PolymorphicModel):
     last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
 
     payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
+    count_trip = models.IntegerField(default=0, verbose_name='Количество поездок')
 
     def get_average_rating(self):
         average_ratings = {}

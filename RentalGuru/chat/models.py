@@ -151,6 +151,8 @@ class Trip(models.Model):
         super(Trip, self).save(*args, **kwargs)
 
         if previous_trip and previous_trip.status != 'finished' and self.status == 'finished':
+            self.vehicle.count_trip += 1
+            self.vehicle.save(update_fields=['count_trip'])
             self.owner.lessor.count_trip += 1
             self.owner.lessor.save(update_fields=['count_trip'])
 
