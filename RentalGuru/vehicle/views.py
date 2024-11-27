@@ -6,7 +6,7 @@ from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.db import models
-from django.db.models import F, Q, TextField, Value, Func
+from django.db.models import F, Q, TextField, Value, Func, Min
 from django.db.models.functions import Cast
 from django_filters.rest_framework import DjangoFilterBackend
 from googletrans import Translator
@@ -85,21 +85,23 @@ class BaseViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(summary="Автомобиль CRUD", description="""Сортировка по цене от меньшего к большему:\n
-                                                  URL: ?ordering=rent_prices__price
+                                                  URL: ?ordering=price
                                                   \nСортировка по цене от большего к меньшему:\n
-                                                  URL: ?ordering=-rent_prices__price""")
+                                                  URL: ?ordering=-price""")
 class AutoViewSet(BaseViewSet):
     queryset = Auto.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = AutoFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Auto.objects.select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type',
-                                                'vehicle_class')
+        queryset = (Auto.objects.annotate(price=Min('rent_prices__price'))
+                    .select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type',
+                                    'vehicle_class')
                     .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
                                       'features_additionally', 'availabilities', 'documents', 'rent_prices'))
+
         is_renter = hasattr(user, 'renter')
         is_lessor = hasattr(user, 'lessor')
         if is_lessor:
@@ -123,11 +125,11 @@ class BikeViewSet(BaseViewSet):
     queryset = Bike.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BikeFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Bike.objects.all().select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class').
+        queryset = (Bike.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class').
                     prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
                                      'documents', 'rent_prices', 'photos'))
         is_renter = hasattr(user, 'renter')
@@ -153,11 +155,11 @@ class ShipViewSet(BaseViewSet):
     queryset = Ship.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = ShipFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Ship.objects.all().select_related('owner', 'brand', 'model', 'vehicle_class').
+        queryset = (Ship.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'vehicle_class').
                     prefetch_related('payment_method', 'features_functions', 'features_additionally',
                                      'features_equipment',
                                      'availabilities', 'documents', 'rent_prices', 'photos'))
@@ -184,11 +186,11 @@ class HelicopterViewSet(BaseViewSet):
     queryset = Helicopter.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = HelicopterFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Helicopter.objects.all().select_related('owner', 'brand', 'model', 'vehicle_class').
+        queryset = (Helicopter.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'vehicle_class').
                     prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
         is_renter = hasattr(user, 'renter')
         is_lessor = hasattr(user, 'lessor')
@@ -213,11 +215,11 @@ class SpecialTechnicViewSet(BaseViewSet):
     queryset = SpecialTechnic.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = SpecialTechnicFilter
-    ordering_fields = ['rent_prices__price']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (SpecialTechnic.objects.all().select_related('owner', 'brand', 'model').
+        queryset = (SpecialTechnic.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model').
                     prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
         is_renter = hasattr(user, 'renter')
         is_lessor = hasattr(user, 'lessor')
