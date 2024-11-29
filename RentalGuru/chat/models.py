@@ -5,6 +5,7 @@ from django.db import models
 from RentalGuru import settings
 
 
+
 class RequestRent(models.Model):
     """ Заявки на аренду """
     STATUS_CHOICES = (
@@ -29,6 +30,7 @@ class RequestRent(models.Model):
     deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     delivery = models.BooleanField(default=False)
+    on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
 
     @property
     def owner(self):
@@ -83,6 +85,16 @@ class RequestRent(models.Model):
             self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
             # Рассчитываем итоговую стоимость при создании
             self.total_cost = self.calculate_rent_price()
+            # Проверка является ли заявки по запросу
+            from vehicle.models import Availability
+            availabilities = Availability.objects.filter(vehicle=self.vehicle)
+            for availability in availabilities:
+                if availability.on_request:
+                    self.on_request = True
+                    break
+                else:
+                    self.on_request = False
+
         else:
             original = RequestRent.objects.get(pk=self.pk)
             if original.status != 'accept' and self.status == 'accept':
@@ -123,9 +135,11 @@ class Trip(models.Model):
         ('canceled', 'Отменить')
     )
     status = models.CharField(max_length=8, default='current', choices=STATUS_CHOICES, verbose_name='Статус')
-    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_organized_trips', verbose_name='Арендатор')
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                  related_name='trip_organized_trips', verbose_name='Арендатор')
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
+        'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
     object_id = models.PositiveIntegerField(verbose_name='id транспорта')
     vehicle = GenericForeignKey('content_type', 'object_id')
 
@@ -194,7 +208,8 @@ class TopicSupport(models.Model):
 
 
 class ChatSupport(models.Model):
-    creator = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='created_chats', on_delete=models.CASCADE, verbose_name='Создатель')
+    creator = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='created_chats', on_delete=models.CASCADE,
+                                   verbose_name='Создатель')
 
     class Meta:
         verbose_name = 'Чат с техподдержкой'
@@ -205,8 +220,10 @@ class ChatSupport(models.Model):
 
 
 class IssueSupport(models.Model):
-    chat = models.ForeignKey(ChatSupport, null=False, on_delete=models.CASCADE, related_name='issue_chat', verbose_name='Чат техподдержки')
-    topic = models.ForeignKey(TopicSupport, null=False, related_name='chat_support', on_delete=models.CASCADE, verbose_name='Тема')
+    chat = models.ForeignKey(ChatSupport, null=False, on_delete=models.CASCADE, related_name='issue_chat',
+                             verbose_name='Чат техподдержки')
+    topic = models.ForeignKey(TopicSupport, null=False, related_name='chat_support', on_delete=models.CASCADE,
+                              verbose_name='Тема')
     description = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Время создания')
 

@@ -30,7 +30,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestRent
         exclude = ['content_type', 'object_id']
-        read_only_fields = ['organizer', 'total_cost', 'deposit_cost', 'delivery_cost']
+        read_only_fields = ['organizer', 'total_cost', 'deposit_cost', 'delivery_cost', 'on_request']
 
     def create(self, validated_data):
         vehicle_type = validated_data.pop('vehicle_type')

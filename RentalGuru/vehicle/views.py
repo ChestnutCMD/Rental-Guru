@@ -488,7 +488,7 @@ class AllVehiclesListView(APIView):
     def get(self, request):
         all_vehicles = []
         user = request.user
-        if user.role == 'renter':
+        if user.role == 'renter' or user is None:
             autos = Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
             bikes = Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
             ships = Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
