@@ -20,6 +20,7 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 "status": instance.status,
                 "organizer_id": instance.organizer.id,
                 "vehicle_id": instance.object_id,
+                "vehicle_type": str(instance.content_type),
                 "start_date": str(instance.start_date),
                 "end_date": str(instance.end_date),
                 "start_time": str(instance.start_time),
@@ -28,7 +29,7 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 "deposit_cost": float(instance.deposit_cost),
                 "delivery_cost": float(instance.delivery_cost),
                 "delivery": instance.delivery
-            })
+            }, ensure_ascii=False)
 
             Message.objects.create(
                 chat=chat,

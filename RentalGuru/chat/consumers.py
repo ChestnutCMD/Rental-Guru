@@ -480,8 +480,8 @@ class ChatConsumer(BaseChatConsumer):
                 "end_date": request_rent.end_date,
                 "total_cost": request_rent.total_cost,
                 "status": request_rent.status,
-                "content_type": request_rent.content_type,
-                "object_id": request_rent.object_id
+                "vehicle_type": request_rent.content_type,
+                "vehicle_id": request_rent.object_id
             }
             await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
 
