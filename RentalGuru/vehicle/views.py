@@ -6,8 +6,9 @@ from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.db import models
-from django.db.models import F, Q, TextField, Value, Func, Min
+from django.db.models import F, Q, TextField, Value, Func, Min, Avg
 from django.db.models.functions import Cast
+from django.utils.datastructures import MultiValueDictKeyError
 from django_filters.rest_framework import DjangoFilterBackend
 from googletrans import Translator
 from rest_framework import viewsets, status
@@ -34,7 +35,7 @@ from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, Sp
     BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
-    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer
+    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer, BaseVehicleListSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
     AutoTransmissionSerializer, AutoBodyTypeSerializer
@@ -488,32 +489,11 @@ class AllVehiclesListView(APIView):
     def get(self, request):
         all_vehicles = []
         user = request.user
-        if user.role == 'renter' or user is None:
-            autos = Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
-            bikes = Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
-            ships = Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
-            helicopters = Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
-            special_technics = SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price'))
-        elif user.role == 'lessor':
-            autos = Auto.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
-            bikes = Bike.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
-            ships = Ship.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
-            helicopters = Helicopter.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
-            special_technics = SpecialTechnic.objects.filter(owner=user).annotate(price=Min('rent_prices__price'))
-        else:
-            autos = Auto.objects.all().annotate(price=Min('rent_prices__price'))
-            bikes = Bike.objects.all().annotate(price=Min('rent_prices__price'))
-            ships = Ship.objects.all().annotate(price=Min('rent_prices__price'))
-            helicopters = Helicopter.objects.all().annotate(price=Min('rent_prices__price'))
-            special_technics = SpecialTechnic.objects.all().annotate(price=Min('rent_prices__price'))
+        ordering = request.GET.get('ordering', 'price')
 
-        for queryset, serializer in [
-            (autos, AutoListSerializer),
-            (bikes, BikeListSerializer),
-            (ships, ShipListSerializer),
-            (helicopters, HelicopterListSerializer),
-            (special_technics, SpecialTechnicListSerializer),
-        ]:
+        vehicle_queries = self.get_vehicle_queries(user, ordering)
+
+        for queryset, serializer in vehicle_queries:
             filtered_queryset = self.apply_filters(queryset, request)
             vehicles_data = serializer(filtered_queryset, many=True).data
             all_vehicles.extend(vehicles_data)
@@ -524,14 +504,53 @@ class AllVehiclesListView(APIView):
 
         return paginator.get_paginated_response(paginated_vehicles)
 
+    def get_vehicle_queries(self, user, ordering):
+        queries = []
+        if user.is_authenticated:
+            if user.role == 'renter':
+                queries = [
+                    (Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), AutoListSerializer),
+                    (Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), BikeListSerializer),
+                    (Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), ShipListSerializer),
+                    (Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
+                    (SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
+                ]
+            elif user.role == 'lessor':
+                queries = [
+                    (Auto.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), AutoListSerializer),
+                    (Bike.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), BikeListSerializer),
+                    (Ship.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), ShipListSerializer),
+                    (Helicopter.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
+                    (SpecialTechnic.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
+                ]
+            else:
+                queries = [
+                    (Auto.objects.all().annotate(price=Min('rent_prices__price')), AutoListSerializer),
+                    (Bike.objects.all().annotate(price=Min('rent_prices__price')), BikeListSerializer),
+                    (Ship.objects.all().annotate(price=Min('rent_prices__price')), ShipListSerializer),
+                    (Helicopter.objects.all().annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
+                    (SpecialTechnic.objects.all().annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
+                ]
+        else:
+            queries = [
+                (Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), AutoListSerializer),
+                (Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), BikeListSerializer),
+                (Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), ShipListSerializer),
+                (Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
+                (SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
+            ]
+
+        for idx, (queryset, serializer) in enumerate(queries):
+            queryset = queryset.order_by(ordering)
+            queries[idx] = (queryset, serializer)
+
+        return queries
+
     def apply_filters(self, queryset, request):
-        filtered_queryset = queryset
-
-        filterset = self.filterset_class(request.GET, queryset=filtered_queryset)
+        filterset = self.filterset_class(request.GET, queryset=queryset)
         if filterset.is_valid():
-            filtered_queryset = filterset.qs
-
-        return filtered_queryset
+            queryset = filterset.qs
+        return queryset
 
 
 @extend_schema(summary="Удаление фото транспорта", description="Удаление фото транспорта по id")
