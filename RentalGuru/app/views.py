@@ -727,7 +727,7 @@ class VerifiedEmailView(APIView):
 class MailRuRedirectView(View):
     def get(self, request):
         client_id = settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY
-        redirect_uri = 'https://rentalguru.ru/app/mail_oauth'
+        redirect_uri = 'https://rentalguru.ru/app/mail_oauth/'
         state = 'rentalguru'
 
         auth_url = (
