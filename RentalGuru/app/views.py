@@ -4,7 +4,7 @@ import json
 import random
 from datetime import datetime, timedelta, date
 from io import BytesIO
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import requests
 from django.core.exceptions import ObjectDoesNotExist
@@ -726,6 +726,10 @@ class VerifiedEmailView(APIView):
             return Response({"message": "Неверный код"}, status=status.HTTP_403_FORBIDDEN)
 
 
+@extend_schema(
+    summary="Аутентификация через Mail.ru",
+    description="Аутентификация через Mail.ru"
+)
 class MailRuRedirectView(View):
     def get(self, request):
         client_id = settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY
@@ -743,6 +747,10 @@ class MailRuRedirectView(View):
         return redirect(auth_url)
 
 
+@extend_schema(
+    summary="Коллбэк для аутентификации через Mail.ru",
+    description="Отдает JWT токены"
+)
 class MailRuCallbackView(APIView):
     def get(self, request):
         code = request.GET.get('code')
@@ -766,7 +774,7 @@ class MailRuCallbackView(APIView):
             access_token = token_data.get('access_token')
 
             if not access_token:
-                return Response({"error": "Failed to retrieve access token"}, status=400)
+                return Response({"error": "Ошибка получения токена"}, status=400)
 
             user_info_url = f'https://oauth.mail.ru/userinfo?access_token={access_token}'
             user_response = requests.get(user_info_url)
@@ -775,22 +783,34 @@ class MailRuCallbackView(APIView):
 
             email = user_data.get('email')
             if not email:
-                return Response({"error": "Email not provided by Mail.ru"}, status=400)
+                return Response({"error": "Email не передан от Mail.ru"}, status=400)
+
+            birthday = user_data.get('birthday')
+            formatted_birthday = None
+            if birthday:
+                try:
+                    formatted_birthday = datetime.strptime(birthday, "%d.%m.%Y").date()
+                except ValueError:
+                    return Response({"error": "Неверный формат даты рождения"}, status=400)
 
             user, created = User.objects.get_or_create(email=email, defaults={
-                'email': email,
                 'first_name': user_data.get('first_name', ''),
                 'last_name': user_data.get('last_name', ''),
-                'date_of_birth': user_data.get('birthday', ''),
+                'date_of_birth': formatted_birthday,
+                'role': 'member',
             })
 
-            # avatar_url = user_data.get('image', '')
-            # if avatar_url and (created or not user.avatar):
-            #     response = requests.get(avatar_url)
-            #     if response.status_code == 200:
-            #         img_temp = BytesIO(response.content)
-            #         file_name = f"avatars/{email}_avatar.jpg"
-            #         user.avatar.save(file_name, ContentFile(img_temp.getvalue()), save=True)
+            if created:
+                Renter.objects.create(user=user)
+
+            if 'image' in user_data and not user.avatar:
+                avatar_url = user_data['image']
+                avatar_response = requests.get(avatar_url)
+                avatar_response.raise_for_status()
+                parsed_url = urlparse(avatar_url)
+                filename = parsed_url.path.split('/')[-1]
+                user.avatar.save(filename, ContentFile(avatar_response.content))
+                user.save()
 
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
