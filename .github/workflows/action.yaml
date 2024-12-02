@@ -38,6 +38,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       SOCIAL_AUTH_MAILRU_OAUTH2_KEY: ${{ secrets.SOCIAL_AUTH_MAILRU_OAUTH2_KEY }}
       SOCIAL_AUTH_MAILRU_OAUTH2_SECRET: ${{ secrets.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET }}
+      SOCIAL_AUTH_VK_OAUTH2_KEY: ${{ secrets.SOCIAL_AUTH_VK_OAUTH2_KEY }}
+      SOCIAL_AUTH_VK_OAUTH2_SECRET: ${{ secrets.SOCIAL_AUTH_VK_OAUTH2_SECRET }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
