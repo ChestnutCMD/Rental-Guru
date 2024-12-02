@@ -94,6 +94,7 @@ MIDDLEWARE = [
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
 
 ]
 
@@ -347,10 +348,13 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
     'app.pipeline.ensure_email',
 )
-
-LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-
+LOGIN_REDIRECT_URL = '/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/login-error/'
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+SOCIAL_AUTH_JSONFIELD_CUSTOM = 'django.db.models.JSONField'
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']
@@ -358,6 +362,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']
 SOCIAL_AUTH_VK_OAUTH2_KEY = getenv('SOCIAL_AUTH_VK_OAUTH2_KEY')
 SOCIAL_AUTH_VK_OAUTH2_SECRET = getenv('SOCIAL_AUTH_VK_OAUTH2_SECRET')
 SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email']
+SOCIAL_AUTH_VK_EXTRA_DATA = [('email', 'email')]
 
 SOCIAL_AUTH_MAILRU_OAUTH2_KEY = getenv('SOCIAL_AUTH_MAILRU_OAUTH2_KEY')
 SOCIAL_AUTH_MAILRU_OAUTH2_SECRET = getenv('SOCIAL_AUTH_MAILRU_OAUTH2_SECRET')
