@@ -7,7 +7,7 @@ from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, Upda
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
     SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
     FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
-    FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuRedirectView
+    FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuRedirectView, MailRuCallbackView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
