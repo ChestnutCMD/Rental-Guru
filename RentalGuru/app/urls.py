@@ -7,7 +7,7 @@ from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, Upda
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
     SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
     FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
-    FavoriteListDetailView, FavoriteListAllVehiclesView
+    FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuRedirectView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -41,6 +41,9 @@ urlpatterns = [
     path('favorite_list/<int:pk>/delete/', FavoriteListDeleteView.as_view(), name='delete_favorite_list'),
     path('favorite_list/<int:vehicle_id>/add_vehicle/', AddVehicleToFavoriteListView.as_view(), name='add_vehicle_to_favorite_list'),
     path('favorite_list/<int:vehicle_id>/remove_vehicle/', RemoveVehicleFromFavoriteListView.as_view(), name='remove_vehicle_from_favorite_list'),
+
+    path('mailru/', MailRuRedirectView.as_view(), name='mailru_auth'),
+    path('mail_oauth/', MailRuCallbackView.as_view(), name='mailru_callback'),
 
     path('', include(router.urls))
 ]

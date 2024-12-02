@@ -5,9 +5,12 @@ import random
 from datetime import datetime, timedelta, date
 from urllib.parse import urlencode
 
+import requests
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.shortcuts import redirect
 from django.utils.timezone import now
+from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, serializers, generics
@@ -719,3 +722,81 @@ class VerifiedEmailView(APIView):
             return Response({"message": "Код успешно подтвержден"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Неверный код"}, status=status.HTTP_403_FORBIDDEN)
+
+
+class MailRuRedirectView(View):
+    def get(self, request):
+        client_id = settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY
+        redirect_uri = 'https://rentalguru.ru/app/mail_oauth'
+        state = 'rentalguru'
+
+        auth_url = (
+            f"https://oauth.mail.ru/login?"
+            f"client_id={client_id}&"
+            f"response_type=code&"
+            f"scope=userinfo&"
+            f"redirect_uri={redirect_uri}&"
+            f"state={state}"
+        )
+        return redirect(auth_url)
+
+
+class MailRuCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get('code')
+        if not code:
+            return Response({"error": "Code not provided"}, status=400)
+
+        token_url = 'https://oauth.mail.ru/token'
+        redirect_uri = 'https://rentalguru.ru/app/mail_oauth'
+
+        auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
+        data = {
+            'grant_type': 'authorization_code',
+            'redirect_uri': redirect_uri,
+            'code': code,
+        }
+
+        try:
+            # Обмен кода на access token
+            token_response = requests.post(token_url, data=data, auth=auth)
+            token_response.raise_for_status()
+            token_data = token_response.json()
+            access_token = token_data.get('access_token')
+
+            if not access_token:
+                return Response({"error": "Failed to retrieve access token"}, status=400)
+
+            # Получение данных пользователя
+            user_info_url = f'https://oauth.mail.ru/userinfo?access_token={access_token}'
+            user_response = requests.get(user_info_url)
+            user_response.raise_for_status()
+            user_data = user_response.json()
+
+            email = user_data.get('email')
+            if not email:
+                return Response({"error": "Email not provided by Mail.ru"}, status=400)
+
+            # Проверка существования пользователя
+            user, created = User.objects.get_or_create(username=email, defaults={
+                'email': email,
+                'first_name': user_data.get('first_name', ''),
+                'last_name': user_data.get('last_name', ''),
+            })
+
+            # Генерация токенов доступа и обновления
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            return Response({
+                'access_token': access_token,
+                'refresh_token': str(refresh),
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                }
+            })
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Request failed: {str(e)}"}, status=400)
