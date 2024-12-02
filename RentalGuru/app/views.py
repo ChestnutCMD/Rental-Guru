@@ -457,6 +457,9 @@ class UpdateRatingView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(summary="Вход через социальные сети", description="Вход и регистрация. Принимает токен и название "
                                                                  "провайдера: Яндекс — yandex-oauth2\nMail.ru — "
@@ -468,10 +471,7 @@ class SocialAuthView(APIView):
         token = request.data.get('token')
 
         if not all([provider, token]):
-            return Response(
-                {"error": "Provider and token are required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Provider and token are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             strategy = load_strategy(request)
@@ -480,28 +480,14 @@ class SocialAuthView(APIView):
             try:
                 user_social_auth = backend.do_auth(token)
             except (AuthForbidden, AuthTokenError) as e:
-                return Response(
-                    {"error": f"Invalid token: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                logger.error(f"Token error: {e}")
+                return Response({"error": f"Invalid token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
             if user_social_auth is None:
-                return Response(
-                    {"error": "Authentication failed"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if not user_social_auth.email:
-                return Response(
-                    {"error": "Email is required but was not provided by the social provider"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if user_social_auth.is_new:
-                Renter.objects.create(user=user_social_auth.user)
+                logger.warning("Authentication failed: user_social_auth is None")
+                return Response({"error": "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST)
 
             refresh = RefreshToken.for_user(user_social_auth.user)
-
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
@@ -510,15 +496,12 @@ class SocialAuthView(APIView):
                     "email": user_social_auth.user.email,
                     "first_name": user_social_auth.user.first_name,
                     "last_name": user_social_auth.user.last_name,
-                    "is_new": user_social_auth.is_new,
                 }
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response(
-                {"error": f"Authentication failed: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            logger.exception(f"Unhandled exception during social authentication: {e}")
+            return Response({"error": f"Authentication failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(summary="Стать арендодателем", description="Удаление арендатора и создание арендодателя")
