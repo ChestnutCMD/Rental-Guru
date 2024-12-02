@@ -748,7 +748,7 @@ class MailRuCallbackView(APIView):
             return Response({"error": "Code not provided"}, status=400)
 
         token_url = 'https://oauth.mail.ru/token'
-        redirect_uri = 'https://rentalguru.ru/app/mail_oauth'
+        redirect_uri = 'https://rentalguru.ru/app/mail_oauth/'
 
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
         data = {
