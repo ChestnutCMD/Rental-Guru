@@ -168,7 +168,6 @@ AUTH_USER_MODEL = 'app.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    #'PAGE_SIZE': 10, # Это стоило бы раскоментировать, но фронт и мобильное приложение уже написано
     'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',
                                        'rest_framework.authentication.SessionAuthentication'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -359,7 +358,6 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']
 SOCIAL_AUTH_VK_OAUTH2_KEY = getenv('SOCIAL_AUTH_VK_OAUTH2_KEY')
 SOCIAL_AUTH_VK_OAUTH2_SECRET = getenv('SOCIAL_AUTH_VK_OAUTH2_SECRET')
 SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email']
-SOCIAL_AUTH_VK_OAUTH2_DEBUG = True
 
 SOCIAL_AUTH_MAILRU_OAUTH2_KEY = getenv('SOCIAL_AUTH_MAILRU_OAUTH2_KEY')
 SOCIAL_AUTH_MAILRU_OAUTH2_SECRET = getenv('SOCIAL_AUTH_MAILRU_OAUTH2_SECRET')
