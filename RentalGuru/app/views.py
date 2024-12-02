@@ -798,6 +798,7 @@ class MailRuCallbackView(APIView):
                 'last_name': user_data.get('last_name', ''),
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
+                'email_verified': True
             })
 
             if created:
