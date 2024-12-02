@@ -478,10 +478,15 @@ class SocialAuthView(APIView):
             backend = load_backend(strategy=strategy, name=provider, redirect_uri=None)
 
             try:
+                logger.info(f"Attempting VK auth with token: {token}")
                 user_social_auth = backend.do_auth(token)
-            except (AuthForbidden, AuthTokenError) as e:
-                logger.error(f"Token error: {e}")
-                return Response({"error": f"Invalid token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+                logger.info(f"VK auth result: {user_social_auth}")
+            except Exception as e:
+                logger.error(f"VK Auth Error: {str(e)}")
+                return Response(
+                    {"error": f"Authentication failed: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             if user_social_auth is None:
                 logger.warning("Authentication failed: user_social_auth is None")
