@@ -3,10 +3,12 @@ import hmac
 import json
 import random
 from datetime import datetime, timedelta, date
+from io import BytesIO
 from urllib.parse import urlencode
 
 import requests
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import redirect
 from django.utils.timezone import now
@@ -758,7 +760,6 @@ class MailRuCallbackView(APIView):
         }
 
         try:
-            # Обмен кода на access token
             token_response = requests.post(token_url, data=data, auth=auth)
             token_response.raise_for_status()
             token_data = token_response.json()
@@ -767,7 +768,6 @@ class MailRuCallbackView(APIView):
             if not access_token:
                 return Response({"error": "Failed to retrieve access token"}, status=400)
 
-            # Получение данных пользователя
             user_info_url = f'https://oauth.mail.ru/userinfo?access_token={access_token}'
             user_response = requests.get(user_info_url)
             user_response.raise_for_status()
@@ -777,14 +777,21 @@ class MailRuCallbackView(APIView):
             if not email:
                 return Response({"error": "Email not provided by Mail.ru"}, status=400)
 
-            # Проверка существования пользователя
-            user, created = User.objects.get_or_create(username=email, defaults={
+            user, created = User.objects.get_or_create(email=email, defaults={
                 'email': email,
                 'first_name': user_data.get('first_name', ''),
                 'last_name': user_data.get('last_name', ''),
+                'date_of_birth': user_data.get('birthday', ''),
             })
 
-            # Генерация токенов доступа и обновления
+            # avatar_url = user_data.get('image', '')
+            # if avatar_url and (created or not user.avatar):
+            #     response = requests.get(avatar_url)
+            #     if response.status_code == 200:
+            #         img_temp = BytesIO(response.content)
+            #         file_name = f"avatars/{email}_avatar.jpg"
+            #         user.avatar.save(file_name, ContentFile(img_temp.getvalue()), save=True)
+
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
