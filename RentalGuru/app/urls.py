@@ -7,7 +7,8 @@ from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, Upda
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
     TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
     FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
-    FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuCallbackView, OauthRedirectView, VKCallbackView
+    FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuCallbackView, OauthRedirectView, VKCallbackView, \
+    YandexCallbackView
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -44,6 +45,7 @@ urlpatterns = [
     path('oauth_social/', OauthRedirectView.as_view(), name='oauth_social'),
     path('oauth_mail/', MailRuCallbackView.as_view(), name='mailru_callback'),
     path('oauth_vk/', VKCallbackView.as_view(), name='mailru_callback'),
+    path('oauth_yandex/', YandexCallbackView.as_view(), name='yandex_callback'),
 
     path('', include(router.urls))
 ]
