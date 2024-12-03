@@ -812,7 +812,7 @@ class VKCallbackView(APIView):
 
         try:
             # Получение токена доступа
-            token_response = requests.post(token_url, data=data)
+            token_response = requests.get(token_url, params=data)
             token_response.raise_for_status()
             token_data = token_response.json()
 
