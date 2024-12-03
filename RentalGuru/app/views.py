@@ -801,7 +801,7 @@ class VKCallbackView(APIView):
             return Response({"error": "Code not provided"}, status=400)
 
         token_url = 'https://oauth.vk.com/access_token'
-        redirect_uri = 'https://rentalguru.ru/app/oauth_vk/'
+        redirect_uri = settings.VK_REDIRECT_URI
 
         data = {
             'client_id': settings.SOCIAL_AUTH_VK_OAUTH2_KEY,
@@ -811,56 +811,64 @@ class VKCallbackView(APIView):
         }
 
         try:
+            # Получение токена доступа
             token_response = requests.post(token_url, data=data)
             token_response.raise_for_status()
             token_data = token_response.json()
+
             access_token = token_data.get('access_token')
             email = token_data.get('email')
-            if not email:
-                return Response({"error": "Email не передан от VK"}, status=400)
             user_id = token_data.get('user_id')
-            if not access_token:
-                return Response({"error": "Ошибка получения токена"}, status=400)
 
-            user_info_url = f'https://api.vk.com/method/users.get'
+            if not access_token or not email:
+                return Response({"error": "Ошибка получения токена или email не передан VK"}, status=400)
+
+            # Получение данных о пользователе VK
+            user_info_url = 'https://api.vk.com/method/users.get'
             user_data = {
                 'user_ids': user_id,
-                'fields': 'bdate',
+                'fields': 'bdate,photo_max',
                 'access_token': access_token,
                 'v': '5.199'
             }
-            user_response = requests.post(user_info_url, data=user_data)
+            user_response = requests.get(user_info_url, params=user_data)
             user_response.raise_for_status()
-            user_data = user_response.json()
+            user_data_response = user_response.json()
 
-            birthday = user_data.get('bdate')
-            formatted_birthday = None
-            if birthday:
-                try:
-                    formatted_birthday = datetime.strptime(birthday, "%d.%m.%Y").date()
-                except ValueError:
-                    return Response({"error": "Неверный формат даты рождения"}, status=400)
+            if 'response' in user_data_response and len(user_data_response['response']) > 0:
+                vk_user = user_data_response['response'][0]
+                first_name = vk_user.get('first_name', '')
+                last_name = vk_user.get('last_name', '')
+                birthday = vk_user.get('bdate')
+                avatar_url = vk_user.get('photo_max')
 
+                formatted_birthday = None
+                if birthday:
+                    try:
+                        formatted_birthday = datetime.strptime(birthday, "%d.%m.%Y").date()
+                    except ValueError:
+                        pass  # Обработка случаев без года рождения
+            else:
+                return Response({"error": "Ошибка получения данных пользователя VK"}, status=400)
+
+            # Создание или обновление пользователя
             user, created = User.objects.get_or_create(email=email, defaults={
-                'first_name': user_data.get('first_name', ''),
-                'last_name': user_data.get('last_name', ''),
+                'first_name': first_name,
+                'last_name': last_name,
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
                 'email_verified': True
             })
 
-            if created:
-                Renter.objects.create(user=user)
-
-            if 'image' in user_data and not user.avatar:
-                avatar_url = user_data['image']
+            # Сохранение аватара, если он есть
+            if avatar_url and not user.avatar:
                 avatar_response = requests.get(avatar_url)
                 avatar_response.raise_for_status()
-                parsed_url = urlparse(avatar_url)
-                filename = parsed_url.path.split('/')[-1]
+                filename = avatar_url.split('/')[-1]
                 user.avatar.save(filename, ContentFile(avatar_response.content))
                 user.save()
 
+            # Генерация токенов
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
