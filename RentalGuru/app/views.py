@@ -779,11 +779,16 @@ class MailRuCallbackView(APIView):
                 'last_name': user_data.get('last_name', ''),
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
-                'email_verified': True
+                'email_verified': True,
+                'last_login': timezone.now()
             })
 
             if created:
                 Renter.objects.create(user=user)
+
+            if not created:
+                user.last_login = timezone.now()
+                user.save()
 
             if 'image' in user_data and not user.avatar:
                 avatar_url = user_data['image']
@@ -957,6 +962,7 @@ class YandexCallbackView(APIView):
             last_name = user_data_response.get('last_name', '')
             avatar_url = user_data_response.get('default_avatar_id')
             birthday = user_data_response.get('birthday')
+            phone = user_data_response.get('default_phone')
 
             if not email:
                 return Response({"error": "Email не передан от Яндекс"}, status=400)
@@ -967,7 +973,8 @@ class YandexCallbackView(APIView):
                 'role': 'member',
                 'email_verified': True,
                 'last_login': timezone.now(),
-                'date_of_birth': birthday
+                'date_of_birth': birthday,
+                'telephone': phone['number']
             })
 
             if not created:
