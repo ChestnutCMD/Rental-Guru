@@ -676,8 +676,8 @@ class VerifiedEmailView(APIView):
 
 
 @extend_schema(
-    summary="Аутентификация через Mail.ru",
-    description="Аутентификация через Mail.ru"
+    summary="Аутентификация через соцсети",
+    description="Аутентификация через соцсети"
 )
 class OauthRedirectView(APIView):
     def get(self, request):
@@ -800,35 +800,40 @@ class VKCallbackView(APIView):
         if not code:
             return Response({"error": "Code not provided"}, status=400)
 
-        token_url = 'https://oauth.mail.ru/token'
-        redirect_uri = 'https://rentalguru.ru/app/mail_oauth/'
+        token_url = 'https://oauth.vk.com/access_token'
+        redirect_uri = 'https://rentalguru.ru/app/oauth_vk/'
 
-        auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
         data = {
-            'grant_type': 'authorization_code',
+            'client_id': settings.SOCIAL_AUTH_VK_OAUTH2_KEY,
+            'client_secret': settings.SOCIAL_AUTH_VK_OAUTH2_SECRET,
             'redirect_uri': redirect_uri,
             'code': code,
         }
 
         try:
-            token_response = requests.post(token_url, data=data, auth=auth)
+            token_response = requests.post(token_url, data=data)
             token_response.raise_for_status()
             token_data = token_response.json()
             access_token = token_data.get('access_token')
-
+            email = token_data.get('email')
+            if not email:
+                return Response({"error": "Email не передан от VK"}, status=400)
+            user_id = token_data.get('user_id')
             if not access_token:
                 return Response({"error": "Ошибка получения токена"}, status=400)
 
-            user_info_url = f'https://oauth.mail.ru/userinfo?access_token={access_token}'
-            user_response = requests.get(user_info_url)
+            user_info_url = f'https://api.vk.com/method/users.get'
+            user_data = {
+                'user_ids': user_id,
+                'fields': 'bdate',
+                'access_token': access_token,
+                'v': '5.199'
+            }
+            user_response = requests.post(user_info_url, data=user_data)
             user_response.raise_for_status()
             user_data = user_response.json()
 
-            email = user_data.get('email')
-            if not email:
-                return Response({"error": "Email не передан от Mail.ru"}, status=400)
-
-            birthday = user_data.get('birthday')
+            birthday = user_data.get('bdate')
             formatted_birthday = None
             if birthday:
                 try:
