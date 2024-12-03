@@ -730,21 +730,34 @@ class VerifiedEmailView(APIView):
     summary="Аутентификация через Mail.ru",
     description="Аутентификация через Mail.ru"
 )
-class MailRuRedirectView(View):
+class OauthRedirectView(View):
     def get(self, request):
-        client_id = settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY
-        redirect_uri = 'https://rentalguru.ru/app/mail_oauth/'
-        state = 'rentalguru'
+        provider = request.GET.get('provider')
 
-        auth_url = (
-            f"https://oauth.mail.ru/login?"
-            f"client_id={client_id}&"
-            f"response_type=code&"
-            f"scope=userinfo&"
-            f"redirect_uri={redirect_uri}&"
-            f"state={state}"
-        )
-        return redirect(auth_url)
+        if provider == 'vk':
+            vk_auth_url = (
+                f"https://oauth.vk.com/authorize?"
+                f"client_id={settings.SOCIAL_AUTH_VK_OAUTH2_KEY}&"
+                f"redirect_uri={settings.VK_REDIRECT_URI}&"
+                f"display=page&"
+                f"scope=email,offline&"
+                f"response_type=code&"
+                f"v=5.131&"
+                f"state=security_token"
+            )
+            return redirect(vk_auth_url)
+
+        elif provider == 'mailru':
+            mailru_auth_url = (
+                f"https://oauth.mail.ru/login?"
+                f"client_id={settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY}&"
+                f"redirect_uri={settings.MAILRU_REDIRECT_URI}&"
+                f"response_type=code"
+            )
+            return redirect(mailru_auth_url)
+
+        else:
+            return Response({"error": "Invalid or missing provider"}, status=400)
 
 
 @extend_schema(
@@ -752,6 +765,85 @@ class MailRuRedirectView(View):
     description="Отдает JWT токены"
 )
 class MailRuCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get('code')
+        if not code:
+            return Response({"error": "Code not provided"}, status=400)
+
+        token_url = 'https://oauth.mail.ru/token'
+        redirect_uri = 'https://rentalguru.ru/app/mail_oauth/'
+
+        auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
+        data = {
+            'grant_type': 'authorization_code',
+            'redirect_uri': redirect_uri,
+            'code': code,
+        }
+
+        try:
+            token_response = requests.post(token_url, data=data, auth=auth)
+            token_response.raise_for_status()
+            token_data = token_response.json()
+            access_token = token_data.get('access_token')
+
+            if not access_token:
+                return Response({"error": "Ошибка получения токена"}, status=400)
+
+            user_info_url = f'https://oauth.mail.ru/userinfo?access_token={access_token}'
+            user_response = requests.get(user_info_url)
+            user_response.raise_for_status()
+            user_data = user_response.json()
+
+            email = user_data.get('email')
+            if not email:
+                return Response({"error": "Email не передан от Mail.ru"}, status=400)
+
+            birthday = user_data.get('birthday')
+            formatted_birthday = None
+            if birthday:
+                try:
+                    formatted_birthday = datetime.strptime(birthday, "%d.%m.%Y").date()
+                except ValueError:
+                    return Response({"error": "Неверный формат даты рождения"}, status=400)
+
+            user, created = User.objects.get_or_create(email=email, defaults={
+                'first_name': user_data.get('first_name', ''),
+                'last_name': user_data.get('last_name', ''),
+                'date_of_birth': formatted_birthday,
+                'role': 'member',
+                'email_verified': True
+            })
+
+            if created:
+                Renter.objects.create(user=user)
+
+            if 'image' in user_data and not user.avatar:
+                avatar_url = user_data['image']
+                avatar_response = requests.get(avatar_url)
+                avatar_response.raise_for_status()
+                parsed_url = urlparse(avatar_url)
+                filename = parsed_url.path.split('/')[-1]
+                user.avatar.save(filename, ContentFile(avatar_response.content))
+                user.save()
+
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            return Response({
+                'access_token': access_token,
+                'refresh_token': str(refresh),
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                }
+            })
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Request failed: {str(e)}"}, status=400)
+
+
+class VKCallbackView(APIView):
     def get(self, request):
         code = request.GET.get('code')
         if not code:
