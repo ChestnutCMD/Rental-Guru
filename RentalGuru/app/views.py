@@ -860,13 +860,15 @@ class VKCallbackView(APIView):
                 'email_verified': True
             })
 
-            # Сохранение аватара, если он есть
-            if avatar_url and not user.avatar:
+            avatar_url = user_data.get('photo_100')
+            if avatar_url:
                 avatar_response = requests.get(avatar_url)
                 avatar_response.raise_for_status()
-                filename = avatar_url.split('/')[-1]
+                parsed_url = urlparse(avatar_url)
+                filename = parsed_url.path.split('/')[-1]
                 user.avatar.save(filename, ContentFile(avatar_response.content))
-                user.save()
+            else:
+                return Response({"error": "Аватар не найден"}, status=400)
 
             # Генерация токенов
             refresh = RefreshToken.for_user(user)
