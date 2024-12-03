@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views import ChangePasswordView, UserViewSet, RenterDocumentsViewSet, UpdateRatingView, \
     CustomTokenObtainPairView, PasswordResetRequestView, VerifyCodeView, \
     SetPasswordView, BecomeLessorView, CurrencyListView, LanguageListView, PhoneSendCode, PhoneVerifyCode, \
-    SocialAuthView, TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
+    TelegramCallbackView, TelegramRegisterView, SendCodeToEmailView, VerifiedEmailView, \
     FavoriteListView, FavoriteListDeleteView, AddVehicleToFavoriteListView, RemoveVehicleFromFavoriteListView, \
     FavoriteListDetailView, FavoriteListAllVehiclesView, MailRuCallbackView, OauthRedirectView, VKCallbackView
 
@@ -24,7 +24,6 @@ urlpatterns = [
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     path('verify_code/', VerifyCodeView.as_view(), name='verify_code'),
     path('password-set/', SetPasswordView.as_view(), name='password-set'),
-    path('oauth_social/', SocialAuthView.as_view(), name='social-login'),
     path('become_lessor/', BecomeLessorView.as_view(), name='become_lessor'),
     path('currency/', CurrencyListView.as_view(), name='currency'),
     path('language/', LanguageListView.as_view(), name='language'),
@@ -42,7 +41,7 @@ urlpatterns = [
     path('favorite_list/<int:vehicle_id>/add_vehicle/', AddVehicleToFavoriteListView.as_view(), name='add_vehicle_to_favorite_list'),
     path('favorite_list/<int:vehicle_id>/remove_vehicle/', RemoveVehicleFromFavoriteListView.as_view(), name='remove_vehicle_from_favorite_list'),
 
-    path('oauth_social/', OauthRedirectView.as_view(), name='mailru_auth'),
+    path('oauth_social/', OauthRedirectView.as_view(), name='oauth_social'),
     path('oauth_mail/', MailRuCallbackView.as_view(), name='mailru_callback'),
     path('oauth_vk/', VKCallbackView.as_view(), name='mailru_callback'),
 

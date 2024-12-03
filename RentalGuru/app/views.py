@@ -462,57 +462,6 @@ class UpdateRatingView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
-import logging
-
-logger = logging.getLogger(__name__)
-
-@extend_schema(summary="Вход через социальные сети", description="Вход и регистрация. Принимает токен и название "
-                                                                 "провайдера: Яндекс — yandex-oauth2\nMail.ru — "
-                                                                 "mailru-oauth2\nGoogle — google-oauth2\nVK ("
-                                                                 "ВКонтакте) — vk-oauth2")
-class SocialAuthView(APIView):
-    def post(self, request, *args, **kwargs):
-        provider = request.data.get('provider')
-        token = request.data.get('token')
-
-        if not all([provider, token]):
-            return Response({"error": "Provider and token are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            strategy = load_strategy(request)
-            backend = load_backend(strategy=strategy, name=provider, redirect_uri=None)
-
-            try:
-                logger.info(f"Attempting VK auth with token: {token}")
-                user_social_auth = backend.do_auth(token)
-                logger.info(f"VK auth result: {user_social_auth}")
-            except Exception as e:
-                logger.error(f"VK Auth Error: {str(e)}")
-                return Response(
-                    {"error": f"Authentication failed: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if user_social_auth is None:
-                logger.warning("Authentication failed: user_social_auth is None")
-                return Response({"error": "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST)
-
-            refresh = RefreshToken.for_user(user_social_auth.user)
-            return Response({
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user": {
-                    "id": user_social_auth.user.id,
-                    "email": user_social_auth.user.email,
-                    "first_name": user_social_auth.user.first_name,
-                    "last_name": user_social_auth.user.last_name,
-                }
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.exception(f"Unhandled exception during social authentication: {e}")
-            return Response({"error": f"Authentication failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @extend_schema(summary="Стать арендодателем", description="Удаление арендатора и создание арендодателя")
 class BecomeLessorView(APIView):
@@ -730,7 +679,7 @@ class VerifiedEmailView(APIView):
     summary="Аутентификация через Mail.ru",
     description="Аутентификация через Mail.ru"
 )
-class OauthRedirectView(View):
+class OauthRedirectView(APIView):
     def get(self, request):
         provider = request.GET.get('provider')
 
@@ -752,7 +701,9 @@ class OauthRedirectView(View):
                 f"https://oauth.mail.ru/login?"
                 f"client_id={settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY}&"
                 f"redirect_uri={settings.MAILRU_REDIRECT_URI}&"
-                f"response_type=code"
+                f"response_type=code&"
+                f"scope=userinfo&"            
+                f"state=rentalguru"
             )
             return redirect(mailru_auth_url)
 
