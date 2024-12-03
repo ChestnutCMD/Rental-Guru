@@ -827,7 +827,7 @@ class VKCallbackView(APIView):
             user_info_url = 'https://api.vk.com/method/users.get'
             user_data = {
                 'user_ids': user_id,
-                'fields': 'bdate,photo_max',
+                'fields': 'photo_100',
                 'access_token': access_token,
                 'v': '5.199'
             }
