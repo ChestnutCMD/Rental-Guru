@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import redirect
+from django.utils import timezone
 from django.utils.timezone import now
 from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
@@ -859,8 +860,13 @@ class VKCallbackView(APIView):
                 'last_name': last_name,
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
-                'email_verified': True
+                'email_verified': True,
+                'last_login': timezone.now()
             })
+
+            if not created:
+                user.last_login = timezone.now()
+                user.save()
 
             if created:
                 Renter.objects.create(user=user)
