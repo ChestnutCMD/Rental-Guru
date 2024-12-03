@@ -365,6 +365,7 @@ MAILRU_REDIRECT_URI = 'https://rentalguru.ru/app/oauth_mail/'
 SOCIAL_AUTH_YANDEX_OAUTH2_KEY = getenv('SOCIAL_AUTH_YANDEX_OAUTH2_KEY')
 SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = getenv('SOCIAL_AUTH_YANDEX_OAUTH2_SECRET')
 SOCIAL_AUTH_YANDEX_OAUTH2_SCOPE = ['login:email']
+YANDEX_REDIRECT_URI = 'https://rentalguru.ru/app/oauth_yandex/'
 
 # Проценты по оплате
 RENT_COMMISSION_PERCENTAGE = 4

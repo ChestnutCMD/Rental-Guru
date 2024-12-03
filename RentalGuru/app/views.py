@@ -680,7 +680,7 @@ class VerifiedEmailView(APIView):
     summary="Аутентификация через соцсети",
     description=(
         "Используется для аутентификации пользователей через социальные сети "
-        "VK и Mail.ru. Принимает квери параметр provider = mailru или vk "
+        "VK и Mail.ru. Принимает квери параметр provider = mailru, vk, yandex "
         " https://rentalguru.ru/app/oauth_social/?provider=mailru"
     ),
     parameters=[OauthProviderSerializer]
@@ -712,6 +712,17 @@ class OauthRedirectView(APIView):
                 f"state=rentalguru"
             )
             return redirect(mailru_auth_url)
+
+        elif provider == 'yandex':
+            yandex_auth_url = (
+                f"https://oauth.yandex.com/authorize?"
+                f"client_id={settings.SOCIAL_AUTH_YANDEX_OAUTH2_KEY}&"
+                f"redirect_uri={settings.YANDEX_REDIRECT_URI}&"
+                f"response_type=code&"
+                f"scope=login:email login:info&"
+                f"state=security_token"
+            )
+            return redirect(yandex_auth_url)
 
         else:
             return Response({"error": "Invalid or missing provider"}, status=400)
@@ -801,7 +812,7 @@ class MailRuCallbackView(APIView):
 
 
 @extend_schema(
-    summary="Коллбэк для аутентификации через Mail.ru",
+    summary="Коллбэк для аутентификации через VK",
     description="Отдает JWT токены и регистрирует пользователя"
 )
 class VKCallbackView(APIView):
@@ -885,6 +896,90 @@ class VKCallbackView(APIView):
                 avatar_response.raise_for_status()
                 parsed_url = urlparse(avatar_url)
                 filename = parsed_url.path.split('/')[-1]
+                user.avatar.save(filename, ContentFile(avatar_response.content))
+            else:
+                return Response({"error": "Аватар не найден"}, status=400)
+
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            return Response({
+                'access_token': access_token,
+                'refresh_token': str(refresh),
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                }
+            })
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Request failed: {str(e)}"}, status=400)
+
+@extend_schema(
+    summary="Коллбэк для аутентификации через Yandex",
+    description="Отдает JWT токены и регистрирует пользователя"
+)
+class YandexCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get('code')
+        if not code:
+            return Response({"error": "Code not provided"}, status=400)
+
+        token_url = 'https://oauth.yandex.com/token'
+        redirect_uri = settings.YANDEX_REDIRECT_URI
+
+        data = {
+            'grant_type': 'authorization_code',
+            'client_id': settings.SOCIAL_AUTH_YANDEX_OAUTH2_KEY,
+            'client_secret': settings.SOCIAL_AUTH_YANDEX_OAUTH2_SECRET,
+            'code': code,
+            'redirect_uri': redirect_uri,
+        }
+
+        try:
+            token_response = requests.post(token_url, data=data)
+            token_response.raise_for_status()
+            token_data = token_response.json()
+            access_token = token_data.get('access_token')
+
+            if not access_token:
+                return Response({"error": "Ошибка получения токена"}, status=400)
+
+            user_info_url = 'https://login.yandex.ru/info'
+            headers = {'Authorization': f'Bearer {access_token}'}
+            user_response = requests.get(user_info_url, headers=headers)
+            user_response.raise_for_status()
+            user_data_response = user_response.json()
+
+            email = user_data_response.get('default_email')
+            first_name = user_data_response.get('first_name', '')
+            last_name = user_data_response.get('last_name', '')
+            avatar_url = user_data_response.get('default_avatar_id')
+
+            if not email:
+                return Response({"error": "Email не передан от Яндекс"}, status=400)
+
+            user, created = User.objects.get_or_create(email=email, defaults={
+                'first_name': first_name,
+                'last_name': last_name,
+                'role': 'member',
+                'email_verified': True,
+                'last_login': timezone.now()
+            })
+
+            if not created:
+                user.last_login = timezone.now()
+                user.save()
+
+            if created:
+                Renter.objects.create(user=user)
+
+            if avatar_url:
+                avatar_url_full = f"https://avatars.yandex.net/get-yapic/{avatar_url}/islands-retina-50"
+                avatar_response = requests.get(avatar_url_full)
+                avatar_response.raise_for_status()
+                filename = f"yandex_avatar_{user.id}.jpg"
                 user.avatar.save(filename, ContentFile(avatar_response.content))
             else:
                 return Response({"error": "Аватар не найден"}, status=400)
