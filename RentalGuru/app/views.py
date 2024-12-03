@@ -801,7 +801,7 @@ class VKCallbackView(APIView):
             return Response({"error": "Code not provided"}, status=400)
 
         token_url = 'https://oauth.vk.com/access_token'
-        redirect_uri = settings.VK_REDIRECT_URI
+        redirect_uri = 'https://rentalguru.ru/app/oauth_vk/'
 
         data = {
             'client_id': settings.SOCIAL_AUTH_VK_OAUTH2_KEY,
@@ -811,26 +811,28 @@ class VKCallbackView(APIView):
         }
 
         try:
-            # Получение токена доступа
-            token_response = requests.get(token_url, params=data)
+            token_response = requests.post(token_url, data=data)
             token_response.raise_for_status()
             token_data = token_response.json()
-
             access_token = token_data.get('access_token')
             email = token_data.get('email')
+
+            if not email:
+                return Response({"error": "Email не передан от VK"}, status=400)
+
+            if not access_token:
+                return Response({"error": "Ошибка получения токена"}, status=400)
+
             user_id = token_data.get('user_id')
 
-            if not access_token or not email:
-                return Response({"error": "Ошибка получения токена или email не передан VK"}, status=400)
-
-            # Получение данных о пользователе VK
             user_info_url = 'https://api.vk.com/method/users.get'
             user_data = {
                 'user_ids': user_id,
-                'fields': 'photo_200',
+                'fields': 'photo_200,bdate',
                 'access_token': access_token,
                 'v': '5.199'
             }
+
             user_response = requests.get(user_info_url, params=user_data)
             user_response.raise_for_status()
             user_data_response = user_response.json()
@@ -840,18 +842,18 @@ class VKCallbackView(APIView):
                 first_name = vk_user.get('first_name', '')
                 last_name = vk_user.get('last_name', '')
                 birthday = vk_user.get('bdate')
-                avatar_url = vk_user.get('photo_max')
+                avatar_url = vk_user.get('photo_200')
 
                 formatted_birthday = None
                 if birthday:
                     try:
                         formatted_birthday = datetime.strptime(birthday, "%d.%m.%Y").date()
                     except ValueError:
-                        pass  # Обработка случаев без года рождения
+                        pass
+
             else:
                 return Response({"error": "Ошибка получения данных пользователя VK"}, status=400)
 
-            # Создание или обновление пользователя
             user, created = User.objects.get_or_create(email=email, defaults={
                 'first_name': first_name,
                 'last_name': last_name,
@@ -860,7 +862,9 @@ class VKCallbackView(APIView):
                 'email_verified': True
             })
 
-            avatar_url = user_data.get('photo_100')
+            if created:
+                Renter.objects.create(user=user)
+
             if avatar_url:
                 avatar_response = requests.get(avatar_url)
                 avatar_response.raise_for_status()
@@ -870,7 +874,6 @@ class VKCallbackView(APIView):
             else:
                 return Response({"error": "Аватар не найден"}, status=400)
 
-            # Генерация токенов
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
