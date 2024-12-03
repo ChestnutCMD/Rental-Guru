@@ -43,7 +43,7 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListS
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
     BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer, \
-    TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList
+    TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList, OauthProviderSerializer
 from .task import send_verification_email, send_sms
 
 
@@ -678,7 +678,12 @@ class VerifiedEmailView(APIView):
 
 @extend_schema(
     summary="Аутентификация через соцсети",
-    description="Аутентификация через соцсети"
+    description=(
+        "Используется для аутентификации пользователей через социальные сети "
+        "VK и Mail.ru. Принимает квери параметр provider = mailru или vk "
+        " https://rentalguru.ru/app/oauth_social/?provider=mailru"
+    ),
+    parameters=[OauthProviderSerializer]
 )
 class OauthRedirectView(APIView):
     def get(self, request):
@@ -714,7 +719,7 @@ class OauthRedirectView(APIView):
 
 @extend_schema(
     summary="Коллбэк для аутентификации через Mail.ru",
-    description="Отдает JWT токены"
+    description="Отдает JWT токены и регистрирует пользователя"
 )
 class MailRuCallbackView(APIView):
     def get(self, request):
@@ -795,6 +800,10 @@ class MailRuCallbackView(APIView):
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
 
+@extend_schema(
+    summary="Коллбэк для аутентификации через Mail.ru",
+    description="Отдает JWT токены и регистрирует пользователя"
+)
 class VKCallbackView(APIView):
     def get(self, request):
         code = request.GET.get('code')

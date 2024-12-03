@@ -384,3 +384,7 @@ class TelegramRegisterSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=data['email']).exists():
             raise serializers.ValidationError("Пользователь с таким адресом электронной почты уже существует")
         return data
+
+
+class OauthProviderSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=['vk', 'mailru'], required=True)
