@@ -806,6 +806,7 @@ class MailRuCallbackView(APIView):
                 'access_token': access_token,
                 'refresh_token': str(refresh),
                 'user': {
+                    'user_id': user.id,
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
@@ -912,6 +913,7 @@ class VKCallbackView(APIView):
                 'access_token': access_token,
                 'refresh_token': str(refresh),
                 'user': {
+                    'user_id': user.id,
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
@@ -1000,6 +1002,7 @@ class YandexCallbackView(APIView):
                 'access_token': access_token,
                 'refresh_token': str(refresh),
                 'user': {
+                    'user_id': user.id,
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
