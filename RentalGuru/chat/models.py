@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -49,6 +51,27 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
+
+            message_content = json.dumps({
+                "status": self.status,
+                "organizer": self.organizer,
+                "vehicle_id": self.object_id,
+                "vehicle_type": str(self.content_type),
+                "start_date": str(self.start_date),
+                "end_date": str(self.end_date),
+                "start_time": str(self.start_time),
+                "end_time": str(self.end_time),
+                "total_cost": float(self.total_cost),
+                "deposit_cost": float(self.deposit_cost),
+                "delivery_cost": float(self.delivery_cost),
+                "delivery": self.delivery
+            }, ensure_ascii=False)
+
+            Message.objects.create(
+                chat=chat,
+                sender=self.organizer,
+                content=message_content
+            )
 
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
