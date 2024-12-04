@@ -691,7 +691,7 @@ class OauthCallback(APIView):
         code = request.data.get('code')
 
         if not code or not provider:
-            return Response({"error": "Code or provider not provided"}, status=400)
+            return Response({"error": "Код или провайдер не переданы"}, status=400)
 
         if provider == 'mailru':
             return self.handle_mailru(code)
