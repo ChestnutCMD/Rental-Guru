@@ -973,8 +973,9 @@ class YandexCallbackView(APIView):
             first_name = user_data_response.get('first_name', '')
             last_name = user_data_response.get('last_name', '')
             avatar_url = user_data_response.get('default_avatar_id')
-            birthday = user_data_response.get('birthday')
-            phone = user_data_response.get('default_phone')
+            birthday = user_data_response.get('birthday', None)
+            phone_data = user_data_response.get('default_phone', {})
+            phone = phone_data.get('number', '')
 
             if not email:
                 return Response({"error": "Email не передан от Яндекс"}, status=400)
@@ -986,7 +987,7 @@ class YandexCallbackView(APIView):
                 'email_verified': True,
                 'last_login': timezone.now(),
                 'date_of_birth': birthday,
-                'telephone': phone['number']
+                'telephone': phone
             })
 
             if not created:
