@@ -682,72 +682,33 @@ class VerifiedEmailView(APIView):
     description=(
         "Используется для аутентификации пользователей через социальные сети "
         "VK и Mail.ru. Принимает квери параметр provider = mailru, vk, yandex "
-        " https://rentalguru.ru/app/oauth_social/?provider=mailru"
     ),
     parameters=[OauthProviderSerializer]
 )
-class OauthRedirectView(APIView):
-    def get(self, request):
-        provider = request.GET.get('provider')
+class OauthCallback(APIView):
+    def post(self, request):
+        provider = request.data.get('provider')
+        code = request.data.get('code')
 
+        if not code or not provider:
+            return Response({"error": "Code or provider not provided"}, status=400)
+
+        if provider == 'mailru':
+            return self.handle_mailru(code)
         if provider == 'vk':
-            vk_auth_url = (
-                f"https://oauth.vk.com/authorize?"
-                f"client_id={settings.SOCIAL_AUTH_VK_OAUTH2_KEY}&"
-                f"redirect_uri={settings.VK_REDIRECT_URI}&"
-                f"display=page&"
-                f"scope=email,offline&"
-                f"response_type=code&"
-                f"v=5.131&"
-                f"state=security_token"
-            )
-            return redirect(vk_auth_url)
-
-        elif provider == 'mailru':
-            mailru_auth_url = (
-                f"https://oauth.mail.ru/login?"
-                f"client_id={settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY}&"
-                f"redirect_uri={settings.MAILRU_REDIRECT_URI}&"
-                f"response_type=code&"
-                f"scope=userinfo&"            
-                f"state=rentalguru"
-            )
-            return redirect(mailru_auth_url)
-
-        elif provider == 'yandex':
-            yandex_auth_url = (
-                f"https://oauth.yandex.com/authorize?"
-                f"client_id={settings.SOCIAL_AUTH_YANDEX_OAUTH2_KEY}&"
-                f"redirect_uri={settings.YANDEX_REDIRECT_URI}&"
-                f"response_type=code&"
-                f"scope=login:email login:info&"
-                f"state=security_token"
-            )
-            return redirect(yandex_auth_url)
-
+            return self.handle_vk(code)
+        if provider == 'yandex':
+            return self.handle_yandex(code)
         else:
-            return Response({"error": "Invalid or missing provider"}, status=400)
+            return Response({"error": "Не правильно указан провайдер"}, status=400)
 
-
-@extend_schema(
-    summary="Коллбэк для аутентификации через Mail.ru",
-    description="Отдает JWT токены и регистрирует пользователя"
-)
-class MailRuCallbackView(APIView):
-    renderer_classes = [JSONRenderer]
-
-    def get(self, request):
-        code = request.GET.get('code')
-        if not code:
-            return Response({"error": "Code not provided"}, status=400)
-
+    def handle_mailru(self, code):
         token_url = 'https://oauth.mail.ru/token'
-        redirect_uri = 'https://rentalguru.ru/app/oauth_mail/'
 
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
         data = {
             'grant_type': 'authorization_code',
-            'redirect_uri': redirect_uri,
+            'redirect_uri': settings.MAILRU_REDIRECT_URI,
             'code': code,
         }
 
@@ -820,26 +781,13 @@ class MailRuCallbackView(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-
-@extend_schema(
-    summary="Коллбэк для аутентификации через VK",
-    description="Отдает JWT токены и регистрирует пользователя"
-)
-class VKCallbackView(APIView):
-    renderer_classes = [JSONRenderer]
-
-    def get(self, request):
-        code = request.GET.get('code')
-        if not code:
-            return Response({"error": "Code not provided"}, status=400)
-
+    def handle_vk(self, code):
         token_url = 'https://oauth.vk.com/access_token'
-        redirect_uri = 'https://rentalguru.ru/app/oauth_vk/'
 
         data = {
             'client_id': settings.SOCIAL_AUTH_VK_OAUTH2_KEY,
             'client_secret': settings.SOCIAL_AUTH_VK_OAUTH2_SECRET,
-            'redirect_uri': redirect_uri,
+            'redirect_uri': settings.VK_REDIRECT_URI,
             'code': code,
         }
 
@@ -930,19 +878,7 @@ class VKCallbackView(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-
-@extend_schema(
-    summary="Коллбэк для аутентификации через Yandex",
-    description="Отдает JWT токены и регистрирует пользователя"
-)
-class YandexCallbackView(APIView):
-    renderer_classes = [JSONRenderer]
-
-    def get(self, request):
-        code = request.GET.get('code')
-        if not code:
-            return Response({"error": "Code not provided"}, status=400)
-
+    def handle_yandex(self, code):
         token_url = 'https://oauth.yandex.com/token'
         redirect_uri = settings.YANDEX_REDIRECT_URI
 

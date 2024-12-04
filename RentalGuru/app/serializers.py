@@ -388,3 +388,4 @@ class TelegramRegisterSerializer(serializers.ModelSerializer):
 
 class OauthProviderSerializer(serializers.Serializer):
     provider = serializers.ChoiceField(choices=['vk', 'mailru', 'yandex'], required=True)
+    code = serializers.CharField()
