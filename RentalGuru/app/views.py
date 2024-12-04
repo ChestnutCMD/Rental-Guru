@@ -687,8 +687,12 @@ class VerifiedEmailView(APIView):
 )
 class OauthCallback(APIView):
     def post(self, request):
-        provider = request.data.get('provider')
-        code = request.data.get('code')
+        serializer = OauthProviderSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        provider = serializer.validated_data['provider']
+        code = serializer.validated_data['code']
 
         if not code or not provider:
             return Response({"error": "Код или провайдер не переданы"}, status=400)

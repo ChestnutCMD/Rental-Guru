@@ -23,6 +23,9 @@ class BaseFilter(filters.FilterSet):
     lon = filters.NumberFilter(method='filter_by_lat_lon', label='Долгота')
     radius = filters.NumberFilter(method='filter_by_lat_lon', label='Радиус в км', required=False)
 
+    delivery = filters.BooleanFilter(field_name='delivery')
+    ensurance = filters.CharFilter(field_name='ensurance')
+
     class Meta:
         abstract = True
 
