@@ -104,12 +104,17 @@ class AutoViewSet(BaseViewSet):
                                     'vehicle_class')
                     .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
                                       'features_additionally', 'availabilities', 'documents', 'rent_prices'))
-
-        is_renter = hasattr(user, 'renter')
-        is_lessor = hasattr(user, 'lessor')
-        if is_lessor:
-            queryset = queryset.filter(owner=user)
-        elif is_renter:
+        if user.is_authenticated:
+            if user.role in ['admin', 'manager']:
+                return queryset.distinct()
+            else:
+                is_renter = hasattr(user, 'renter')
+                is_lessor = hasattr(user, 'lessor')
+                if is_lessor:
+                    queryset = queryset.filter(owner=user)
+                elif is_renter:
+                    queryset = queryset.filter(verified=True)
+        else:
             queryset = queryset.filter(verified=True)
         return queryset.distinct()
 
@@ -135,11 +140,17 @@ class BikeViewSet(BaseViewSet):
         queryset = (Bike.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class').
                     prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
                                      'documents', 'rent_prices', 'photos'))
-        is_renter = hasattr(user, 'renter')
-        is_lessor = hasattr(user, 'lessor')
-        if is_lessor:
-            queryset = queryset.filter(owner=user)
-        elif is_renter:
+        if user.is_authenticated:
+            if user.role in ['admin', 'manager']:
+                return queryset.distinct()
+            else:
+                is_renter = hasattr(user, 'renter')
+                is_lessor = hasattr(user, 'lessor')
+                if is_lessor:
+                    queryset = queryset.filter(owner=user)
+                elif is_renter:
+                    queryset = queryset.filter(verified=True)
+        else:
             queryset = queryset.filter(verified=True)
         return queryset.distinct()
 
@@ -166,11 +177,17 @@ class ShipViewSet(BaseViewSet):
                     prefetch_related('payment_method', 'features_functions', 'features_additionally',
                                      'features_equipment',
                                      'availabilities', 'documents', 'rent_prices', 'photos'))
-        is_renter = hasattr(user, 'renter')
-        is_lessor = hasattr(user, 'lessor')
-        if is_lessor:
-            queryset = queryset.filter(owner=user)
-        elif is_renter:
+        if user.is_authenticated:
+            if user.role in ['admin', 'manager']:
+                return queryset.distinct()
+            else:
+                is_renter = hasattr(user, 'renter')
+                is_lessor = hasattr(user, 'lessor')
+                if is_lessor:
+                    queryset = queryset.filter(owner=user)
+                elif is_renter:
+                    queryset = queryset.filter(verified=True)
+        else:
             queryset = queryset.filter(verified=True)
         return queryset.distinct()
 
@@ -195,11 +212,17 @@ class HelicopterViewSet(BaseViewSet):
         user = self.request.user
         queryset = (Helicopter.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'vehicle_class').
                     prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
-        is_renter = hasattr(user, 'renter')
-        is_lessor = hasattr(user, 'lessor')
-        if is_lessor:
-            queryset = queryset.filter(owner=user)
-        elif is_renter:
+        if user.is_authenticated:
+            if user.role in ['admin', 'manager']:
+                return queryset.distinct()
+            else:
+                is_renter = hasattr(user, 'renter')
+                is_lessor = hasattr(user, 'lessor')
+                if is_lessor:
+                    queryset = queryset.filter(owner=user)
+                elif is_renter:
+                    queryset = queryset.filter(verified=True)
+        else:
             queryset = queryset.filter(verified=True)
         return queryset.distinct()
 
@@ -224,11 +247,17 @@ class SpecialTechnicViewSet(BaseViewSet):
         user = self.request.user
         queryset = (SpecialTechnic.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model').
                     prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
-        is_renter = hasattr(user, 'renter')
-        is_lessor = hasattr(user, 'lessor')
-        if is_lessor:
-            queryset = queryset.filter(owner=user)
-        elif is_renter:
+        if user.is_authenticated:
+            if user.role in ['admin', 'manager']:
+                return queryset.distinct()
+            else:
+                is_renter = hasattr(user, 'renter')
+                is_lessor = hasattr(user, 'lessor')
+                if is_lessor:
+                    queryset = queryset.filter(owner=user)
+                elif is_renter:
+                    queryset = queryset.filter(verified=True)
+        else:
             queryset = queryset.filter(verified=True)
         return queryset.distinct()
 
