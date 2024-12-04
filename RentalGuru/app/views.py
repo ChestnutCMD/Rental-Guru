@@ -21,6 +21,7 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -733,6 +734,8 @@ class OauthRedirectView(APIView):
     description="Отдает JWT токены и регистрирует пользователя"
 )
 class MailRuCallbackView(APIView):
+    renderer_classes = [JSONRenderer]
+
     def get(self, request):
         code = request.GET.get('code')
         if not code:
@@ -811,7 +814,8 @@ class MailRuCallbackView(APIView):
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                 }
-            })
+            },
+                content_type='application/json')
 
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
@@ -822,6 +826,8 @@ class MailRuCallbackView(APIView):
     description="Отдает JWT токены и регистрирует пользователя"
 )
 class VKCallbackView(APIView):
+    renderer_classes = [JSONRenderer]
+
     def get(self, request):
         code = request.GET.get('code')
         if not code:
@@ -918,16 +924,20 @@ class VKCallbackView(APIView):
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                 }
-            })
+            },
+                content_type='application/json')
 
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
+
 
 @extend_schema(
     summary="Коллбэк для аутентификации через Yandex",
     description="Отдает JWT токены и регистрирует пользователя"
 )
 class YandexCallbackView(APIView):
+    renderer_classes = [JSONRenderer]
+
     def get(self, request):
         code = request.GET.get('code')
         if not code:
@@ -1007,7 +1017,8 @@ class YandexCallbackView(APIView):
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                 }
-            })
+            },
+                content_type='application/json')
 
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
