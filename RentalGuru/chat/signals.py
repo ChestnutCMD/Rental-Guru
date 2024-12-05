@@ -15,7 +15,7 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
         if instance.vehicle.availabilities.filter(on_request=True).exists() and instance.status == 'unknown':
             instance.create_chat()
 
-            # chat = Chat.objects.get(request_rent=instance)
+            chat = Chat.objects.get(request_rent=instance)
             # message_content = json.dumps({
             #     "status": instance.status,
             #     "organizer_id": instance.organizer.id,
