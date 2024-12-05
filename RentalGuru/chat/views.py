@@ -437,7 +437,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
                 # Преобразование дат в строки
                 for availability in availabilities:
-                    availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d')
+                    availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d') #TODO AttributeError: 'NoneType' object has no attribute 'strftime'
                     availability['end_date'] = availability['end_date'].strftime('%Y-%m-%d')
 
                 sub_period = {'start_date': instance.start_date.strftime('%Y-%m-%d'),
