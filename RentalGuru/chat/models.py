@@ -7,7 +7,6 @@ from django.db import models
 from RentalGuru import settings
 
 
-
 class RequestRent(models.Model):
     """ Заявки на аренду """
     STATUS_CHOICES = (
@@ -54,7 +53,7 @@ class RequestRent(models.Model):
 
             message_content = json.dumps({
                 "status": self.status,
-                "organizer": self.organizer,
+                "organizer_id": self.organizer.id,
                 "vehicle_id": self.object_id,
                 "vehicle_type": str(self.content_type),
                 "start_date": str(self.start_date),
