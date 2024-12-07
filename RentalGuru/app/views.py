@@ -912,7 +912,7 @@ class OauthCallback(APIView):
             email = user_data_response.get('default_email')
             first_name = user_data_response.get('first_name', '')
             last_name = user_data_response.get('last_name', '')
-            avatar_url = user_data_response.get('default_avatar_id')
+            avatar_url = user_data_response.get('default_avatar_id', None)
             birthday = user_data_response.get('birthday', None)
             phone_data = user_data_response.get('default_phone', {})
             phone = phone_data.get('number', '')
