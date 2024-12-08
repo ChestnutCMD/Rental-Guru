@@ -943,8 +943,6 @@ class OauthCallback(APIView):
                 avatar_response.raise_for_status()
                 filename = f"yandex_avatar_{user.id}.jpg"
                 user.avatar.save(filename, ContentFile(avatar_response.content))
-            else:
-                return Response({"error": "Аватар не найден"}, status=400)
 
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
