@@ -133,7 +133,7 @@ class RequestRent(models.Model):
 
 
 class Chat(models.Model):
-    request_rent = models.ForeignKey(RequestRent, null=True, on_delete=models.SET_NULL, verbose_name='Заявка на аренду')
+    request_rent = models.OneToOneField(RequestRent, null=True, on_delete=models.SET_NULL, verbose_name='Заявка на аренду')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:
@@ -168,7 +168,7 @@ class Trip(models.Model):
     start_time = models.TimeField(null=True, blank=True, verbose_name='Время начала аренды')
     end_time = models.TimeField(null=True, blank=True, verbose_name='Время окончания аренды')
 
-    chat = models.ForeignKey(Chat, on_delete=models.SET_NULL, null=True, blank=True)
+    chat = models.OneToOneField(Chat, on_delete=models.SET_NULL, null=True, blank=True)
 
     start_date = models.DateField(verbose_name='Начало поездки')
     end_date = models.DateField(verbose_name='Конец поездки')

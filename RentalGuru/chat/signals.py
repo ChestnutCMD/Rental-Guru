@@ -45,6 +45,8 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
     if instance.status == 'accept':
         instance.create_chat()
 
+        chat = Chat.objects.get(request_rent=instance)
+
         if not Trip.objects.filter(
             object_id=instance.object_id,
             start_date=instance.start_date,
@@ -58,5 +60,6 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 end_date=instance.end_date,
                 start_time=instance.start_time,
                 end_time=instance.end_time,
-                total_cost=instance.total_cost
+                total_cost=instance.total_cost,
+                chat=chat
             )
