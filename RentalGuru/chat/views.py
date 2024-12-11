@@ -345,12 +345,12 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             min_days = vehicle_instance.min_rent_day
             max_days = vehicle_instance.max_rent_day
 
-            #if rental_days < min_days or rental_days > max_days:
-             #   warning_message = (
-               #     f"Период аренды должен быть между {min_days} и {max_days} днями. "
-                 #   f"Текущий период: {rental_days} дней."
-              #  )
-              #  return Response({'warning': warning_message}, status=status.HTTP_400_BAD_REQUEST)
+            if rental_days < min_days or rental_days > max_days:
+                warning_message = (
+                    f"Период аренды должен быть между {min_days} и {max_days} днями. "
+                    f"Текущий период: {rental_days} дней."
+                )
+                return Response({'warning': warning_message}, status=status.HTTP_400_BAD_REQUEST)
 
         # Создание записи аренды после всех проверок
         serializer = self.get_serializer(data=request.data)

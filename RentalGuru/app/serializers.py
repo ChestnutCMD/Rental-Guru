@@ -41,6 +41,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
         ref = request.query_params.get('ref', None)
+        # Проверка свободного Email
+        user = User.objects.filter(email=validated_data['email'])
+        if user:
+            raise serializers.ValidationError({"Email": "Пользователь с данным Email уже зарегистрирован."})
 
         code = str(random.randint(1000, 9999))
         date_of_birth_str = validated_data['date_of_birth'].isoformat()

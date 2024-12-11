@@ -180,7 +180,7 @@ class IssueSupportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssueSupport
-        fields = ['topic_name', 'description']
+        fields = ['id', 'topic_name', 'description']
 
     def create(self, validated_data):
         user = self.context['request'].user
