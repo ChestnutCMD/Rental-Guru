@@ -77,28 +77,33 @@ class RequestRent(models.Model):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
         from vehicle.models import RentPrice
         rental_days = self.rental_days
+        if rental_days <= 0:
+            raise ValueError("Количество дней аренды должно быть положительным.")
 
-        period_priorities = []
+        period_priorities = [
+            ('year', 365),
+            ('month', 30),
+            ('week', 7),
+            ('day', 1),
+        ]
 
-        if self.rental_days > 365:
-            period_priorities.append(('year', 365))
-        if self.rental_days > 30:
-            period_priorities.append(('month', 30))
-        if self.rental_days > 7:
-            period_priorities.append(('week', 7))
-        period_priorities.append(('day', 1))
+        suitable_periods = [(period, days) for period, days in period_priorities if rental_days >= days]
 
-        for period, period_days in period_priorities:
+        if not suitable_periods:
+            raise ValueError("Не найден подходящий период аренды для текущего количества дней.")
+
+        for period, period_days in suitable_periods:
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
             if rent_price:
                 break
         else:
-            raise ValueError("Не найдено подходящей цены аренды для транспортного средства.")
+            raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
+
+        total_cost = (rental_days / period_days) * float(rent_price.total)
 
         if self.delivery:
-            total_cost = ((rental_days / period_days) * float(rent_price.total)) + float(self.vehicle.price_delivery)
-        else:
-            total_cost = (rental_days / period_days) * float(rent_price.total)
+            total_cost += float(self.vehicle.price_delivery)
+
         return total_cost
 
     def clean(self):
