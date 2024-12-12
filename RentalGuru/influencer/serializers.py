@@ -8,9 +8,9 @@ from notification.models import Notification
 
 class InfluencerSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-    first_name = serializers.CharField(source='user.first_name', read_only=True)
-    last_name = serializers.CharField(source='user.last_name', read_only=True)
+    email = serializers.EmailField(source='user.email')
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
 
     class Meta:
         model = Influencer
@@ -21,16 +21,20 @@ class InfluencerSerializer(serializers.ModelSerializer):
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
-        _ = User.objects.filter(email=validated_data['email'])
-        if _:
-            raise serializers.ValidationError("Пользователь с таким email уже зарегистрирован")
+        user_data = validated_data.pop('user')
+        email = user_data.get('email')
+        first_name = user_data.get('first_name')
+        last_name = user_data.get('last_name')
+
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
 
         password = User.objects.make_random_password()
 
         user = User.objects.create_user(
-            email=validated_data.pop('email'),
-            first_name=validated_data.pop('first_name'),
-            last_name=validated_data.pop('last_name'),
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
             password=password,
             role='member',
         )
@@ -39,7 +43,7 @@ class InfluencerSerializer(serializers.ModelSerializer):
 
         Notification.objects.create(
             user=user,
-            content=f"Добро пожаловать, {user.first_name}! Вы успешно зарегистрированы как партнер. Ваш пароль: {password}",
+            content=f"Добро пожаловать, {first_name}! Вы успешно зарегистрированы как партнер. Ваш пароль: {password}",
         )
 
         return influencer
