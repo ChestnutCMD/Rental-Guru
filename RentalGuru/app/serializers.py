@@ -177,9 +177,16 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = ['id', 'code']
 
 
+class InfluencerSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Influencer
+        fields = ['id']
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     renter = RenterDetailSerializer(read_only=True)
     lessor = LessorDetailSerializer(read_only=True)
+    influencer = InfluencerSerializers(read_only=True)
     currency = serializers.SlugRelatedField(slug_field='code', queryset=Currency.objects.all())
     language = serializers.SlugRelatedField(slug_field='code', queryset=Language.objects.all())
 
@@ -201,9 +208,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'push_notification',
             'renter',
             'lessor',
+            'influencer',
             'currency',
             'language',
             'date_joined'
+
         ]
         read_only_fields = ['role', 'date_joined']
 
