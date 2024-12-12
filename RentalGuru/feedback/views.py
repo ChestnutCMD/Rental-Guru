@@ -131,7 +131,7 @@ class FeedbackRenterViewSet(viewsets.ModelViewSet):
 
         content = 'Добавлен отзыв'
         url = f'{settings.HOST_URL}/feedback/feedbacks_renter/{feedback.id}'
-        Notification.objects.create(user=renter_instance.renter.user, content=content, url=url)
+        Notification.objects.create(user=renter_instance.user, content=content, url=url)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
