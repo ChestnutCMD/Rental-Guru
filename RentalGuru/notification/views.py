@@ -26,7 +26,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).select_related('user')
+        return Notification.objects.filter(user=self.request.user).select_related('user').order_by('-created_at')
 
     @action(detail=True, methods=['get'])
     def read(self, request, pk=None):
