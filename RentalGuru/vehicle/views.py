@@ -283,7 +283,6 @@ class UpdateRatingView(APIView):
             vehicle_type = data['Vehicle_type']
             vehicle_id = data['Vehicle_id']
 
-            # Определяем модель транспортного средства
             model = {
                 'Auto': Auto,
                 'Bike': Bike,
@@ -300,7 +299,6 @@ class UpdateRatingView(APIView):
             except model.DoesNotExist:
                 return Response({"error": "Транспорт не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Получаем content_type для данного транспортного средства
             content_type = ContentType.objects.get_for_model(vehicle)
 
             # Проверка, обновлял ли пользователь уже рейтинг
@@ -309,7 +307,6 @@ class UpdateRatingView(APIView):
                 return Response({"error": "Вы уже обновили рейтинг этого автомобиля."},
                                 status=status.HTTP_403_FORBIDDEN)
 
-            # Пытаемся получить поездку
             try:
                 trip = Trip.objects.filter(
                     organizer=request.user,
