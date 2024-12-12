@@ -57,7 +57,7 @@ class ReferralLink(models.Model):
 
 class InfluencerRequest(models.Model):
     name = models.CharField(max_length=50, verbose_name='Имя')
-    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Город')
+    city = models.CharField(max_length=50, verbose_name='Город', null=True, blank=True)
     telephone = models.CharField(max_length=15, null=True, blank=True, verbose_name='Телефон')
     email = models.EmailField(verbose_name='Email')
     social = models.CharField(max_length=250, verbose_name='Сайт или соцсеть')
