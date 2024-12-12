@@ -1,14 +1,12 @@
 import json
 import random
 from datetime import datetime
-
 from django.core.exceptions import ValidationError
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
 
 from franchise.models import Franchise
 from influencer.models import Influencer, ReferralLink
