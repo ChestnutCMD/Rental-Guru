@@ -450,6 +450,7 @@ class ChatConsumer(BaseChatConsumer):
 
     @database_sync_to_async
     def update_response_time(self):
+        """ Обновление среднего времени ответа арендодателя"""
         user = self.scope['user']
         if hasattr(user, 'lessor'):
             response_time = timezone.now() - self.connected_at
@@ -464,7 +465,6 @@ class ChatConsumer(BaseChatConsumer):
                 lessor.average_response_time = total_response_time / lessor.count_trip
 
             lessor.save()
-
 
     async def handle_request_rent_update(self, update_data):
         """ Обновление заявки на аренду арендодателем """
@@ -585,24 +585,6 @@ class ChatConsumer(BaseChatConsumer):
     @database_sync_to_async
     def get_content_type(self, model_name):
         return ContentType.objects.get(model=model_name.lower())
-
-    @database_sync_to_async
-    def update_response_time(self):
-        """ Обновление среднего времени ответа арендодателя"""
-        user = self.scope['user']
-        if hasattr(user, 'lessor'):
-            response_time = self.message_received_at - self.connected_at
-            lessor = user.lessor
-
-            if lessor.average_response_time is None:
-                lessor.average_response_time = response_time
-            else:
-                total_response_time = lessor.average_response_time * lessor.count_trip
-                total_response_time += response_time
-                lessor.count_trip += 1
-                lessor.average_response_time = total_response_time / lessor.count_trip
-
-            lessor.save()
 
     def get_chat_instance(self):
         return Chat.objects.select_related(
