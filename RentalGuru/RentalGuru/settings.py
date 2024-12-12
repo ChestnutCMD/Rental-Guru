@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'social_django',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -91,11 +90,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'social_django.middleware.SocialAuthExceptionMiddleware',
-
 ]
 
 ROOT_URLCONF = 'RentalGuru.urls'
@@ -329,10 +325,6 @@ TINYPAY_API_URL = getenv('TINYPAY_API_URL')
 
 # OAuth 2.0
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.yandex.YandexOAuth2',
-    'social_core.backends.vk.VKOAuth2',
-    'social_core.backends.google.GoogleOAuth2',
-    'social_core.backends.mailru.MailruOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
