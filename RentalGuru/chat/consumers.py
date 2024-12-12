@@ -408,6 +408,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     def get_messages_objects(self):
         raise NotImplementedError
 
+
 class ChatConsumer(BaseChatConsumer):
     """ Чат по аренде """
     async def connect(self):
@@ -445,6 +446,25 @@ class ChatConsumer(BaseChatConsumer):
                 }))
         else:
             await super().receive(text_data)
+        await self.update_response_time()
+
+    @database_sync_to_async
+    def update_response_time(self):
+        user = self.scope['user']
+        if hasattr(user, 'lessor'):
+            response_time = timezone.now() - self.connected_at
+            lessor = user.lessor
+
+            if lessor.average_response_time is None:
+                lessor.average_response_time = response_time
+            else:
+                total_response_time = lessor.average_response_time * lessor.count_trip
+                total_response_time += response_time
+                lessor.count_trip += 1
+                lessor.average_response_time = total_response_time / lessor.count_trip
+
+            lessor.save()
+
 
     async def handle_request_rent_update(self, update_data):
         """ Обновление заявки на аренду арендодателем """
