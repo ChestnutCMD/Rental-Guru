@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
-from app.models import Renter
+from app.models import Rating
 from chat.models import Trip
 from chat.serializers import VehicleRelatedField
 from feedback.models import Feedback, FeedbackRenter
@@ -117,10 +117,18 @@ class FeedbackRenterCreateSerializer(serializers.ModelSerializer):
 class FeedbackRenterSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     renter = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = FeedbackRenter
-        fields = ['id', 'user', 'renter', 'content', 'answer', 'timestamp']
+        fields = ['id', 'user', 'renter', 'content', 'answer', 'timestamp', 'rating']
+
+    def get_rating(self, obj):
+        try:
+            rating = Rating.objects.get(user=obj.user, renter=obj.renter)
+            return rating.rating
+        except Rating.DoesNotExist:
+            return None
 
     def get_user(self, obj):
         return {
