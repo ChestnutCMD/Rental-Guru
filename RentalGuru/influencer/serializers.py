@@ -3,21 +3,45 @@ from rest_framework import serializers
 
 from chat.models import Trip
 from influencer.models import Influencer, ReferralLink, InfluencerRequest
+from notification.models import Notification
 
 
 class InfluencerSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
-    user_id = serializers.IntegerField(source='user.id', read_only=True)
-    referral_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = Influencer
-        fields = ['user_id', 'first_name', 'last_name', 'referral_code']
+        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id']
+        read_only_fields = ['id', 'referral_code']
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        influencer = Influencer.objects.create(user=user)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        _ = User.objects.filter(email=validated_data['email'])
+        if _:
+            raise serializers.ValidationError("Пользователь с таким email уже зарегистрирован")
+
+        password = User.objects.make_random_password()
+
+        user = User.objects.create_user(
+            email=validated_data.pop('email'),
+            first_name=validated_data.pop('first_name'),
+            last_name=validated_data.pop('last_name'),
+            password=password,
+            role='member',
+        )
+
+        influencer = Influencer.objects.create(user=user, **validated_data)
+
+        Notification.objects.create(
+            user=user,
+            content=f"Добро пожаловать, {user.first_name}! Вы успешно зарегистрированы как партнер. Ваш пароль: {password}",
+        )
+
         return influencer
 
 

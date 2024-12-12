@@ -1,9 +1,15 @@
+import random
+import string
+
+from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from influencer.models import Influencer, ReferralLink, InfluencerRequest
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
@@ -11,30 +17,58 @@ from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer,
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer
 
 
-@extend_schema(summary="Список инфлюенсеров", description="Список инфлюенсеров, доступен только для администраторов.")
-class InfluencerListCreateView(ListAPIView, CreateAPIView):
+class InfluencerViewSet(ModelViewSet):
+    """
+    Вьюсет для управления инфлюенсерами: создание, просмотр списка, детали, удаление.
+    """
     queryset = Influencer.objects.all()
-    serializer_class = InfluencerSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrManager]
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return Influencer.objects.select_related('user').prefetch_related('referral_links')
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'destroy']:
+            return InfluencerDetailSerializer
+        return InfluencerSerializer
 
-    def perform_create(self, serializer):
-        try:
-            serializer.save(user=self.request.user)
-        except IntegrityError:
-            raise ValidationError({"detail": "Инфлюенсер для данного пользователя уже существует."})
-
-
-@extend_schema(summary="Детали инфлюенсера", description="Просмотр и удаление инфлюенсера.")
-class InfluencerRetrieveDestroyView(RetrieveAPIView, DestroyAPIView):
-    queryset = Influencer.objects.all()
-    serializer_class = InfluencerDetailSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrInfluencer]
+    def get_permissions(self):
+        if self.action in ['list', 'create']:
+            return [permission() for permission in [IsAdminOrManager]]
+        if self.action in ['retrieve', 'destroy']:
+            return [permission() for permission in [IsAdminOrInfluencer]]
+        return super().get_permissions()
 
     def get_queryset(self):
         return Influencer.objects.select_related('user').prefetch_related('referral_links', 'user__trip_organized_trips')
+
+    @extend_schema(
+        summary="Список инфлюенсеров",
+        description="Список инфлюенсеров, доступен только для администраторов и менеджеров."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Создание инфлюенсера",
+        description="Создание инфлюенсера с автоматической генерацией пароля."
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        influencer = serializer.save()
+        return Response(
+            InfluencerSerializer(influencer).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(
+        summary="Детали инфлюенсера",
+        description="Просмотр и удаление инфлюенсера."
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Удаление инфлюенсера."""
+        return super().destroy(request, *args, **kwargs)
 
 
 @extend_schema(summary="Реферальные ссылки", description="Реферальные ссылки")
