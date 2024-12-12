@@ -27,7 +27,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.test import APIRequestFactory
-from social_django.utils import load_strategy, load_backend
 from social_core.exceptions import AuthForbidden, AuthTokenError
 
 from RentalGuru import settings
