@@ -16,7 +16,7 @@ class RequestRent(models.Model):
     )
     status = models.CharField(max_length=8, default='unknown', choices=STATUS_CHOICES, verbose_name='Статус')
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                                  related_name='request_rent_organized_trips', verbose_name='Автор')
+                                  related_name='request_rent_organized_trips', verbose_name='Арендатор')
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
         'model__in': ('auto', 'bike', 'ship', 'helicopter', 'specialtechnic')}, verbose_name='Тип транспорта')
@@ -29,9 +29,10 @@ class RequestRent(models.Model):
     end_date = models.DateField(verbose_name='Конец аренды', null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
     deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
-    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    delivery = models.BooleanField(default=False)
+    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Стоимость доставки')
+    delivery = models.BooleanField(default=False, verbose_name='Доставка')
     on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
+    is_deleted = models.BooleanField(default=False, verbose_name='Удалена')
 
     @property
     def owner(self):
@@ -77,12 +78,15 @@ class RequestRent(models.Model):
         from vehicle.models import RentPrice
         rental_days = self.rental_days
 
-        period_priorities = [
-            ('year', 365),
-            ('month', 30),
-            ('week', 7),
-            ('day', 1)
-        ]
+        period_priorities = []
+
+        if self.rental_days > 365:
+            period_priorities.append(('year', 365))
+        if self.rental_days > 30:
+            period_priorities.append(('month', 30))
+        if self.rental_days > 7:
+            period_priorities.append(('week', 7))
+        period_priorities.append(('day', 1))
 
         for period, period_days in period_priorities:
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()

@@ -263,7 +263,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             model = content_type.model_class()
             filters |= Q(content_type=content_type, object_id__in=model.objects.filter(owner=user).values('id'))
 
-        return RequestRent.objects.filter(filters)
+        return RequestRent.objects.filter(filters, is_deleted=False)
 
     def check_permissions(self, request):
         user = self.request.user
@@ -472,6 +472,12 @@ class RequestRentViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         self.check_permissions(request)
         return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_deleted = True
+        instance.save()
+        return Response({'detail': 'Заявка удалена.'}, status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
