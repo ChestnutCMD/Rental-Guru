@@ -3,31 +3,23 @@ import hmac
 import json
 import random
 from datetime import datetime, timedelta, date
-from io import BytesIO
-from urllib.parse import urlencode, urlparse
-
+from urllib.parse import urlparse
 import requests
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.timezone import now
-from django.views import View
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, viewsets, serializers, generics
-from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.test import APIRequestFactory
-from social_core.exceptions import AuthForbidden, AuthTokenError
 
 from RentalGuru import settings
 from RentalGuru.settings import redis_1
