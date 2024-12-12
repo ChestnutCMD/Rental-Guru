@@ -202,10 +202,26 @@ class IssueSupportSerializer(serializers.ModelSerializer):
 class ChatSupportSerializer(serializers.ModelSerializer):
     issues = IssueSupportSerializer(many=True, read_only=True)
     messages = MessageSupportSerializer(many=True, read_only=True)
+    last_message = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatSupport
-        fields = ['id', 'creator', 'issues', 'messages']
+        fields = ['id', 'creator', 'issues', 'messages', 'last_message']
+
+    def get_last_message(self, obj):
+        last_message = obj.message_support.order_by('-timestamp').first()
+        if last_message:
+            return {
+                "id": last_message.id,
+                "content": last_message.content,
+                "sender": {
+                    "id": last_message.sender.id,
+                    "first_name": last_message.sender.first_name,
+                    "avatar": last_message.sender.avatar.url if last_message.sender.avatar else None
+                },
+                "timestamp": last_message.timestamp
+            }
+        return None
 
 
 class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
