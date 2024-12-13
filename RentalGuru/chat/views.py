@@ -234,65 +234,29 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # @action(detail=True, methods=['post'])
-    # def pay_deposit(self, request, pk=None):
-    #     request_rent = self.get_object()
-    #     if request_rent.deposit_paid:
-    #         return Response({"error": "Депозит уже оплачен"}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     tinkoff_service = TinkoffPaymentService()
-    #     deposit_amount = request_rent.total_cost * Decimal('0.3')  # 30% от общей стоимости
-    #     if request_rent.delivery_cost:
-    #         deposit_amount += request_rent.delivery_cost
-    #
-    #     payment = tinkoff_service.init_payment(
-    #         amount=deposit_amount,
-    #         order_id=f"deposit-{request_rent.id}",
-    #         description=f"Депозит за аренду {request_rent.vehicle}"
-    #     )
-    #
-    #     if payment.get('Success'):
-    #         Transaction.objects.create(
-    #             user=request.user,
-    #             amount=deposit_amount,
-    #             transaction_type='deposit',
-    #             request_rent=request_rent,
-    #             tinkoff_payment_id=payment['PaymentId'],
-    #             status='pending'
-    #         )
-    #         return Response({"payment_url": payment['PaymentURL']})
-    #     else:
-    #         return Response({"error": "Не удалось инициировать платеж"}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    # @action(detail=True, methods=['post'])
-    # def confirm_deposit(self, request, pk=None):
-    #     request_rent = self.get_object()
-    #     transaction = Transaction.objects.filter(request_rent=request_rent, transaction_type='deposit').last()
-    #
-    #     if not transaction:
-    #         return Response({"error": "Транзакция не найдена"}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     tinkoff_service = TinkoffPaymentService()
-    #     payment_status = tinkoff_service.check_payment_status(transaction.tinkoff_payment_id)
-    #
-    #     if payment_status.get('Status') == 'CONFIRMED':
-    #         transaction.status = 'completed'
-    #         transaction.save()
-    #         request_rent.deposit_paid = True
-    #         request_rent.save()
-    #         return Response({"message": "Депозит успешно оплачен"})
-    #     else:
-    #         return Response({"error": "Платеж не подтвержден"}, status=status.HTTP_400_BAD_REQUEST)
-
     def perform_update(self, serializer):
         instance = self.get_object()
         if 'status' in self.request.data:
             new_status = self.request.data['status']
+
+            if new_status not in ['denied', 'accept', 'unknown']:
+                raise DRFValidationError("Недопустимый статус.")
+
+            # Обработка отказа заявки
+            if new_status == 'denied':
+                if instance.owner != self.request.user:
+                    raise DRFValidationError("Только владелец транспортного средства может отклонить запрос.")
+                denied_reason = self.request.data.get('denied_reason')
+                if not denied_reason:
+                    raise DRFValidationError("Причина отказа обязательна, если статус заявки — 'denied'.")
+                content = f'Вам отказано в аренде транспорта {instance.vehicle} по причине: {denied_reason}'
+                url = ''
+                Notification.objects.create(user=instance.organizer, content=content, url=url)
+
+            # Обработка принятия заявки
             if new_status == 'accept':
                 if instance.owner != self.request.user:
                     raise DRFValidationError("Только владелец транспортного средства может принять запрос.")
-                # if not instance.deposit_cost:
-                #     raise ValidationError("Депозит должен быть оплачен перед принятием заявки.")
 
                 model = instance.content_type.model_class()
                 object_id = instance.object_id

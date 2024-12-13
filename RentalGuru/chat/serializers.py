@@ -87,14 +87,10 @@ class RequestRentSerializer(serializers.ModelSerializer):
         representation['vehicle_type'] = instance.content_type.model
         representation['vehicle_id'] = instance.object_id
 
-        # Получаем транспортное средство через GenericForeignKey
         vehicle = instance.content_type.get_object_for_this_type(id=instance.object_id)
-
-        # Получаем поездку с этим транспортом и статусом 'current'
         trip = vehicle.trips.filter(status='current').select_related('organizer').first()
 
         if trip:
-            # Добавляем информацию о текущем арендаторе
             representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
             representation['renter_first_name'] = trip.organizer.first_name
             representation['renter_last_name'] = trip.organizer.last_name
@@ -102,6 +98,18 @@ class RequestRentSerializer(serializers.ModelSerializer):
         return representation
 
     def validate(self, data):
+        status = data.get('status')
+        denied_reason = data.get('denied_reason')
+
+        if status == 'denied' and not denied_reason:
+            raise serializers.ValidationError({
+                'denied_reason': 'Необходимо указать причину отказа, если статус — "denied".'
+            })
+        if status != 'denied' and denied_reason:
+            raise serializers.ValidationError({
+                'denied_reason': 'Причина отказа может быть указана только при статусе "denied".'
+            })
+
         return data
 
 
