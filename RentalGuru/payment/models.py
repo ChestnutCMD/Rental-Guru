@@ -13,7 +13,7 @@ class Payment(models.Model):
     request_rent = models.ForeignKey(
         RequestRent, on_delete=models.CASCADE, related_name='payments', verbose_name='Заявка на аренду'
     )
-    payment_id = models.CharField(max_length=255, verbose_name='ID платежа в системе Тиньков', unique=True)
+    payment_id = models.CharField(max_length=255, verbose_name='ID платежа в системе Тиньков')
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Сумма платежа')
     deposite = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Депозит')
     delivery = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Стоимость доставки')
