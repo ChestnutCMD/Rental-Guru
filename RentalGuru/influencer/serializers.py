@@ -2,7 +2,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from chat.models import Trip
-from influencer.models import Influencer, ReferralLink, InfluencerRequest
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode
 from notification.models import Notification
 
 
@@ -101,3 +101,28 @@ class InfluencerRequestListSerializer(serializers.ModelSerializer):
     class Meta:
         model = InfluencerRequest
         fields = ['id', 'name', 'city', 'telephone', 'email', 'social', 'description', 'created_at']
+
+
+class QRCodeSerializer(serializers.ModelSerializer):
+    influencer_name = serializers.CharField(source='influencer.user.first_name', read_only=True)
+    qr_code_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QRCode
+        fields = [
+            'id',
+            'influencer',
+            'influencer_name',
+            'channel',
+            'referral_link',
+            'qr_code_url',
+            'created_at'
+        ]
+        read_only_fields = ['referral_link', 'qr_code_url', 'created_at']
+
+    def get_qr_code_url(self, obj):
+        """Возвращает полный URL к QR-коду."""
+        request = self.context.get('request')
+        if obj.qr_code_image:
+            return request.build_absolute_uri(obj.qr_code_image.url) if request else obj.qr_code_image.url
+        return None

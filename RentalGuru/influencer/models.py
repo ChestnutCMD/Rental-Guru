@@ -1,5 +1,10 @@
 import string
 import random
+from io import BytesIO
+from urllib.parse import urlencode
+
+import qrcode
+from django.core.files.base import ContentFile
 from django.db import models
 from RentalGuru import settings
 from franchise.models import City
@@ -32,7 +37,7 @@ class Influencer(models.Model):
 
 
 class ReferralLink(models.Model):
-    influencer = models.ForeignKey('Influencer', on_delete=models.CASCADE, related_name='referral_links', verbose_name='Инфлюенсер')
+    influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, related_name='referral_links', verbose_name='Инфлюенсер')
     channel = models.CharField(max_length=50, verbose_name='Название канала')
     link = models.URLField(blank=True, verbose_name='Ссылка')
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
@@ -67,3 +72,58 @@ class InfluencerRequest(models.Model):
     class Meta:
         verbose_name = 'Заявка на создание инфлюенсера'
         verbose_name_plural = 'Заявки на создание инфлюенсеров'
+
+
+def qr_code_upload_path(instance, filename):
+    """Функция для генерации пути сохранения QR-кодов."""
+    return f'qr_codes/{instance.influencer.user.id}/{filename}'
+
+
+class QRCode(models.Model):
+    influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, related_name='qr_codes', verbose_name='Инфлюенсер')
+    channel = models.CharField(max_length=100, verbose_name='Название канала')
+    referral_link = models.URLField(blank=True, verbose_name='Реферальная ссылка')
+    qr_code_image = models.ImageField(upload_to=qr_code_upload_path, blank=True, verbose_name='QR-код')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    def save(self, *args, **kwargs):
+        if not self.referral_link:
+            self.referral_link = self.generate_referral_link()
+
+        self.qr_code_image = self.generate_qr_code()
+
+        super().save(*args, **kwargs)
+
+    def generate_referral_link(self):
+        """Генерация реферальной ссылки на основе канала и инфлюенсера."""
+        base_url = getattr(settings, "HOST_URL", "http://localhost:8000") + "/app/users/"
+        query_params = {
+            "ref": self.influencer.referral_code,
+            "code": ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        }
+        return f"{base_url}?{urlencode(query_params)}"
+
+    def generate_qr_code(self):
+        """Генерация QR-кода и сохранение его в поле qr_code_image."""
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(self.referral_link)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        file_name = f"qr_{self.influencer.user.id}_{self.channel}.png"
+
+        return ContentFile(buffer.read(), name=file_name)
+
+    class Meta:
+        verbose_name = 'QR-код'
+        verbose_name_plural = 'QR-коды'

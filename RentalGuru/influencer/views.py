@@ -5,16 +5,17 @@ from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from influencer.models import Influencer, ReferralLink, InfluencerRequest
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
-    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer
+    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -106,3 +107,30 @@ class InfluencerRequestDeleteView(DestroyAPIView):
     queryset = InfluencerRequest.objects.all()
     serializer_class = InfluencerRequestListSerializer
     permission_classes = [IsAdminOrManagerForRequest]
+
+
+class QRCodeViewSet(viewsets.ModelViewSet):
+    queryset = QRCode.objects.all()
+    serializer_class = QRCodeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Возвращает QR-коды только текущего пользователя."""
+        return QRCode.objects.filter(influencer__user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Добавляет текущего пользователя как инфлюенсера."""
+        influencer = self.request.user.influencer
+        serializer.save(influencer=influencer)
+
+    @action(detail=True, methods=['get'], url_path='download-qr-code')
+    def download_qr_code(self, request, pk=None):
+        """Возвращает файл QR-кода для скачивания."""
+        qr_code = self.get_object()
+        if not qr_code.qr_code_image:
+            return Response({"detail": "QR-код еще не сгенерирован."}, status=400)
+
+        response = Response()
+        response['Content-Disposition'] = f'attachment; filename="{qr_code.qr_code_image.name}"'
+        response['X-Accel-Redirect'] = qr_code.qr_code_image.url
+        return response

@@ -425,17 +425,17 @@ class UpdateRatingView(APIView):
 
     def post(self, request, renter_id):
         renter = get_object_or_404(Renter.objects.select_related('user'), id=renter_id)
-        user = request.user
+        owner = request.user
         trips = Trip.objects.filter(organizer=renter.user, end_date__lt=now()).select_related(
             'content_type').prefetch_related('vehicle')
-        is_owner = any(trip.vehicle.owner == user for trip in trips)
+        is_owner = any(trip.vehicle.owner == owner for trip in trips)
 
         if not is_owner:
             return Response({
                                 "detail": "Вы не являетесь владельцем транспортного средства в завершённых поездках данного арендатора."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        if Rating.objects.filter(user=user, renter=renter).exists():
+        if Rating.objects.filter(user=owner, renter=renter).exists():
             return Response({"detail": "Вы уже оставляли рейтинг этому арендатору."},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -443,7 +443,7 @@ class UpdateRatingView(APIView):
 
         if serializer.is_valid():
             serializer.update(renter, serializer.validated_data)
-            Rating.objects.create(user=user, renter=renter, rating=serializer.validated_data['rating'])
+            Rating.objects.create(user=owner, renter=renter, rating=serializer.validated_data['rating'])
             return Response({"average_rating": renter.get_average_rating()}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

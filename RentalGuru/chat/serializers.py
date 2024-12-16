@@ -63,6 +63,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
         validated_data['object_id'] = vehicle_id
         validated_data['status'] = 'unknown'
         request = self.context.get('request')
+        validated_data['is_deleted'] = False
         validated_data['organizer'] = request.user
 
         return super().create(validated_data)

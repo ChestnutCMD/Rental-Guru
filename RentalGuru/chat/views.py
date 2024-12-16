@@ -1,12 +1,9 @@
-from datetime import datetime, time, date
-from decimal import Decimal
+from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, permissions, status, serializers, filters
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,17 +11,15 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from app.models import User, RenterDocuments
 from notification.models import Notification
-from payment.models import Transaction, PaymentSetting
-from payment.services import TinkoffPaymentService
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .filters import  MessageFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
-from .permissions import IsAdminOrOwner, IsParticipantOrAdmin, IsChatCreatorOrAdmin
+from .permissions import IsAdminOrOwner
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, IssueSupportSerializer, \
     ChatSupportRetrieveSerializer
-from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied, ValidationError
-from .utils import is_period_contained, subtract_periods, calculate_age
+from rest_framework.exceptions import ValidationError as DRFValidationError, PermissionDenied
+from .utils import is_period_contained, subtract_periods
 
 
 @extend_schema(summary="Поездка", description='Поездка')

@@ -1,6 +1,12 @@
-from django.urls import path
-from .views import tinkoff_webhook
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
+from payment.views import TinkoffCallbackView, PaymentViewSet
+
+router = DefaultRouter()
+router.register(r'payments', PaymentViewSet, basename='payment')
 
 urlpatterns = [
-    path('webhook/tinkoff/', tinkoff_webhook, name='tinkoff_webhook'),
+    path('callback/', TinkoffCallbackView.as_view(), name='tinkoff-callback'),
+    path('', include(router.urls)),
 ]

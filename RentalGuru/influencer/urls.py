@@ -1,11 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ReferralLinkViewSet, InfluencerRequestCreateView, InfluencerRequestListView, \
-    InfluencerRequestDeleteView, InfluencerViewSet
+    InfluencerRequestDeleteView, InfluencerViewSet, QRCodeViewSet
 
 router = DefaultRouter()
 router.register(r'referral-links', ReferralLinkViewSet)
 router.register('influencers', InfluencerViewSet)
+router.register(r'qr-codes', QRCodeViewSet, basename='qr-code')
+
 
 urlpatterns = [
     path('influencer_requests/', InfluencerRequestCreateView.as_view(), name='influencer-request-create'),

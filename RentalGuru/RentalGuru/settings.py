@@ -241,7 +241,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 STATIC_URL = '/static/'
-#STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
@@ -322,14 +321,12 @@ HOST_URL = 'https://rentalguru.ru'
 TINYPAY_TERMINAL_KEY = getenv('TINYPAY_TERMINAL_KEY')
 TINYPAY_PASSWORD = getenv('TINYPAY_PASSWORD')
 TINYPAY_API_URL = getenv('TINYPAY_API_URL')
+TINYPAY_CALLBACK = f'{HOST_URL}/payment/callback/'
 
 # OAuth 2.0
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
-
-LOGOUT_REDIRECT_URL = '/'
-LOGIN_REDIRECT_URL = '/'
 
 SOCIAL_AUTH_VK_OAUTH2_KEY = getenv('SOCIAL_AUTH_VK_OAUTH2_KEY')
 SOCIAL_AUTH_VK_OAUTH2_SECRET = getenv('SOCIAL_AUTH_VK_OAUTH2_SECRET')
@@ -357,8 +354,3 @@ RENT_REQUEST_EXPIRATION_HOURS = 24
 
 # Время на отмену поездки с возвратом средств
 CANCELLATION_REFUND_LIMIT_HOURS = 48
-
-# webhook
-TINKOFF_WEBHOOK_URL = f'{HOST_URL}/payments/webhook/tinkoff/'
-
-

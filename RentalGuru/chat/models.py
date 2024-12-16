@@ -2,7 +2,7 @@ import json
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 
 from RentalGuru import settings
 
@@ -30,7 +30,7 @@ class RequestRent(models.Model):
     start_date = models.DateField(verbose_name='Начало аренды', null=True, blank=True)
     end_date = models.DateField(verbose_name='Конец аренды', null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
-    deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Залог', default=0.00)
+    deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Депозит', default=0.00)
     delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Стоимость доставки')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
@@ -130,13 +130,27 @@ class RequestRent(models.Model):
 
         else:
             original = RequestRent.objects.get(pk=self.pk)
-            if original.status != 'accept' and self.status == 'accept':
-                self.total_cost = self.calculate_rent_price()
+            with transaction.atomic():
+                super(RequestRent, self).save(*args, **kwargs)
+                if original.status != 'accept' and self.status == 'accept':
+                    self.total_cost = self.calculate_rent_price()
+                    self.create_payment()
 
         super(RequestRent, self).save(*args, **kwargs)
 
+    def create_payment(self):
+        """Создание платежа через Тиньков API"""
+        from payment.models import Payment
+
+        Payment.objects.create(
+            request_rent=self,
+            amount=self.total_cost / 100 * float(self.vehicle.owner.lessor.commission),
+            deposite=self.deposit_cost,
+            delivery=self.delivery_cost
+        )
+
     def __str__(self):
-        return f'request rent id-{self.pk}'
+        return f'Заявка на аренду id-{self.pk}'
 
     class Meta:
         verbose_name = 'Заявка на аренду'
