@@ -22,25 +22,25 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 content=f"Поступил запрос аренды на {instance.vehicle}",
                 url=f"wss://{HOST_URL.split('//')[1]}/ws/chat/{chat.pk}/"
             )
-    # Перенесено в платежи
-    # if instance.status == 'accept':
-    #     instance.create_chat()
-    #
-    #     chat = Chat.objects.get(request_rent=instance)
-    #
-    #     if not Trip.objects.filter(
-    #         object_id=instance.object_id,
-    #         start_date=instance.start_date,
-    #         end_date=instance.end_date
-    #     ).exists():
-    #         Trip.objects.create(
-    #             organizer=instance.organizer,
-    #             content_type=instance.content_type,
-    #             object_id=instance.object_id,
-    #             start_date=instance.start_date,
-    #             end_date=instance.end_date,
-    #             start_time=instance.start_time,
-    #             end_time=instance.end_time,
-    #             total_cost=instance.total_cost,
-    #             chat=chat
-    #         )
+
+    if instance.status == 'accept':
+        instance.create_chat()
+
+        chat = Chat.objects.get(request_rent=instance)
+
+        if not Trip.objects.filter(
+            object_id=instance.object_id,
+            start_date=instance.start_date,
+            end_date=instance.end_date
+        ).exists():
+            Trip.objects.create(
+                organizer=instance.organizer,
+                content_type=instance.content_type,
+                object_id=instance.object_id,
+                start_date=instance.start_date,
+                end_date=instance.end_date,
+                start_time=instance.start_time,
+                end_time=instance.end_time,
+                total_cost=instance.total_cost,
+                chat=chat
+            )

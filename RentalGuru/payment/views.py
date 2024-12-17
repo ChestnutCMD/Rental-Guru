@@ -1,6 +1,8 @@
 import hashlib
+import logging
 import random
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from rest_framework import status, viewsets
@@ -10,11 +12,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from RentalGuru import settings
-from chat.models import Chat, Trip
+from chat.models import Trip
 from notification.models import Notification
 from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
 from payment.serializers import PaymentSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentViewSet(viewsets.ViewSet):
@@ -105,54 +110,56 @@ class TinkoffCallbackView(APIView):
         #     return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
 
         required_fields = {'PaymentId', 'Status', 'Amount'}
-        if not required_fields.issubset(data.keys()):
-            return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+        missing_fields = required_fields - data.keys()
+        if missing_fields:
+            return Response(
+                {"error": f"Отсутствуют обязательные поля: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         payment_id = data['PaymentId']
         status_from_tinkoff = data['Status']
-        amount = int(data['Amount']) / 100
 
-        payment = get_object_or_404(Payment, payment_id=payment_id)
+        try:
+            payment = get_object_or_404(Payment, payment_id=payment_id)
+        except Http404:
+            logger.error(f"Платеж с ID {payment_id} не найден.")
+            raise
 
         if status_from_tinkoff == 'CONFIRMED':
             payment.status = 'success'
             payment.paid_at = now()
             payment.save()
 
-            instance = payment.request_rent
-            instance.create_chat()
-
-            chat = Chat.objects.get(request_rent=instance)
-
-            if not Trip.objects.filter(
-                    object_id=instance.object_id,
-                    start_date=instance.start_date,
-                    end_date=instance.end_date
-            ).exists():
-                Trip.objects.create(
-                    organizer=instance.organizer,
-                    content_type=instance.content_type,
-                    object_id=instance.object_id,
-                    start_date=instance.start_date,
-                    end_date=instance.end_date,
-                    start_time=instance.start_time,
-                    end_time=instance.end_time,
-                    total_cost=instance.total_cost,
-                    chat=chat
-                )
-            Notification.objects.create(
-                user=instance.organizer,
-                content=f"Оплачена заявка на аренду {instance.vehicle}. Начало аренды: {instance.start_date}/{instance.start_time}"
-            )
-            return Response({"message": "Payment confirmed successfully"}, status=status.HTTP_200_OK)
+            trip = Trip.objects.filter(chat=payment.request_rent.chat).first()
+            if trip:
+                trip.status = 'started'
+                trip.save()
+                try:
+                    Notification.objects.create(
+                        user=trip.organizer,
+                        content=f"Оплачена заявка на аренду {trip.vehicle}. Начало аренды: {trip.start_date}/{trip.start_time}"
+                    )
+                except Exception as e:
+                    logger.error(f"Ошибка создания уведомления: {e}")
+            else:
+                logger.warning(f"Trip для чата {payment.request_rent.chat} не найден.")
+            return Response({"message": "Платеж успешно подтвержден"}, status=status.HTTP_200_OK)
 
         elif status_from_tinkoff in ['CANCELLED', 'REJECTED']:
             payment.status = 'failed'
             payment.save()
-            Notification.objects.create(
-                user=payment.request_rent.organizer,
-                content=f"Не удалось обработать платеж #{payment_id} по заявке #{payment.request_rent.id}"
-            )
-            return Response({"message": f"Payment failed with status {status_from_tinkoff}"}, status=status.HTTP_200_OK)
+            try:
+                Notification.objects.create(
+                    user=payment.request_rent.organizer,
+                    content=f"Не удалось обработать платеж #{payment_id} по заявке #{payment.request_rent.id}"
+                )
 
-        return Response({"message": "Unhandled status"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(f"Ошибка создания уведомления: {e}")
+            return Response(
+                {"message": f"Не удалось выполнить платеж со статусом {status_from_tinkoff}"},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY
+            )
+        logger.warning(f"Необработанный статус платежа: {status_from_tinkoff}")
+        return Response({"message": "Необработанный статус"}, status=status.HTTP_400_BAD_REQUEST)

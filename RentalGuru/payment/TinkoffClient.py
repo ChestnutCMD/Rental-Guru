@@ -2,7 +2,7 @@ import hashlib
 
 import requests
 
-from RentalGuru.settings import TINYPAY_TERMINAL_KEY, TINYPAY_PASSWORD, TINYPAY_CALLBACK
+from RentalGuru.settings import TINYPAY_TERMINAL_KEY, TINYPAY_PASSWORD, TINYPAY_SUCCESS_URL, TINYPAY_FAIL_URL
 
 
 class TinkoffAPI:
@@ -10,8 +10,8 @@ class TinkoffAPI:
         self.base_url = 'https://securepay.tinkoff.ru/v2/'
         self.terminal_key = TINYPAY_TERMINAL_KEY
         self.secret_key = TINYPAY_PASSWORD
-        self.redirect_url = TINYPAY_CALLBACK
-
+        self.success_url = TINYPAY_SUCCESS_URL
+        self.fail_url = TINYPAY_FAIL_URL
 
     def _generate_token(self, params):
         """Генерация токена для подписи"""
@@ -26,8 +26,8 @@ class TinkoffAPI:
             'OrderId': order_id,
             'Amount': amount,
             'Description': description,
-            'SuccessURL': self.redirect_url,
-            'FailURL': self.redirect_url,
+            'SuccessURL': self.success_url,
+            'FailURL': self.fail_url,
         }
         payload['Token'] = self._generate_token(payload)
         response = requests.post(f'{self.base_url}Init', json=payload)
