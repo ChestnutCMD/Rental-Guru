@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import requests
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.utils import timezone
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
@@ -26,7 +26,7 @@ from RentalGuru.settings import redis_1
 from chat.models import Trip
 from franchise.models import Franchise
 from influencer.models import Influencer
-from notification.models import Notification
+from notification.models import Notification, FCMToken
 from vehicle.models import Vehicle
 from .filters import RenterDocumentsFilter
 from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor, Currency, Language
@@ -684,20 +684,21 @@ class OauthCallback(APIView):
 
         provider = serializer.validated_data['provider']
         code = serializer.validated_data['code']
+        fcm_token = request.data.get('fcm_token', '')
 
         if not code or not provider:
             return Response({"error": "Код или провайдер не переданы"}, status=400)
 
         if provider == 'mailru':
-            return self.handle_mailru(code)
+            return self.handle_mailru(code, fcm_token)
         if provider == 'vk':
-            return self.handle_vk(code)
+            return self.handle_vk(code, fcm_token)
         if provider == 'yandex':
-            return self.handle_yandex(code)
+            return self.handle_yandex(code, fcm_token)
         else:
             return Response({"error": "Не правильно указан провайдер"}, status=400)
 
-    def handle_mailru(self, code):
+    def handle_mailru(self, code, fcm_token):
         token_url = 'https://oauth.mail.ru/token'
 
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
@@ -749,6 +750,8 @@ class OauthCallback(APIView):
                 user.last_login = timezone.now()
                 user.save()
 
+            self.update_fcm_token(user=user, fcm_token=fcm_token)
+
             if 'image' in user_data and not user.avatar:
                 avatar_url = user_data['image']
                 avatar_response = requests.get(avatar_url)
@@ -776,7 +779,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_vk(self, code):
+    def handle_vk(self, code, fcm_token):
         token_url = 'https://oauth.vk.com/access_token'
 
         data = {
@@ -843,6 +846,8 @@ class OauthCallback(APIView):
                 user.last_login = timezone.now()
                 user.save()
 
+            self.update_fcm_token(user=user, fcm_token=fcm_token)
+
             if created:
                 Renter.objects.create(user=user)
 
@@ -873,7 +878,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_yandex(self, code):
+    def handle_yandex(self, code, fcm_token):
         token_url = 'https://oauth.yandex.com/token'
         redirect_uri = settings.YANDEX_REDIRECT_URI
 
@@ -925,6 +930,8 @@ class OauthCallback(APIView):
                 user.last_login = timezone.now()
                 user.save()
 
+            self.update_fcm_token(user=user, fcm_token=fcm_token)
+
             if created:
                 Renter.objects.create(user=user)
 
@@ -952,3 +959,17 @@ class OauthCallback(APIView):
 
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
+
+    def update_fcm_token(self, user, fcm_token):
+        """
+        Обновление или создание FCM токена.
+        """
+        if fcm_token:
+            try:
+                FCMToken.objects.update_or_create(
+                    user=user,
+                    token=fcm_token,
+                    defaults={'last_used_at': now()}
+                )
+            except IntegrityError:
+                pass
