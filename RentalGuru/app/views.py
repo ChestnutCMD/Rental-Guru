@@ -166,17 +166,20 @@ class SetPasswordView(APIView):
             )
 
             # Привязка к франшизе или инфлюенсеру
-            if cache_data['member_type'] == 'lessor' and cache_data.get('franchise_id'):
-                franchise = Franchise.objects.get(id=cache_data['franchise_id'])
-                Lessor.objects.create(user=user, franchise=franchise)
-            elif cache_data['member_type'] == 'renter' and cache_data.get('influencer_id'):
-                influencer = Influencer.objects.get(id=cache_data['influencer_id'])
+            member_type = cache_data.get('member_type')
+            franchise_id = cache_data.get('franchise_id')
+            influencer_id = cache_data.get('influencer_id')
+
+            if member_type == 'lessor':
+                franchise = Franchise.objects.filter(id=franchise_id).first()
+                influencer = Influencer.objects.filter(id=influencer_id).first()
+                Lessor.objects.create(user=user, franchise=franchise, influencer=influencer)
+            elif member_type == 'renter':
+                influencer = Influencer.objects.filter(id=influencer_id).first()
                 Renter.objects.create(user=user, influencer=influencer)
-            elif cache_data['member_type'] == 'lessor':
-                Lessor.objects.create(user=user)
-            elif cache_data['member_type'] == 'renter':
-                Renter.objects.create(user=user)
+
             message = "Пользователь успешно зарегистрирован."
+
         elif cache_data['action'] == 'reset_password':
             user = User.objects.get(email=email)
             user.set_password(password)

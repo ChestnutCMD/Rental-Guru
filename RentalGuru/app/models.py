@@ -78,6 +78,8 @@ class Lessor(models.Model):
     franchise = models.ForeignKey(Franchise, on_delete=models.SET_NULL, null=True, blank=True, related_name='lessors',
                                   verbose_name='Франшиза')
     commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия', default=10.0)
+    influencer = models.ForeignKey(Influencer, null=True, blank=True, on_delete=models.SET_NULL, related_name='lessors',
+                                   verbose_name='Инфлюенсер')
 
     def clean(self):
         if not (1 <= float(self.commission) <= 90):

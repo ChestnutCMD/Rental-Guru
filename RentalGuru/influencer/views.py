@@ -3,6 +3,8 @@ import string
 
 from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
+from django.db.models import Count, Value
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -38,7 +40,8 @@ class InfluencerViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return Influencer.objects.select_related('user').prefetch_related('referral_links', 'user__trip_organized_trips')
+        return Influencer.objects.select_related('user').prefetch_related('referral_links',
+                                                                          'user__trip_organized_trips')
 
     @extend_schema(
         summary="Список инфлюенсеров",
@@ -116,7 +119,10 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Возвращает QR-коды только текущего пользователя."""
-        return QRCode.objects.filter(influencer__user=self.request.user)
+        return QRCode.objects.filter(influencer__user=self.request.user).annotate(
+            total_users=Coalesce(Count('influencer__renters', distinct=True), Value(0)) +
+                        Coalesce(Count('influencer__lessors', distinct=True), Value(0))
+        ).select_related('influencer', 'influencer__user')
 
     def perform_create(self, serializer):
         """Добавляет текущего пользователя как инфлюенсера."""

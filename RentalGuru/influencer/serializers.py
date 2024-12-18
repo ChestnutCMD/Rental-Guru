@@ -1,10 +1,12 @@
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework import serializers
 
-from chat.models import Trip
+from chat.models import Trip, RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, Contact, BankDetails, Organization, \
     InfluencerDocuments
 from notification.models import Notification
+from payment.models import Payment
+from vehicle.models import Vehicle
 
 
 class InfluencerSerializer(serializers.ModelSerializer):
@@ -194,6 +196,9 @@ class InfluencerRequestListSerializer(serializers.ModelSerializer):
 class QRCodeSerializer(serializers.ModelSerializer):
     influencer_name = serializers.CharField(source='influencer.user.first_name', read_only=True)
     qr_code_url = serializers.SerializerMethodField()
+    total_users = serializers.IntegerField(read_only=True)
+    turnover = serializers.SerializerMethodField()
+    income = serializers.SerializerMethodField()
 
     class Meta:
         model = QRCode
@@ -204,9 +209,12 @@ class QRCodeSerializer(serializers.ModelSerializer):
             'channel',
             'referral_link',
             'qr_code_url',
-            'created_at'
+            'created_at',
+            'total_users',
+            'turnover',
+            'income'
         ]
-        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer']
+        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'total_users', 'turnover', 'income']
 
     def get_qr_code_url(self, obj):
         """Возвращает полный URL к QR-коду."""
@@ -214,3 +222,30 @@ class QRCodeSerializer(serializers.ModelSerializer):
         if obj.qr_code_image:
             return request.build_absolute_uri(obj.qr_code_image.url) if request else obj.qr_code_image.url
         return None
+
+    def get_turnover(self, obj):
+        """
+        Подсчет суммы успешных платежей для QR-кода инфлюенсера.
+        """
+        request_rents = RequestRent.objects.filter(
+            Q(organizer__renter__influencer=obj.influencer) |
+            Q(content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+              object_id__in=Vehicle.objects.filter(
+                  owner__renter__influencer=obj.influencer
+              ).values_list('id', flat=True))
+        ).distinct()
+
+        turnover = Payment.objects.filter(
+            request_rent__in=request_rents,
+            status='success'
+        ).aggregate(total_sum=Sum('amount'))['total_sum'] or 0
+
+        return turnover
+
+    def get_income(self, obj):
+        """
+        Подсчет дохода инфлюенсера на основе оборота и комиссии.
+        """
+        turnover = self.get_turnover(obj)
+        commission = getattr(obj.influencer, 'commission', 0)
+        return (turnover * commission) / 100

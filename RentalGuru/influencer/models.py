@@ -10,9 +10,10 @@ from RentalGuru import settings
 
 
 class Influencer(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='influencer', verbose_name='Пользователь')
     referral_code = models.CharField(max_length=20, unique=True, verbose_name='Реферальный код')
     organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Организация')
+    commission = models.PositiveIntegerField(default=5, null=True, blank=True)
 
     def __str__(self):
         return f'{self.user.first_name} - {self.referral_code}'
