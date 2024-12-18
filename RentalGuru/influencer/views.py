@@ -26,14 +26,14 @@ class InfluencerViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.action in ['retrieve', 'destroy']:
+        if self.action in ['retrieve', 'destroy', 'update', 'partial_update']:
             return InfluencerDetailSerializer
         return InfluencerSerializer
 
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [permission() for permission in [IsAdminOrManager]]
-        if self.action in ['retrieve', 'destroy']:
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             return [permission() for permission in [IsAdminOrInfluencer]]
         return super().get_permissions()
 

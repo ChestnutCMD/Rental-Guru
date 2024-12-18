@@ -7,12 +7,13 @@ import qrcode
 from django.core.files.base import ContentFile
 from django.db import models
 from RentalGuru import settings
-from franchise.models import City
 
 
 class Influencer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     referral_code = models.CharField(max_length=20, unique=True, verbose_name='Реферальный код')
+    organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Организация')
+    #document = models.OneToOneField('InfluencerDocuments', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Паспортные данные')
 
     def __str__(self):
         return f'{self.user.first_name} - {self.referral_code}'
@@ -34,6 +35,72 @@ class Influencer(models.Model):
     class Meta:
         verbose_name = 'Инфлюенсер'
         verbose_name_plural = 'Инфлюенсеры'
+
+
+def upload_renter_document(instance, filename):
+    return f'media/images/users/{instance.influencer.user.id}/documents/{filename}'
+
+
+class InfluencerDocuments(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'На проверке'),
+        ('approved', 'Подтверждено'),
+        ('rejected', 'Отклонено'),
+    )
+
+    influencer = models.OneToOneField(Influencer, on_delete=models.CASCADE, verbose_name='Партнер', related_name='document')
+    number = models.PositiveIntegerField(verbose_name='Серия и номер')
+    photo = models.ImageField(upload_to=upload_renter_document, verbose_name='Фото')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус проверки')
+
+    def __str__(self):
+        return f'Паспорт: {self.number}'
+
+    class Meta:
+        verbose_name = 'Паспортные данные'
+        verbose_name_plural = 'Паспортные данные'
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Название организации")
+    country = models.CharField(max_length=100, verbose_name="Страна")
+    city = models.CharField(max_length=100, verbose_name="Город")
+    address = models.CharField(max_length=255, verbose_name="Адрес")
+    contacts = models.ManyToManyField('Contact', verbose_name="Контакты", blank=True)
+    bank_details = models.OneToOneField(
+        'BankDetails',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Банковские реквизиты"
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class Contact(models.Model):
+    CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
+    contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, verbose_name="Тип контакта")
+    value = models.CharField(max_length=100, verbose_name="Значение")
+    is_primary = models.BooleanField(default=False, verbose_name="Основной контакт")
+
+    def __str__(self):
+        return f"{CONTACT_TYPE_CHOICES_DICT.get(str(self.contact_type), self.contact_type)}: {self.value}"
+
+
+CONTACT_TYPE_CHOICES_DICT = dict(Contact.CONTACT_TYPE_CHOICES)
+
+
+class BankDetails(models.Model):
+    inn = models.CharField(max_length=12, verbose_name="ИНН")
+    ogrn = models.CharField(max_length=15, verbose_name="ОГРН")
+    registration_date = models.DateField(verbose_name="Дата регистрации")
+    account_number = models.CharField(max_length=20, verbose_name="Расчетный счет")
+    account_owner = models.CharField(max_length=255, verbose_name="ФИО владельца счета")
+
+    def __str__(self):
+        return f"ИНН: {self.inn}, Счет: {self.account_number}"
 
 
 class ReferralLink(models.Model):

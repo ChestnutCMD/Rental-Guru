@@ -16,7 +16,7 @@ class IsAdminOrInfluencer(permissions.BasePermission):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return request.user.role == 'admin' or obj.user == request.user
+        return request.user.role in ['admin', 'manager'] or obj.user == request.user
 
 
 class IsAdminOrManagerForRequest(permissions.BasePermission):
