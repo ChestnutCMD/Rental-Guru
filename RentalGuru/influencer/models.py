@@ -13,7 +13,6 @@ class Influencer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     referral_code = models.CharField(max_length=20, unique=True, verbose_name='Реферальный код')
     organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Организация')
-    #document = models.OneToOneField('InfluencerDocuments', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Паспортные данные')
 
     def __str__(self):
         return f'{self.user.first_name} - {self.referral_code}'
@@ -49,7 +48,7 @@ class InfluencerDocuments(models.Model):
     )
 
     influencer = models.OneToOneField(Influencer, on_delete=models.CASCADE, verbose_name='Партнер', related_name='document')
-    number = models.PositiveIntegerField(verbose_name='Серия и номер')
+    number = models.CharField(verbose_name='Серия и номер')
     photo = models.ImageField(upload_to=upload_renter_document, verbose_name='Фото')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус проверки')
 
@@ -143,7 +142,7 @@ class InfluencerRequest(models.Model):
 
 def qr_code_upload_path(instance, filename):
     """Функция для генерации пути сохранения QR-кодов."""
-    return f'qr_codes/{instance.influencer.user.id}/{filename}'
+    return f'media/images/users/{instance.influencer.user.id}/{filename}'
 
 
 class QRCode(models.Model):
