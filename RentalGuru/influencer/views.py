@@ -120,8 +120,11 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Добавляет текущего пользователя как инфлюенсера."""
-        influencer = self.request.user.influencer
-        serializer.save(influencer=influencer)
+        try:
+            influencer = self.request.user.influencer
+            serializer.save(influencer=influencer)
+        except Influencer.DoesNotExist:
+            raise ValidationError({"detail": "У текущего пользователя нет связанного инфлюенсера."})
 
     @action(detail=True, methods=['get'], url_path='download-qr-code')
     def download_qr_code(self, request, pk=None):

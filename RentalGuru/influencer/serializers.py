@@ -206,7 +206,7 @@ class QRCodeSerializer(serializers.ModelSerializer):
             'qr_code_url',
             'created_at'
         ]
-        read_only_fields = ['referral_link', 'qr_code_url', 'created_at']
+        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer']
 
     def get_qr_code_url(self, obj):
         """Возвращает полный URL к QR-коду."""
