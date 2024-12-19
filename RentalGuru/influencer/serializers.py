@@ -187,8 +187,8 @@ class ReferralLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReferralLink
-        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count']
-        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count']
+        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count', 'income', 'turnover']
+        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count', 'income', 'turnover']
 
     def create(self, validated_data):
         validated_data['influencer'] = self.context['request'].user.influencer
