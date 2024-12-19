@@ -1,23 +1,16 @@
-import random
-import string
-
-from django.contrib.auth.hashers import make_password
-from django.db import IntegrityError
-from django.db.models import Count, Value
-from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, DestroyAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
-    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer
+    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -75,22 +68,6 @@ class InfluencerViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-@extend_schema(summary="Реферальные ссылки", description="Реферальные ссылки")
-class ReferralLinkViewSet(viewsets.ModelViewSet):
-    queryset = ReferralLink.objects.all()
-    serializer_class = ReferralLinkSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'admin':
-            return ReferralLink.objects.select_related('influencer__user')
-        return ReferralLink.objects.filter(influencer__user=user).select_related('influencer__user')
-
-    def perform_create(self, serializer):
-        serializer.save(influencer=self.request.user.influencer)
-
-
 @extend_schema(summary="Заявка на создание инфлюенсера", description="Заявка на создание инфлюенсера")
 class InfluencerRequestCreateView(CreateAPIView):
     queryset = InfluencerRequest.objects.all()
@@ -112,6 +89,22 @@ class InfluencerRequestDeleteView(DestroyAPIView):
     permission_classes = [IsAdminOrManagerForRequest]
 
 
+@extend_schema(summary="Реферальные ссылки", description="Реферальные ссылки")
+class ReferralLinkViewSet(viewsets.ModelViewSet):
+    queryset = ReferralLink.objects.all()
+    serializer_class = ReferralLinkSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return ReferralLink.objects.select_related('influencer__user')
+        return ReferralLink.objects.filter(influencer__user=user).select_related('influencer__user')
+
+    def perform_create(self, serializer):
+        serializer.save(influencer=self.request.user.influencer)
+
+
 class QRCodeViewSet(viewsets.ModelViewSet):
     queryset = QRCode.objects.all()
     serializer_class = QRCodeSerializer
@@ -119,10 +112,10 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Возвращает QR-коды только текущего пользователя."""
-        return QRCode.objects.filter(influencer__user=self.request.user).annotate(
-            total_users=Coalesce(Count('influencer__renters', distinct=True), Value(0)) +
-                        Coalesce(Count('influencer__lessors', distinct=True), Value(0))
-        ).select_related('influencer', 'influencer__user')
+        user = self.request.user
+        if user.role == 'admin':
+            return QRCode.objects.select_related('influencer__user')
+        return QRCode.objects.filter(influencer__user=self.request.user).select_related('influencer', 'influencer__user')
 
     def perform_create(self, serializer):
         """Добавляет текущего пользователя как инфлюенсера."""
@@ -143,3 +136,26 @@ class QRCodeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="{qr_code.qr_code_image.name}"'
         response['X-Accel-Redirect'] = qr_code.qr_code_image.url
         return response
+
+
+@extend_schema(summary="Промокоды", description="CRUD промокодов")
+class PromoCodeViewSet(ModelViewSet):
+    queryset = PromoCode.objects.all()
+    serializer_class = PromoCodeSerializer
+    permission_classes = [IsAdminOrManagerForRequest]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['admin', 'manager']:
+            return PromoCode.objects.all()
+        elif hasattr(user, 'influencer') and user.influencer:
+            return PromoCode.objects.filter(influencer=user.influencer)
+        return PromoCode.objects.none()
+
+    def get_permissions(self):
+        """
+        Используем разные permissions для разных методов.
+        """
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminOrManager()]

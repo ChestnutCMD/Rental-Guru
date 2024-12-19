@@ -1,9 +1,10 @@
 from django.db.models import Sum, Q
+from django.utils.timezone import now
 from rest_framework import serializers
 
 from chat.models import Trip, RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, Contact, BankDetails, Organization, \
-    InfluencerDocuments
+    InfluencerDocuments, PromoCode, RegistrationSource
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -50,21 +51,6 @@ class InfluencerSerializer(serializers.ModelSerializer):
         )
 
         return influencer
-
-
-class ReferralLinkSerializer(serializers.ModelSerializer):
-    influencer_id = serializers.IntegerField(source='influencer.id', read_only=True)
-    influencer_name = serializers.CharField(source='influencer.user.first_name', read_only=True)
-
-    class Meta:
-        model = ReferralLink
-        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count']
-        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count']
-
-    def create(self, validated_data):
-        validated_data['influencer'] = self.context['request'].user.influencer
-        referral_link = ReferralLink.objects.create(**validated_data)
-        return referral_link
 
 
 class LinkSerializer(serializers.ModelSerializer):
@@ -193,10 +179,62 @@ class InfluencerRequestListSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'city', 'telephone', 'email', 'social', 'description', 'created_at']
 
 
+class ReferralLinkSerializer(serializers.ModelSerializer):
+    influencer_id = serializers.IntegerField(source='influencer.id', read_only=True)
+    influencer_name = serializers.CharField(source='influencer.user.first_name', read_only=True)
+    turnover = serializers.SerializerMethodField()
+    income = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReferralLink
+        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count']
+        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count']
+
+    def create(self, validated_data):
+        validated_data['influencer'] = self.context['request'].user.influencer
+        referral_link = ReferralLink.objects.create(**validated_data)
+        return referral_link
+
+    def get_turnover(self, obj):
+        """
+        Подсчет суммы успешных платежей для ссылок инфлюенсера.
+        """
+        registered_users = RegistrationSource.objects.filter(
+            source_type='qr_code',
+            source_details=obj.link
+        ).values_list('user', flat=True)
+        organizer_rents = RequestRent.objects.filter(
+            organizer__in=registered_users
+        )
+
+        lessor_rents = RequestRent.objects.filter(
+            content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+            object_id__in=Vehicle.objects.filter(
+                owner__in=registered_users
+            ).values_list('id', flat=True)
+        )
+
+        all_rents = organizer_rents | lessor_rents
+
+        turnover = Payment.objects.filter(
+            request_rent__in=all_rents,
+            status='success'
+        ).aggregate(total_sum=Sum('amount'))['total_sum'] or 0
+
+        return turnover
+
+    def get_income(self, obj):
+        """
+        Подсчет дохода инфлюенсера на основе оборота и комиссии.
+        """
+        turnover = self.get_turnover(obj)
+        commission = getattr(obj.influencer, 'commission', 0)
+        return (turnover * commission) / 100
+
+
 class QRCodeSerializer(serializers.ModelSerializer):
     influencer_name = serializers.CharField(source='influencer.user.first_name', read_only=True)
     qr_code_url = serializers.SerializerMethodField()
-    total_users = serializers.IntegerField(read_only=True)
     turnover = serializers.SerializerMethodField()
     income = serializers.SerializerMethodField()
 
@@ -210,11 +248,11 @@ class QRCodeSerializer(serializers.ModelSerializer):
             'referral_link',
             'qr_code_url',
             'created_at',
-            'total_users',
+            'count',
             'turnover',
             'income'
         ]
-        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'total_users', 'turnover', 'income']
+        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'count', 'turnover', 'income']
 
     def get_qr_code_url(self, obj):
         """Возвращает полный URL к QR-коду."""
@@ -227,16 +265,40 @@ class QRCodeSerializer(serializers.ModelSerializer):
         """
         Подсчет суммы успешных платежей для QR-кода инфлюенсера.
         """
-        request_rents = RequestRent.objects.filter(
-            Q(organizer__renter__influencer=obj.influencer) |
-            Q(content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
-              object_id__in=Vehicle.objects.filter(
-                  owner__renter__influencer=obj.influencer
-              ).values_list('id', flat=True))
-        ).distinct()
+        # request_rents = RequestRent.objects.filter(
+        #     Q(organizer__renter__influencer=obj.influencer) |
+        #     Q(content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+        #       object_id__in=Vehicle.objects.filter(
+        #           owner__renter__influencer=obj.influencer
+        #       ).values_list('id', flat=True))
+        # ).distinct()
+        #
+        # turnover = Payment.objects.filter(
+        #     request_rent__in=request_rents,
+        #     status='success'
+        # ).aggregate(total_sum=Sum('amount'))['total_sum'] or 0
+        #
+        # return turnover
+
+        registered_users = RegistrationSource.objects.filter(
+            source_type='qr_code',
+            source_details=obj.referral_link
+        ).values_list('user', flat=True)
+        organizer_rents = RequestRent.objects.filter(
+            organizer__in=registered_users
+        )
+
+        lessor_rents = RequestRent.objects.filter(
+            content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+            object_id__in=Vehicle.objects.filter(
+                owner__in=registered_users
+            ).values_list('id', flat=True)
+        )
+
+        all_rents = organizer_rents | lessor_rents
 
         turnover = Payment.objects.filter(
-            request_rent__in=request_rents,
+            request_rent__in=all_rents,
             status='success'
         ).aggregate(total_sum=Sum('amount'))['total_sum'] or 0
 
@@ -246,6 +308,85 @@ class QRCodeSerializer(serializers.ModelSerializer):
         """
         Подсчет дохода инфлюенсера на основе оборота и комиссии.
         """
+        turnover = self.get_turnover(obj)
+        commission = getattr(obj.influencer, 'commission', 0)
+        return (turnover * commission) / 100
+
+
+class PromoCodeSerializer(serializers.ModelSerializer):
+    turnover = serializers.SerializerMethodField()
+    income = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PromoCode
+        fields = '__all__'
+        read_only_fields = ['count', 'turnover', 'income']
+
+    def validate(self, attrs):
+        percent = attrs.get('percent', False)
+        cash = attrs.get('cash', False)
+        count = attrs.get('count', 0)
+        expiration_date = attrs.get('expiration_date', None)
+
+        if not (percent or cash):
+            raise serializers.ValidationError(
+                'Должно быть выбрано хотя бы одно из полей: percent или cash.'
+            )
+
+        if percent and cash:
+            raise serializers.ValidationError(
+                'Поля percent и cash не могут быть выбраны одновременно.'
+            )
+
+        if percent and count > 50:
+            raise serializers.ValidationError(
+                'Если percent выбран, total не может превышать 50.'
+            )
+
+        if expiration_date and expiration_date < now():
+            raise serializers.ValidationError(
+                'Срок действия промокода не может быть в прошлом.'
+            )
+
+        return attrs
+
+    def get_turnover(self, obj):
+        """
+        Подсчет суммы успешных платежей для промокода.
+        """
+        if not obj.influencer:
+            return 0
+
+        registered_users = RegistrationSource.objects.filter(
+            source_type='promo',
+            source_details=obj.title
+        ).values_list('user', flat=True)
+
+        organizer_rents = RequestRent.objects.filter(
+            organizer__in=registered_users
+        )
+
+        lessor_rents = RequestRent.objects.filter(
+            content_type__model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+            object_id__in=Vehicle.objects.filter(
+                owner__in=registered_users
+            ).values_list('id', flat=True)
+        )
+        all_rents = organizer_rents | lessor_rents
+
+        turnover = Payment.objects.filter(
+            request_rent__in=all_rents,
+            status='success'
+        ).aggregate(total_sum=Sum('amount'))['total_sum'] or 0
+
+        return turnover
+
+    def get_income(self, obj):
+        """
+        Подсчет дохода инфлюенсера на основе оборота и комиссии.
+        """
+        if not obj.influencer:
+            return 0
         turnover = self.get_turnover(obj)
         commission = getattr(obj.influencer, 'commission', 0)
         return (turnover * commission) / 100

@@ -4,9 +4,20 @@ from io import BytesIO
 from urllib.parse import urlencode
 
 import qrcode
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import models
+from django.utils.timezone import now
+
 from RentalGuru import settings
+
+
+class RegistrationSource(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='registration_source', verbose_name='Пользователь')
+    influencer = models.ForeignKey('Influencer', on_delete=models.CASCADE, related_name='registrations', verbose_name='Инфлюенсер')
+    source_type = models.CharField(max_length=20, choices=[('referral', 'Реферальная ссылка'), ('qr_code', 'QR-код'), ('promo', 'Промокод')], verbose_name='Тип источника')
+    source_details = models.CharField(max_length=100, blank=True, verbose_name='Детали источника (ссылка, qr код и т.д.)')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
 
 
 class Influencer(models.Model):
@@ -152,6 +163,7 @@ class QRCode(models.Model):
     referral_link = models.URLField(blank=True, verbose_name='Реферальная ссылка')
     qr_code_image = models.ImageField(upload_to=qr_code_upload_path, blank=True, verbose_name='QR-код')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
 
     def save(self, *args, **kwargs):
         if not self.referral_link:
@@ -194,3 +206,49 @@ class QRCode(models.Model):
     class Meta:
         verbose_name = 'QR-код'
         verbose_name_plural = 'QR-коды'
+
+
+class PromoCode(models.Model):
+    title = models.CharField(max_length=50, unique=True, verbose_name='Заголовок')
+    influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Партнер')
+    percent = models.BooleanField(verbose_name='Процент')
+    cash = models.BooleanField(verbose_name='Бонусные рубли')
+    total = models.PositiveIntegerField(verbose_name='Колличество')
+    expiration_date = models.DateTimeField(verbose_name='Срок действия', null=True, blank=True)
+    count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
+
+    class Meta:
+        verbose_name = 'Промокод'
+        verbose_name_plural = 'Промокоды'
+
+    def __str__(self):
+        if self.percent:
+            promo = 'процент'
+        else:
+            promo = 'бонусные рубли'
+        return f'Промокод {self.title}: {self.total} {promo}'
+
+    def clean(self):
+        if not (self.percent or self.cash):
+            raise ValidationError('Должно быть выбрано хотя бы одно из полей: "Процент" или "Бонусные рубли".')
+
+        if self.percent and self.cash:
+            raise ValidationError('Поля "Процент" и "Бонусные рубли" не могут быть выбраны одновременно.')
+
+        if self.percent and int(self.total) > 50:
+            raise ValidationError('Если "Процент" выбран, "Количество" не может превышать 50.')
+
+        if self.expiration_date and self.expiration_date < now():
+            raise ValidationError('Срок действия промокода не может быть в прошлом.')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def is_active(self):
+        """
+        Проверяет, активен ли промокод в текущий момент.
+        """
+        if self.expiration_date:
+            return now() <= self.expiration_date
+        return True

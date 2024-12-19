@@ -9,7 +9,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from franchise.models import Franchise
-from influencer.models import Influencer, ReferralLink
+from influencer.models import Influencer, ReferralLink, QRCode, PromoCode
 from notification.models import FCMToken
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
@@ -38,6 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
         ref = request.query_params.get('ref', None)
+        promocode = request.query_params.get('promocode', None)
         # Проверка свободного Email
         user = User.objects.filter(email=validated_data['email'])
         if user:
@@ -62,13 +63,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         if current_user and Franchise.objects.filter(director=current_user).exists():
             franchise = Franchise.objects.get(director=current_user)
             cache_data['franchise_id'] = franchise.id
+
         # Обработка инфлюенсера по реферальному коду
-        elif ref and code:
+        elif ref:
             try:
                 referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=code)
                 cache_data['influencer_id'] = referral_link.influencer.id
+                cache_data['source_type'] = 'referral'
+                cache_data['source_details'] = referral_link.link
             except ReferralLink.DoesNotExist:
+                qr_code = QRCode.objects.get(influencer__referral_code=ref, referral_link__icontains=code)
+                cache_data['influencer_id'] = qr_code.influencer.id
+                cache_data['source_type'] = 'qr_code'
+                cache_data['source_details'] = qr_code.referral_link
+            except QRCode.DoesNotExist:
                 raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
+
+        elif promocode:
+            try:
+                promo = PromoCode.objects.get(title=promocode)
+                if promo.influencer:
+                    cache_data['influencer_id'] = promo.influencer.id
+                    cache_data['source_type'] = 'promo'
+                    cache_data['source_details'] = promocode
+            except PromoCode.DoesNotExist:
+                raise serializers.ValidationError({"referral_code": "Неправильный промокод"})
 
         # Сохранение данных в Redis на 30 минут
         redis_1.set(f"auth_{validated_data['email']}", json.dumps(cache_data), ex=1800)

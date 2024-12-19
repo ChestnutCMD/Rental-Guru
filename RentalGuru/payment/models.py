@@ -1,5 +1,4 @@
 from django.db import models
-
 from chat.models import RequestRent
 
 
@@ -26,4 +25,4 @@ class Payment(models.Model):
         verbose_name_plural = 'Платежи'
 
     def __str__(self):
-        return f'Payment {self.payment_id} for RequestRent {self.request_rent.id}'
+        return f'Платеж {self.payment_id} для заявки на аренду №{self.request_rent.id}'

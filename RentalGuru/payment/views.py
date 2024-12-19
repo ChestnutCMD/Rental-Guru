@@ -1,10 +1,10 @@
 import hashlib
 import logging
 import random
-
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -18,10 +18,10 @@ from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
 from payment.serializers import PaymentSerializer
 
-
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(summary="Платежи")
 class PaymentViewSet(viewsets.ViewSet):
     """
     ViewSet для работы с платежами
@@ -81,6 +81,7 @@ class PaymentViewSet(viewsets.ViewSet):
             return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(summary="Коллбэк для Т")
 class TinkoffCallbackView(APIView):
     """
     Обрабатывает callback'и от Тинькофф.
