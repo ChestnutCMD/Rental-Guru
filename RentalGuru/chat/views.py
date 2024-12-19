@@ -247,6 +247,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 content = f'Вам отказано в аренде транспорта {instance.vehicle} по причине: {denied_reason}'
                 url = ''
                 Notification.objects.create(user=instance.organizer, content=content, url=url)
+                serializer.save(user=self.request.user)
 
             # Обработка принятия заявки
             if new_status == 'accept':
@@ -266,7 +267,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
                 # Преобразование дат в строки
                 for availability in availabilities:
-                    availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d') #TODO AttributeError: 'NoneType' object has no attribute 'strftime'
+                    availability['start_date'] = availability['start_date'].strftime('%Y-%m-%d')
                     availability['end_date'] = availability['end_date'].strftime('%Y-%m-%d')
 
                 sub_period = {'start_date': instance.start_date.strftime('%Y-%m-%d'),
