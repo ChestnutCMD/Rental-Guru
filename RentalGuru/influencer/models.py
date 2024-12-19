@@ -119,6 +119,7 @@ class ReferralLink(models.Model):
     channel = models.CharField(max_length=50, verbose_name='Название канала')
     link = models.URLField(blank=True, verbose_name='Ссылка')
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True)
 
     def __str__(self):
         return f'{self.influencer.user.first_name} - {self.channel}'
@@ -216,6 +217,7 @@ class PromoCode(models.Model):
     total = models.PositiveIntegerField(verbose_name='Колличество')
     expiration_date = models.DateTimeField(verbose_name='Срок действия', null=True, blank=True)
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True)
 
     class Meta:
         verbose_name = 'Промокод'

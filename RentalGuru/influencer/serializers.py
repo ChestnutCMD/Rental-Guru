@@ -187,8 +187,8 @@ class ReferralLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReferralLink
-        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count', 'income', 'turnover']
-        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count', 'income', 'turnover']
+        fields = ['id', 'influencer_id', 'influencer_name', 'channel', 'link', 'count', 'income', 'turnover', 'created_at']
+        read_only_fields = ['id', 'influencer_id', 'influencer_name', 'link', 'count', 'income', 'turnover', 'created_at']
 
     def create(self, validated_data):
         validated_data['influencer'] = self.context['request'].user.influencer
@@ -252,7 +252,7 @@ class QRCodeSerializer(serializers.ModelSerializer):
             'turnover',
             'income'
         ]
-        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'count', 'turnover', 'income']
+        read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'count', 'turnover', 'income', 'created_at']
 
     def get_qr_code_url(self, obj):
         """Возвращает полный URL к QR-коду."""
@@ -320,7 +320,7 @@ class PromoCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoCode
         fields = '__all__'
-        read_only_fields = ['count', 'turnover', 'income']
+        read_only_fields = ['count', 'turnover', 'income', 'created_at']
 
     def validate(self, attrs):
         percent = attrs.get('percent', False)
