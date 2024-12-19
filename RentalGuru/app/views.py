@@ -215,7 +215,8 @@ class SetPasswordView(APIView):
 @extend_schema(summary="Пользователи CRUD", description="""\nРегистрация, получение списка пользователей, 
                                                             получение пользователя по ID, обновление, удаление.
                                                             Метод пост может принимать параметры:\n
-                            /?ref=<referral_code>&code=<link_code>""")
+                            /?ref=<referral_code>&code=<link_code>
+                            /?promocode=<promocode>""")
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
