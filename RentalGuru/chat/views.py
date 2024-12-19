@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from RentalGuru import settings
-from app.models import User, RenterDocuments
 from notification.models import Notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .filters import  MessageFilter

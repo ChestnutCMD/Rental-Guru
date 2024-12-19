@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from feedback.models import Feedback
+from notification.models import Notification
 from vehicle.models import RatingUpdateLog
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 
@@ -40,6 +41,22 @@ class TripSerializer(serializers.ModelSerializer):
         representation['content_type'] = instance.content_type.model
         return representation
 
+    def update(self, instance, validated_data):
+        previous_status = instance.status
+        new_status = validated_data.get('status', previous_status)
+
+        instance = super().update(instance, validated_data)
+
+        if previous_status != 'finished' and new_status == 'finished':
+            Notification.objects.create(
+                user=instance.organizer,
+                content=f"Поездка c транспортом {instance.vehicle} была завершена."
+            )
+            Notification.objects.create(
+                user=instance.vehicle.owner,
+                content=f"Поездка c транспортом {instance.vehicle} была завершена."
+            )
+        return instance
 
 class RequestRentSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.CharField(write_only=True)
