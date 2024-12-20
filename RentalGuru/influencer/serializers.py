@@ -12,15 +12,16 @@ from vehicle.models import Vehicle
 
 class InfluencerSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
-    email = serializers.EmailField(source='user.email')
+    email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_of_birth = serializers.DateField(source='user.date_of_birth')
-    avatar = serializers.ImageField(source='user.avatar')
+    avatar = serializers.ImageField(source='user.avatar', required=False)
+    telephone = serializers.CharField(source='user.telephone')
 
     class Meta:
         model = Influencer
-        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'date_of_birth', 'avatar']
+        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'date_of_birth', 'avatar', 'telephone']
         read_only_fields = ['id', 'referral_code', 'email']
 
     def create(self, validated_data):
@@ -92,8 +93,9 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_of_birth = serializers.DateField(source='user.date_of_birth')
-    avatar = serializers.ImageField(source='user.avatar')
+    avatar = serializers.ImageField(source='user.avatar', required=False)
     email = serializers.EmailField(source='user.email')
+    telephone = serializers.CharField(source='user.telephone')
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     organization = OrganizationSerializer()
     document = InfluencerDocumentsSerializer(required=False, allow_null=True)
@@ -104,7 +106,7 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Influencer
         fields = ['id', 'user_id', 'first_name', 'last_name', 'referral_code', 'referral_links', 'total_clicks',
-                  'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email']
+                  'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email', 'telephone']
         read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income', 'email']
 
     def get_total_clicks(self, obj):
@@ -125,6 +127,12 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
             user.first_name = user_data['first_name']
         if 'last_name' in user_data:
             user.last_name = user_data['last_name']
+        if 'date_of_birth' in user_data:
+            user.date_of_birth = user_data['date_of_birth']
+        if 'telephone' in user_data:
+            user.telephone = user_data['telephone']
+        if 'avtar' in user_data:
+            user.avatar = user_data['telephone']
         user.save()
 
         organization_data = validated_data.pop('organization', None)
