@@ -1,5 +1,6 @@
 from django.db import models
 from chat.models import RequestRent
+from influencer.models import PromoCode
 
 
 class Payment(models.Model):
@@ -15,7 +16,7 @@ class Payment(models.Model):
     deposite = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Депозит')
     delivery = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Стоимость доставки')
     status = models.CharField(max_length=8, choices=STATUS_CHOICES, default='pending', verbose_name='Статус платежа')
-    promo_code = models.ForeignKey('PromoCode', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Примененный промокод')
+    promo_code = models.ForeignKey(PromoCode, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Примененный промокод')
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Сумма скидки')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
