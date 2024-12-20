@@ -254,3 +254,13 @@ class PromoCode(models.Model):
         if self.expiration_date:
             return now() <= self.expiration_date
         return True
+
+
+class UsedPromoCode(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='used_promo_codes', verbose_name='Арендатор')
+    promo_code = models.ForeignKey(PromoCode, on_delete=models.CASCADE, related_name='used_by', verbose_name='Промокод')
+    applied_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата применения')
+    used = models.BooleanField(default=False, verbose_name='Использован')
+
+    class Meta:
+        unique_together = ('user', 'promo_code')

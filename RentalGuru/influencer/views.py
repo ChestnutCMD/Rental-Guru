@@ -1,3 +1,5 @@
+from django.db import transaction
+from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -5,9 +7,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer
@@ -64,8 +67,19 @@ class InfluencerViewSet(ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        """Удаление инфлюенсера."""
-        return super().destroy(request, *args, **kwargs)
+        """Удаление инфлюенсера и связанного пользователя."""
+        instance = self.get_object()
+
+        with transaction.atomic():
+            user = instance.user
+            user.delete()
+
+            instance.delete()
+
+        return Response(
+            {"message": "Инфлюенсер и связанный пользователь успешно удалены."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
 
 @extend_schema(summary="Заявка на создание инфлюенсера", description="Заявка на создание инфлюенсера")
@@ -159,3 +173,50 @@ class PromoCodeViewSet(ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
         return [IsAuthenticated(), IsAdminOrManager()]
+
+
+class ApplyPromoCodeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request={
+            'application/json': {
+                'promocode': 'string',
+            }
+        },
+        responses={
+            200: {'message': 'Промокод успешно применен.'},
+            400: {'message': 'Ошибка при применении промокода.'}
+        }
+    )
+    def post(self, request):
+        if not hasattr(request.user, 'renter'):
+            raise ValidationError('Доступно только для пользователей с ролью арендатора.')
+
+        renter = request.user.renter
+        promo_code_title = request.data.get('promocode')
+
+        if not promo_code_title:
+            raise ValidationError('Не указан промокод.')
+
+        try:
+            promo_code = PromoCode.objects.get(title=promo_code_title)
+        except PromoCode.DoesNotExist:
+            raise ValidationError('Промокод не найден.')
+
+        if promo_code.expiration_date and promo_code.expiration_date < now():
+            raise ValidationError('Срок действия промокода истек.')
+
+        if UsedPromoCode.objects.filter(renter=renter, promo_code=promo_code).exists():
+            raise ValidationError('Вы уже использовали этот промокод.')
+
+        if promo_code.cash:
+            renter.bonus_account += promo_code.total
+            renter.save()
+        elif promo_code.percent:
+            UsedPromoCode.objects.create(renter=renter, promo_code=promo_code)
+
+        promo_code.count += 1
+        promo_code.save()
+
+        return Response({'message': 'Промокод успешно применен.'})

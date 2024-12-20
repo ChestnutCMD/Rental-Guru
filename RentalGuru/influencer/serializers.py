@@ -15,11 +15,13 @@ class InfluencerSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
+    date_of_birth = serializers.DateField(source='user.date_of_birth')
+    avatar = serializers.ImageField(source='user.avatar')
 
     class Meta:
         model = Influencer
-        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id']
-        read_only_fields = ['id', 'referral_code']
+        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'date_of_birth', 'avatar']
+        read_only_fields = ['id', 'referral_code', 'email']
 
     def create(self, validated_data):
         from django.contrib.auth import get_user_model
@@ -89,6 +91,9 @@ class InfluencerDocumentsSerializer(serializers.ModelSerializer):
 class InfluencerDetailSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
+    date_of_birth = serializers.DateField(source='user.date_of_birth')
+    avatar = serializers.ImageField(source='user.avatar')
+    email = serializers.EmailField(source='user.email')
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     organization = OrganizationSerializer()
     document = InfluencerDocumentsSerializer(required=False, allow_null=True)
@@ -98,8 +103,9 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Influencer
-        fields = ['id', 'user_id', 'first_name', 'last_name', 'referral_code', 'referral_links', 'total_clicks', 'total_rent_income', 'organization', 'document']
-        read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income',]
+        fields = ['id', 'user_id', 'first_name', 'last_name', 'referral_code', 'referral_links', 'total_clicks',
+                  'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email']
+        read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income', 'email']
 
     def get_total_clicks(self, obj):
         return obj.referral_links.aggregate(total_count=Sum('count'))['total_count'] or 0
@@ -390,3 +396,4 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         turnover = self.get_turnover(obj)
         commission = getattr(obj.influencer, 'commission', 0)
         return (turnover * commission) / 100
+
