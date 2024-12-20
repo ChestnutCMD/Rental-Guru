@@ -21,6 +21,8 @@ from .models import User, Lessor, Renter, RenterDocuments, FavoriteList, Currenc
 from RentalGuru.settings import redis_1
 from .task import send_verification_email
 
+import logging
+logger = logging.getLogger(__name__)
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
@@ -38,6 +40,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
         ref = request.query_params.get('ref', None)
+        ref_code = request.query_params.get('code', None)
         promocode = request.query_params.get('promocode', None)
         # Проверка свободного Email
         user = User.objects.filter(email=validated_data['email'])
@@ -67,17 +70,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         # Обработка инфлюенсера по реферальному коду
         elif ref:
             try:
-                referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=code)
+                referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=ref_code)
                 cache_data['influencer_id'] = referral_link.influencer.id
                 cache_data['source_type'] = 'referral'
                 cache_data['source_details'] = referral_link.link
             except ReferralLink.DoesNotExist:
-                qr_code = QRCode.objects.get(influencer__referral_code=ref, referral_link__icontains=code)
-                cache_data['influencer_id'] = qr_code.influencer.id
-                cache_data['source_type'] = 'qr_code'
-                cache_data['source_details'] = qr_code.referral_link
-            except QRCode.DoesNotExist:
-                raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
+                try:
+                    qr_code = QRCode.objects.get(influencer__referral_code=ref, referral_link__icontains=ref_code)
+                    cache_data['influencer_id'] = qr_code.influencer.id
+                    cache_data['source_type'] = 'qr_code'
+                    cache_data['source_details'] = qr_code.referral_link
+                except QRCode.DoesNotExist:
+                    raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
 
         elif promocode:
             try:
