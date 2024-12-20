@@ -94,7 +94,7 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name')
     date_of_birth = serializers.DateField(source='user.date_of_birth')
     avatar = serializers.ImageField(source='user.avatar', required=False)
-    email = serializers.EmailField(source='user.email')
+    email = serializers.EmailField(source='user.email', read_only=True)
     telephone = serializers.CharField(source='user.telephone')
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     organization = OrganizationSerializer()
@@ -118,11 +118,22 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
         return total_income['total_cost'] or 0.00
 
     def update(self, instance, validated_data):
-        request = self.context.get('request')
-        user_role = getattr(request.user, 'role', None) if request else None
-
         user_data = validated_data.pop('user', {})
-        user = instance.user
+        self.update_user(instance.user, user_data)
+
+        organization_data = validated_data.pop('organization', None)
+        if organization_data:
+            self.update_organization(instance, organization_data)
+
+        document_data = validated_data.pop('document', None)
+        if document_data:
+            self.update_document(instance, document_data)
+
+        instance.save()
+        return instance
+
+    def update_user(self, user, user_data):
+        """Обновление данных пользователя."""
         if 'first_name' in user_data:
             user.first_name = user_data['first_name']
         if 'last_name' in user_data:
@@ -131,54 +142,72 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
             user.date_of_birth = user_data['date_of_birth']
         if 'telephone' in user_data:
             user.telephone = user_data['telephone']
-        if 'avtar' in user_data:
-            user.avatar = user_data['telephone']
         user.save()
 
-        organization_data = validated_data.pop('organization', None)
-        if organization_data:
-            organization = instance.organization
-            if not organization:
-                organization = Organization.objects.create(**organization_data)
-                instance.organization = organization
-            else:
-                contacts_data = organization_data.pop('contacts', [])
-                bank_details_data = organization_data.pop('bank_details', {})
-                for attr, value in organization_data.items():
-                    setattr(organization, attr, value)
-                organization.save()
-                if contacts_data is not None:
-                    contact_ids = []
-                    for contact_data in contacts_data:
-                        contact, _ = Contact.objects.get_or_create(**contact_data)
-                        contact_ids.append(contact.id)
-                    organization.contacts.set(contact_ids)
-                else:
-                    organization.contacts.clear()
-                if bank_details_data:
-                    bank_details, _ = BankDetails.objects.update_or_create(
-                        id=organization.bank_details.id if organization.bank_details else None,
-                        defaults=bank_details_data
-                    )
-                    organization.bank_details = bank_details
-                    organization.save()
+    def update_organization(self, instance, organization_data):
+        """Обновление или создание организации и связанных объектов."""
+        organization = instance.organization
+        if not organization:
+            contacts_data = organization_data.pop('contacts', [])
+            bank_details_data = organization_data.pop('bank_details', None)
+            organization = Organization.objects.create(**organization_data)
+            instance.organization = organization
+            self.update_contacts(organization, contacts_data)
+            if bank_details_data:
+                self.update_bank_details(organization, bank_details_data)
+        else:
+            contacts_data = organization_data.pop('contacts', [])
+            bank_details_data = organization_data.pop('bank_details', None)
+            for attr, value in organization_data.items():
+                setattr(organization, attr, value)
+            organization.save()
 
-        document_data = validated_data.pop('document', None)
-        if document_data:
-            if document_data.get('status') != 'pending':
-                if user_role not in ['admin', 'manager']:
-                    document_data['status'] = 'pending'
-            if hasattr(instance, 'document') and instance.document:
-                for attr, value in document_data.items():
-                    setattr(instance.document, attr, value)
-                instance.document.save()
-            else:
-                document_data['influencer'] = instance
-                document = InfluencerDocuments.objects.create(**document_data)
-                instance.document = document
+            self.update_contacts(organization, contacts_data)
+            if bank_details_data:
+                self.update_bank_details(organization, bank_details_data)
 
-        instance.save()
-        return instance
+    def update_contacts(self, organization, contacts_data):
+        """Обновление контактов организации."""
+        if contacts_data is not None:
+            contact_ids = []
+            for contact_data in contacts_data:
+                contact, _ = Contact.objects.update_or_create(
+                    organization=organization,
+                    contact_type=contact_data['contact_type'],
+                    defaults=contact_data
+                )
+                contact_ids.append(contact.id)
+            organization.contacts.set(contact_ids)
+        else:
+            organization.contacts.clear()
+
+    def update_bank_details(self, organization, bank_details_data):
+        """Обновление или создание банковских данных."""
+        if organization.bank_details:
+            for attr, value in bank_details_data.items():
+                setattr(organization.bank_details, attr, value)
+            organization.bank_details.save()
+        else:
+            bank_details = BankDetails.objects.create(**bank_details_data)
+            organization.bank_details = bank_details
+            organization.save()
+
+    def update_document(self, instance, document_data):
+        """Обновление документа инфлюенсера."""
+        request = self.context.get('request')
+        user_role = getattr(request.user, 'role', None) if request else None
+
+        if document_data.get('status') != 'pending' and user_role not in ['admin', 'manager']:
+            document_data['status'] = 'pending'
+
+        if hasattr(instance, 'document') and instance.document:
+            for attr, value in document_data.items():
+                setattr(instance.document, attr, value)
+            instance.document.save()
+        else:
+            document_data['influencer'] = instance
+            document = InfluencerDocuments.objects.create(**document_data)
+            instance.document = document
 
 
 class InfluencerRequestCreateSerializer(serializers.ModelSerializer):
