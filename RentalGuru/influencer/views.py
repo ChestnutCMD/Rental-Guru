@@ -179,6 +179,8 @@ class ApplyPromoCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        summary="Применить промокод",
+        description="Применение промокода",
         request={
             'application/json': {
                 'promocode': 'string',
@@ -193,7 +195,7 @@ class ApplyPromoCodeView(APIView):
         if not hasattr(request.user, 'renter'):
             raise ValidationError('Доступно только для пользователей с ролью арендатора.')
 
-        renter = request.user.renter
+        user = request.user
         promo_code_title = request.data.get('promocode')
 
         if not promo_code_title:
@@ -207,14 +209,17 @@ class ApplyPromoCodeView(APIView):
         if promo_code.expiration_date and promo_code.expiration_date < now():
             raise ValidationError('Срок действия промокода истек.')
 
-        if UsedPromoCode.objects.filter(renter=renter, promo_code=promo_code).exists():
+        if UsedPromoCode.objects.filter(user=user, promo_code=promo_code, used=False).exists():
+            raise ValidationError('Вы уже применили этот промокод.')
+
+        if UsedPromoCode.objects.filter(user=user, promo_code=promo_code, used=True).exists():
             raise ValidationError('Вы уже использовали этот промокод.')
 
         if promo_code.cash:
-            renter.bonus_account += promo_code.total
-            renter.save()
+            user.renter.bonus_account += promo_code.total
+            user.renter.save()
         elif promo_code.percent:
-            UsedPromoCode.objects.create(renter=renter, promo_code=promo_code)
+            UsedPromoCode.objects.create(user=user, promo_code=promo_code)
 
         promo_code.count += 1
         promo_code.save()

@@ -25,7 +25,7 @@ from RentalGuru import settings
 from RentalGuru.settings import redis_1
 from chat.models import Trip
 from franchise.models import Franchise
-from influencer.models import Influencer, RegistrationSource, ReferralLink, QRCode, PromoCode
+from influencer.models import Influencer, RegistrationSource, ReferralLink, QRCode, PromoCode, UsedPromoCode
 from notification.models import Notification, FCMToken
 from vehicle.models import Vehicle
 from .filters import RenterDocumentsFilter
@@ -198,6 +198,7 @@ class SetPasswordView(APIView):
                     promocode = PromoCode.objects.get(title=cache_data.get('source_details'))
                     promocode.count += 1
                     promocode.save()
+                    UsedPromoCode.objects.create(user=user, promo_code=promocode)
             message = "Пользователь успешно зарегистрирован."
 
         elif cache_data['action'] == 'reset_password':

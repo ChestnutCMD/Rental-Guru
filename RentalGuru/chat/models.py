@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
 from RentalGuru import settings
+from influencer.models import UsedPromoCode
 
 
 class RequestRent(models.Model):
@@ -142,11 +143,33 @@ class RequestRent(models.Model):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
 
+        amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission)
+
+        discount_amount = 0
+        promo_code = getattr(self, 'active_promocode', None)
+
+        if promo_code:
+            if promo_code.percent:
+                discount_amount = amount * (promo_code.total / 100)
+            elif promo_code.cash:
+                discount_amount = promo_code.total
+
+            UsedPromoCode.objects.filter(
+                user=self.organizer,
+                promo_code=promo_code,
+                used=False
+            ).update(used=True)
+
+            promo_code.count += 1
+            promo_code.save()
+
         Payment.objects.create(
             request_rent=self,
-            amount=self.total_cost / 100 * float(self.vehicle.owner.lessor.commission),
+            amount=max(amount - discount_amount, 0),
             deposite=self.deposit_cost,
-            delivery=self.delivery_cost
+            delivery=self.delivery_cost,
+            promo_code=promo_code,
+            discount_amount=discount_amount
         )
 
     def __str__(self):

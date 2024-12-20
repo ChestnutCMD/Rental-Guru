@@ -3,6 +3,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from feedback.models import Feedback
+from influencer.models import PromoCode
+from influencer.utils import check_promocode
 from notification.models import Notification
 from vehicle.models import RatingUpdateLog
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
@@ -58,9 +60,11 @@ class TripSerializer(serializers.ModelSerializer):
             )
         return instance
 
+
 class RequestRentSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.CharField(write_only=True)
     vehicle_id = serializers.IntegerField(write_only=True)
+    promocode = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = RequestRent
@@ -68,6 +72,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
         read_only_fields = ['organizer', 'total_cost', 'deposit_cost', 'delivery_cost', 'on_request']
 
     def create(self, validated_data):
+        promocode = validated_data.pop('promocode', None)
         vehicle_type = validated_data.pop('vehicle_type')
         vehicle_id = validated_data.pop('vehicle_id')
 
@@ -82,6 +87,14 @@ class RequestRentSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         validated_data['is_deleted'] = False
         validated_data['organizer'] = request.user
+
+        if promocode:
+            promo_result = check_promocode(request.user, promocode)
+            if promo_result == "Промокод не применен. Нажмите на кнопку применить":
+                raise serializers.ValidationError({"promocode": "Промокод не применен. Нажмите на кнопку применить"})
+            elif promo_result is True:
+                # Сохраняем промокод для использования в create_payment
+                validated_data['active_promocode'] = PromoCode.objects.get(title=promocode)
 
         return super().create(validated_data)
 
