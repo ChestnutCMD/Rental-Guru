@@ -1,11 +1,9 @@
 import json
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
 from RentalGuru import settings
-from influencer.models import UsedPromoCode
 
 
 class RequestRent(models.Model):
@@ -32,7 +30,8 @@ class RequestRent(models.Model):
     end_date = models.DateField(verbose_name='Конец аренды', null=True, blank=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Итоговая стоимость', default=0.00)
     deposit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Депозит', default=0.00)
-    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name='Стоимость доставки')
+    delivery_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
+                                        verbose_name='Стоимость доставки')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
     is_deleted = models.BooleanField(default=False, verbose_name='Удалена')
@@ -145,27 +144,26 @@ class RequestRent(models.Model):
 
         amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission)
 
-        discount_amount = 0
         promo_code = getattr(self, 'active_promocode', None)
+        bonus = getattr(self, 'used_bonus', None)
+        discount_amount = 0
 
         if promo_code:
-            if promo_code.percent:
-                discount_amount = amount * (promo_code.total / 100)
-            elif promo_code.cash:
-                discount_amount = promo_code.total
-
-            UsedPromoCode.objects.filter(
-                user=self.organizer,
-                promo_code=promo_code,
-                used=False
-            ).update(used=True)
-
-            promo_code.count += 1
-            promo_code.save()
+            discount_amount = amount / 100 * promo_code.total
+            amount -= discount_amount
+        elif bonus:
+            renter = self.organizer.renter
+            if amount < bonus:
+                renter.bonus_account -= amount
+                amount = 0  # TODO платеж не пройдет, надо уточнить какую максимальную сумму можно списывать
+            else:
+                renter.bonus_account -= bonus
+                amount -= bonus
+            renter.save()
 
         Payment.objects.create(
             request_rent=self,
-            amount=max(amount - discount_amount, 0),
+            amount=amount,
             deposite=self.deposit_cost,
             delivery=self.delivery_cost,
             promo_code=promo_code,
@@ -181,7 +179,8 @@ class RequestRent(models.Model):
 
 
 class Chat(models.Model):
-    request_rent = models.OneToOneField(RequestRent, null=True, on_delete=models.SET_NULL, verbose_name='Заявка на аренду')
+    request_rent = models.OneToOneField(RequestRent, null=True, on_delete=models.SET_NULL,
+                                        verbose_name='Заявка на аренду')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:

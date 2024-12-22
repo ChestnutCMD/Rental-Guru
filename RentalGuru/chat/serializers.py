@@ -65,6 +65,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.CharField(write_only=True)
     vehicle_id = serializers.IntegerField(write_only=True)
     promocode = serializers.CharField(required=False, allow_blank=True)
+    bonus = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = RequestRent
@@ -72,7 +73,8 @@ class RequestRentSerializer(serializers.ModelSerializer):
         read_only_fields = ['organizer', 'total_cost', 'deposit_cost', 'delivery_cost', 'on_request']
 
     def create(self, validated_data):
-        promocode = validated_data.pop('promocode', None)
+        query_promocode = validated_data.pop('promocode', None)
+        bonus = validated_data.pop('bonus', None)
         vehicle_type = validated_data.pop('vehicle_type')
         vehicle_id = validated_data.pop('vehicle_id')
 
@@ -84,17 +86,23 @@ class RequestRentSerializer(serializers.ModelSerializer):
         validated_data['content_type'] = content_type
         validated_data['object_id'] = vehicle_id
         validated_data['status'] = 'unknown'
-        request = self.context.get('request')
         validated_data['is_deleted'] = False
+        request = self.context.get('request')
         validated_data['organizer'] = request.user
+        renter = validated_data['organizer'].renter
 
-        if promocode:
-            promo_result = check_promocode(request.user, promocode)
-            if promo_result == "Промокод не применен. Нажмите на кнопку применить":
-                raise serializers.ValidationError({"promocode": "Промокод не применен. Нажмите на кнопку применить"})
-            elif promo_result is True:
-                # Сохраняем промокод для использования в create_payment
-                validated_data['active_promocode'] = PromoCode.objects.get(title=promocode)
+        # Обработка промокодов и бонусных рублей
+        if query_promocode:
+            promo_code = check_promocode(request.user, query_promocode)
+            if promo_code == "Промокод не применен. Нажмите на кнопку применить":
+                raise serializers.ValidationError({"message": promo_code})
+            else:
+                validated_data['active_promocode'] = promo_code
+        elif bonus:
+            if renter.bonus_account < bonus:
+                raise serializers.ValidationError({"message": "На бонусном счете недостаточно средств"})
+            else:
+                validated_data['used_bonus'] = bonus
 
         return super().create(validated_data)
 

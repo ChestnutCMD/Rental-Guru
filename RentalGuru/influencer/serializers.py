@@ -366,24 +366,18 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         read_only_fields = ['count', 'turnover', 'income', 'created_at']
 
     def validate(self, attrs):
-        percent = attrs.get('percent', False)
-        cash = attrs.get('cash', False)
-        count = attrs.get('count', 0)
-        expiration_date = attrs.get('expiration_date', None)
+        promo_type = attrs.get('type')
+        total = attrs.get('total', 0)
+        expiration_date = attrs.get('expiration_date')
 
-        if not (percent or cash):
+        if not promo_type:
             raise serializers.ValidationError(
-                'Должно быть выбрано хотя бы одно из полей: percent или cash.'
+                'Поле "Тип промокода" обязательно для заполнения.'
             )
 
-        if percent and cash:
+        if promo_type == PromoCode.TYPE_PERCENT and total > 50:
             raise serializers.ValidationError(
-                'Поля percent и cash не могут быть выбраны одновременно.'
-            )
-
-        if percent and count > 50:
-            raise serializers.ValidationError(
-                'Если percent выбран, total не может превышать 50.'
+                'Если выбран тип "Процент", "Количество" не может превышать 50.'
             )
 
         if expiration_date and expiration_date < now():
@@ -415,6 +409,7 @@ class PromoCodeSerializer(serializers.ModelSerializer):
                 owner__in=registered_users
             ).values_list('id', flat=True)
         )
+
         all_rents = organizer_rents | lessor_rents
 
         turnover = Payment.objects.filter(
@@ -430,6 +425,7 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         """
         if not obj.influencer:
             return 0
+
         turnover = self.get_turnover(obj)
         commission = getattr(obj.influencer, 'commission', 0)
         return (turnover * commission) / 100

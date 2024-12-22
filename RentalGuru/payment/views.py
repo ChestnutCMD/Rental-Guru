@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from RentalGuru import settings
 from chat.models import Trip
+from influencer.models import UsedPromoCode
 from notification.models import Notification
 from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
@@ -131,6 +132,9 @@ class TinkoffCallbackView(APIView):
             payment.status = 'success'
             payment.paid_at = now()
             payment.save()
+
+            if payment.promo_code:
+                UsedPromoCode.objects.filter(user=payment.request_rent.organizer, promo_code=payment.promo_code).update(used=True)
 
             trip = Trip.objects.filter(chat=payment.request_rent.chat).first()
             if trip:

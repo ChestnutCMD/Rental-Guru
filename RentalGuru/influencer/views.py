@@ -214,13 +214,19 @@ class ApplyPromoCodeView(APIView):
 
         if UsedPromoCode.objects.filter(user=user, promo_code=promo_code, used=True).exists():
             raise ValidationError('Вы уже использовали этот промокод.')
+        try:
+            with transaction.atomic():
+                if promo_code.type == 'cash':
+                    user.renter.bonus_account += promo_code.total
+                    user.renter.save()
+                    UsedPromoCode.objects.create(user=user, promo_code=promo_code, used=True)
+                    promo_code.count += 1
+                    promo_code.save()
+                    return Response({'message': 'Промокод успешно применен.'})
+        except Exception as e:
+            raise ValidationError({'message': f'Ошибка при применении промокода: {str(e)}'})
 
-        if promo_code.cash:
-            user.renter.bonus_account += promo_code.total
-            user.renter.save()
-        elif promo_code.percent:
-            UsedPromoCode.objects.create(user=user, promo_code=promo_code)
-
+        UsedPromoCode.objects.create(user=user, promo_code=promo_code)
         promo_code.count += 1
         promo_code.save()
 

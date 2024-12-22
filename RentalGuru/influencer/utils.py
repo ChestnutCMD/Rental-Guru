@@ -27,5 +27,4 @@ def check_promocode(user, promocode):
     # Промокод не применен
     if not UsedPromoCode.objects.filter(user=user, promo_code=promo_code, used=False).exists():
         return "Промокод не применен. Нажмите на кнопку применить"
-
-    return True
+    return promo_code

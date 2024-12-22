@@ -210,11 +210,18 @@ class QRCode(models.Model):
 
 
 class PromoCode(models.Model):
+    PERCENT = 'percent'
+    CASH = 'cash'
+
+    PROMO_TYPE_CHOICES = [
+        (PERCENT, 'Процент'),
+        (CASH, 'Бонусные рубли'),
+    ]
+
     title = models.CharField(max_length=50, unique=True, verbose_name='Заголовок')
-    influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Партнер')
-    percent = models.BooleanField(verbose_name='Процент')
-    cash = models.BooleanField(verbose_name='Бонусные рубли')
-    total = models.PositiveIntegerField(verbose_name='Колличество')
+    influencer = models.ForeignKey('Influencer', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Партнер')
+    type = models.CharField(max_length=10, choices=PROMO_TYPE_CHOICES, verbose_name='Тип промокода')
+    total = models.PositiveIntegerField(verbose_name='Количество')
     expiration_date = models.DateTimeField(verbose_name='Срок действия', null=True, blank=True)
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True)
@@ -224,21 +231,14 @@ class PromoCode(models.Model):
         verbose_name_plural = 'Промокоды'
 
     def __str__(self):
-        if self.percent:
-            promo = 'процент'
-        else:
-            promo = 'бонусные рубли'
-        return f'Промокод {self.title}: {self.total} {promo}'
+        return f'Промокод {self.title}: {self.total} {self.get_type_display()}'
 
     def clean(self):
-        if not (self.percent or self.cash):
-            raise ValidationError('Должно быть выбрано хотя бы одно из полей: "Процент" или "Бонусные рубли".')
+        if not self.type:
+            raise ValidationError('Поле "Тип промокода" обязательно для заполнения.')
 
-        if self.percent and self.cash:
-            raise ValidationError('Поля "Процент" и "Бонусные рубли" не могут быть выбраны одновременно.')
-
-        if self.percent and int(self.total) > 50:
-            raise ValidationError('Если "Процент" выбран, "Количество" не может превышать 50.')
+        if self.type == self.PERCENT and self.total > 50:
+            raise ValidationError('Если выбран тип "Процент", "Количество" не может превышать 50.')
 
         if self.expiration_date and self.expiration_date < now():
             raise ValidationError('Срок действия промокода не может быть в прошлом.')

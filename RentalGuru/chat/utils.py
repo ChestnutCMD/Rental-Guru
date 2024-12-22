@@ -1,4 +1,7 @@
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, date
+
+from influencer.models import PromoCode
 
 
 def subtract_periods(periods, sub_period):
@@ -70,3 +73,16 @@ def calculate_age(birth_date):
     today = date.today()
     age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
     return age
+
+
+class PromoCodeStrategy(ABC):
+    @abstractmethod
+    def apply(self, amount: float, promo_code: PromoCode, bonus_account) -> float:
+        """Применяет промокод и возвращает обновленную сумму"""
+        pass
+
+
+class PercentDiscountStrategy(PromoCodeStrategy):
+    def apply(self, amount: float, promo_code: PromoCode, bonus_account) -> float:
+        discount = amount * (promo_code.total / 100)
+        return max(amount - discount, 0)
