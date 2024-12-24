@@ -10,18 +10,33 @@ from payment.models import Payment
 from vehicle.models import Vehicle
 
 
-class InfluencerSerializer(serializers.ModelSerializer):
+class InfluencerListSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+    date_of_birth = serializers.DateField(source='user.date_of_birth', read_only=True)
+    avatar = serializers.ImageField(source='user.avatar', required=False, read_only=True)
+    telephone = serializers.CharField(source='user.telephone', read_only=True)
+
+    class Meta:
+        model = Influencer
+        fields = [
+            'id', 'user_id', 'email', 'first_name', 'last_name',
+            'date_of_birth', 'avatar', 'telephone', 'referral_code',
+        ]
+
+
+class InfluencerSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    email = serializers.EmailField(source='user.email')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
-    date_of_birth = serializers.DateField(source='user.date_of_birth')
-    avatar = serializers.ImageField(source='user.avatar', required=False)
     telephone = serializers.CharField(source='user.telephone')
 
     class Meta:
         model = Influencer
-        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'date_of_birth', 'avatar', 'telephone']
+        fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'telephone']
         read_only_fields = ['id', 'referral_code']
 
     def create(self, validated_data):
@@ -32,6 +47,7 @@ class InfluencerSerializer(serializers.ModelSerializer):
         email = user_data.get('email')
         first_name = user_data.get('first_name')
         last_name = user_data.get('last_name')
+        telephone = user_data.get('telephone')
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
@@ -43,6 +59,7 @@ class InfluencerSerializer(serializers.ModelSerializer):
             first_name=first_name,
             last_name=last_name,
             password=password,
+            telephone=telephone,
             role='member',
         )
 

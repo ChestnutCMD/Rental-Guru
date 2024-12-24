@@ -13,7 +13,8 @@ from rest_framework.viewsets import ModelViewSet
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
-    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer
+    InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
+    InfluencerListSerializer
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -26,6 +27,8 @@ class InfluencerViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['retrieve', 'destroy', 'update', 'partial_update']:
             return InfluencerDetailSerializer
+        if self.action == 'list':
+            return InfluencerListSerializer
         return InfluencerSerializer
 
     def get_permissions(self):
