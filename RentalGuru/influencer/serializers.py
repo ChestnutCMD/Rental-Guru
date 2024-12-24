@@ -22,7 +22,7 @@ class InfluencerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Influencer
         fields = ['id', 'email', 'first_name', 'last_name', 'referral_code', 'user_id', 'date_of_birth', 'avatar', 'telephone']
-        read_only_fields = ['id', 'referral_code', 'email']
+        read_only_fields = ['id', 'referral_code']
 
     def create(self, validated_data):
         from django.contrib.auth import get_user_model
