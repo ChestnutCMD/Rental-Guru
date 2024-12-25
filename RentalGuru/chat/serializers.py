@@ -91,18 +91,19 @@ class RequestRentSerializer(serializers.ModelSerializer):
         validated_data['organizer'] = request.user
         renter = validated_data['organizer'].renter
 
-        # Обработка промокодов и бонусных рублей
+        # Обработка промокодов
         if query_promocode:
             promo_code = check_promocode(request.user, query_promocode)
-            if promo_code == "Промокод не применен. Нажмите на кнопку применить":
+            if isinstance(promo_code, str):
                 raise serializers.ValidationError({"message": promo_code})
-            else:
-                validated_data['active_promocode'] = promo_code
-        elif bonus:
+            validated_data['promocode'] = promo_code
+
+        # Обработка бонусов
+        if bonus:
             if renter.bonus_account < bonus:
                 raise serializers.ValidationError({"message": "На бонусном счете недостаточно средств"})
             else:
-                validated_data['used_bonus'] = bonus
+                validated_data['bonus'] = bonus  # Сохраняем бонус в поле модели
 
         return super().create(validated_data)
 

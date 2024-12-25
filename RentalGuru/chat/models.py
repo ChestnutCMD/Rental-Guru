@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
 from RentalGuru import settings
+from influencer.models import PromoCode
 
 
 class RequestRent(models.Model):
@@ -35,6 +36,8 @@ class RequestRent(models.Model):
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
     is_deleted = models.BooleanField(default=False, verbose_name='Удалена')
+    promocode = models.OneToOneField(PromoCode, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Активный промокод")
+    bonus = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Использованные бонусные рубли")
 
     @property
     def owner(self):
@@ -44,7 +47,7 @@ class RequestRent(models.Model):
     def rental_days(self):
         """Подсчитывает количество дней аренды."""
         if self.start_date and self.end_date:
-            return (self.end_date - self.start_date).days + 1
+            return (self.end_date - self.start_date).days
         return 0
 
     def create_chat(self):
@@ -143,30 +146,33 @@ class RequestRent(models.Model):
         from payment.models import Payment
 
         amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission)
-
-        promo_code = getattr(self, 'active_promocode', None)
-        bonus = getattr(self, 'used_bonus', None)
         discount_amount = 0
 
-        if promo_code:
-            discount_amount = amount / 100 * promo_code.total
+        # Обработка промокода
+        if self.promocode:
+            discount_amount = amount / 100 * float(
+                self.promocode.total)
             amount -= discount_amount
-        elif bonus:
+
+        # Обработка бонусов
+        if self.bonus:
+            bonus = float(self.bonus)
             renter = self.organizer.renter
-            if amount < bonus:
+            if amount <= bonus:
                 renter.bonus_account -= amount
-                amount = 0  # TODO платеж не пройдет, надо уточнить какую максимальную сумму можно списывать
+                amount = 0  # Все покрыто бонусами
             else:
                 renter.bonus_account -= bonus
                 amount -= bonus
             renter.save()
 
+        # Создание записи о платеже
         Payment.objects.create(
             request_rent=self,
             amount=amount,
             deposite=self.deposit_cost,
             delivery=self.delivery_cost,
-            promo_code=promo_code,
+            promo_code=self.promocode,
             discount_amount=discount_amount
         )
 

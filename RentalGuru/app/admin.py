@@ -140,7 +140,7 @@ class RenterAdmin(BaseUserRelatedAdmin):
 
     fieldsets = [
         ('Основная информация', {
-            'fields': ('user', 'verification')
+            'fields': ('user', 'verification', 'bonus_account')
         }),
         ('Информация о пользователе', {
             'fields': (
