@@ -186,7 +186,14 @@ class ApplyPromoCodeView(APIView):
         description="Применение промокода",
         request={
             'application/json': {
-                'promocode': 'string',
+                'type': 'object',  # Объект JSON
+                'properties': {
+                    'promocode': {
+                        'type': 'string',
+                        'description': 'Промокод, который нужно применить'
+                    }
+                },
+                'required': ['promocode'],
             }
         },
         responses={
