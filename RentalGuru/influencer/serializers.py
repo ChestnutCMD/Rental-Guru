@@ -1,4 +1,4 @@
-from django.db.models import Sum, Q
+from django.db.models import Sum
 from django.utils.timezone import now
 from rest_framework import serializers
 
@@ -85,6 +85,12 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ['id', 'contact_type', 'value', 'is_primary']
 
 
+class ContactCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ['id', 'organization', 'contact_type', 'value', 'is_primary']
+
+
 class BankDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankDetails
@@ -92,12 +98,54 @@ class BankDetailsSerializer(serializers.ModelSerializer):
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    contacts = ContactSerializer(many=True)
+    contacts = ContactSerializer(source='contact_set', many=True)
     bank_details = BankDetailsSerializer()
 
     class Meta:
         model = Organization
         fields = ['id', 'name', 'country', 'city', 'address', 'contacts', 'bank_details']
+
+    def create(self, validated_data):
+        contacts_data = validated_data.pop('contact_set', [])
+        bank_details_data = validated_data.pop('bank_details', None)
+
+        bank_details = None
+        if bank_details_data:
+            bank_details = BankDetails.objects.create(**bank_details_data)
+
+        organization = Organization.objects.create(bank_details=bank_details, **validated_data)
+
+        for contact_data in contacts_data:
+            Contact.objects.create(organization=organization, **contact_data)
+
+        return organization
+
+    def update(self, instance, validated_data):
+        contacts_data = validated_data.pop('contact_set', [])
+        bank_details_data = validated_data.pop('bank_details', None)
+
+        # Обновление данных организации
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Обновление банковских данных
+        if bank_details_data:
+            if instance.bank_details:
+                for attr, value in bank_details_data.items():
+                    setattr(instance.bank_details, attr, value)
+                instance.bank_details.save()
+            else:
+                bank_details = BankDetails.objects.create(**bank_details_data)
+                instance.bank_details = bank_details
+                instance.save()
+
+        # Обновить контакты - удалить старые и создать новые
+        instance.contact_set.all().delete()
+        for contact_data in contacts_data:
+            Contact.objects.create(organization=instance, **contact_data)
+
+        return instance
 
 
 class InfluencerDocumentsSerializer(serializers.ModelSerializer):
@@ -131,7 +179,8 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
     def get_total_rent_income(self, obj):
         renter_users = obj.renters.values_list('user_id', flat=True)
-        total_income = Trip.objects.filter(organizer_id__in=renter_users, status='finished').aggregate(total_cost=Sum('total_cost'))
+        total_income = Trip.objects.filter(organizer_id__in=renter_users, status='finished').aggregate(
+            total_cost=Sum('total_cost'))
         return total_income['total_cost'] or 0.00
 
     def update(self, instance, validated_data):
@@ -151,52 +200,37 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
     def update_user(self, user, user_data):
         """Обновление данных пользователя."""
-        if 'first_name' in user_data:
-            user.first_name = user_data['first_name']
-        if 'last_name' in user_data:
-            user.last_name = user_data['last_name']
-        if 'date_of_birth' in user_data:
-            user.date_of_birth = user_data['date_of_birth']
-        if 'telephone' in user_data:
-            user.telephone = user_data['telephone']
+        for field in ['first_name', 'last_name', 'date_of_birth', 'telephone']:
+            if field in user_data:
+                setattr(user, field, user_data[field])
         user.save()
 
     def update_organization(self, instance, organization_data):
         """Обновление или создание организации и связанных объектов."""
         organization = instance.organization
+        contacts_data = organization_data.pop('contact_set', [])
+        bank_details_data = organization_data.pop('bank_details', None)
+
         if not organization:
-            contacts_data = organization_data.pop('contacts', [])
-            bank_details_data = organization_data.pop('bank_details', None)
-            organization = Organization.objects.create(**organization_data)
-            instance.organization = organization
-            self.update_contacts(organization, contacts_data)
+            bank_details = None
             if bank_details_data:
-                self.update_bank_details(organization, bank_details_data)
+                bank_details = BankDetails.objects.create(**bank_details_data)
+
+            organization = Organization.objects.create(bank_details=bank_details, **organization_data)
+            instance.organization = organization
+            instance.save()
         else:
-            contacts_data = organization_data.pop('contacts', [])
-            bank_details_data = organization_data.pop('bank_details', None)
             for attr, value in organization_data.items():
                 setattr(organization, attr, value)
             organization.save()
 
-            self.update_contacts(organization, contacts_data)
             if bank_details_data:
                 self.update_bank_details(organization, bank_details_data)
 
-    def update_contacts(self, organization, contacts_data):
-        """Обновление контактов организации."""
-        if contacts_data is not None:
-            contact_ids = []
-            for contact_data in contacts_data:
-                contact, _ = Contact.objects.update_or_create(
-                    organization=organization,
-                    contact_type=contact_data['contact_type'],
-                    defaults=contact_data
-                )
-                contact_ids.append(contact.id)
-            organization.contacts.set(contact_ids)
-        else:
-            organization.contacts.clear()
+        # Update contacts
+        organization.contact_set.all().delete()
+        for contact_data in contacts_data:
+            Contact.objects.create(organization=organization, **contact_data)
 
     def update_bank_details(self, organization, bank_details_data):
         """Обновление или создание банковских данных."""
@@ -300,18 +334,7 @@ class QRCodeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QRCode
-        fields = [
-            'id',
-            'influencer',
-            'influencer_name',
-            'channel',
-            'referral_link',
-            'qr_code_url',
-            'created_at',
-            'count',
-            'turnover',
-            'income'
-        ]
+        fields = ['id', 'influencer', 'influencer_name', 'channel', 'referral_link', 'qr_code_url', 'created_at', 'count', 'turnover', 'income']
         read_only_fields = ['referral_link', 'qr_code_url', 'created_at', 'influencer', 'count', 'turnover', 'income', 'created_at']
 
     def get_qr_code_url(self, obj):
@@ -446,4 +469,3 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         turnover = self.get_turnover(obj)
         commission = getattr(obj.influencer, 'commission', 0)
         return (turnover * commission) / 100
-

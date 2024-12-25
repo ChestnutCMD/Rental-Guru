@@ -179,7 +179,8 @@ class RenterDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Renter
-        fields = ['id', 'user', 'verification', 'renter_documents', 'influencer', 'rating']
+        fields = ['id', 'user', 'verification', 'renter_documents', 'influencer', 'rating', 'bonus_account']
+        read_only_fields = ['id', 'verification', 'influencer', 'rating', 'bonus_account']
 
 
 class LessorDetailSerializer(serializers.ModelSerializer):

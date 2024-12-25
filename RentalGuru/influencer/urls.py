@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ReferralLinkViewSet, InfluencerRequestCreateView, InfluencerRequestListView, \
-    InfluencerRequestDeleteView, InfluencerViewSet, QRCodeViewSet, PromoCodeViewSet, ApplyPromoCodeView
+    InfluencerRequestDeleteView, InfluencerViewSet, QRCodeViewSet, PromoCodeViewSet, ApplyPromoCodeView, \
+    ContactCreateAPIView, ContactDeleteAPIView
 
 router = DefaultRouter()
 router.register(r'referral-links', ReferralLinkViewSet)
@@ -14,6 +15,8 @@ urlpatterns = [
     path('influencer_requests/', InfluencerRequestCreateView.as_view(), name='influencer-request-create'),
     path('influencer_requests/list/', InfluencerRequestListView.as_view(), name='influencer-request-list'),
     path('influencer_requests/delete/<int:pk>/', InfluencerRequestDeleteView.as_view(), name='influencer-request-delete'),
-    path('api/v1.0/promocodes/apply/', ApplyPromoCodeView.as_view(), name='apply_promocode'),
+    path('promocodes/apply/', ApplyPromoCodeView.as_view(), name='apply_promocode'),
+    path('contacts/create/', ContactCreateAPIView.as_view(), name='create_contact'),
+    path('contacts/delete/<int:pk>/', ContactDeleteAPIView.as_view(), name='delete_contact'),
     path('', include(router.urls)),
 ]

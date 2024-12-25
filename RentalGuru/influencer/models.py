@@ -77,7 +77,6 @@ class Organization(models.Model):
     country = models.CharField(max_length=100, verbose_name="Страна")
     city = models.CharField(max_length=100, verbose_name="Город")
     address = models.CharField(max_length=255, verbose_name="Адрес")
-    contacts = models.ManyToManyField('Contact', verbose_name="Контакты", blank=True)
     bank_details = models.OneToOneField(
         'BankDetails',
         on_delete=models.SET_NULL,
@@ -92,6 +91,7 @@ class Organization(models.Model):
 
 class Contact(models.Model):
     CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
     contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, verbose_name="Тип контакта")
     value = models.CharField(max_length=100, verbose_name="Значение")
     is_primary = models.BooleanField(default=False, verbose_name="Основной контакт")

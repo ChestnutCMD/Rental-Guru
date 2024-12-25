@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -10,11 +10,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, Contact
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
-    InfluencerListSerializer
+    InfluencerListSerializer, ContactCreateSerializer
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -39,8 +39,15 @@ class InfluencerViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return Influencer.objects.select_related('user').prefetch_related('referral_links',
-                                                                          'user__trip_organized_trips')
+        return Influencer.objects.select_related(
+            'user',
+            'organization',
+            'organization__bank_details'
+        ).prefetch_related(
+            'referral_links',
+            'user__trip_organized_trips',
+            'organization__contact_set'  # Changed from contacts to contact_set
+        )
 
     @extend_schema(
         summary="Список инфлюенсеров",
@@ -76,7 +83,6 @@ class InfluencerViewSet(ModelViewSet):
         with transaction.atomic():
             user = instance.user
             user.delete()
-
             instance.delete()
 
         return Response(
@@ -122,6 +128,7 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
         serializer.save(influencer=self.request.user.influencer)
 
 
+@extend_schema(summary="CRUD QR кодов", description="CRUD QR кодов")
 class QRCodeViewSet(viewsets.ModelViewSet):
     queryset = QRCode.objects.all()
     serializer_class = QRCodeSerializer
@@ -142,6 +149,7 @@ class QRCodeViewSet(viewsets.ModelViewSet):
         except Influencer.DoesNotExist:
             raise ValidationError({"detail": "У текущего пользователя нет связанного инфлюенсера."})
 
+    @extend_schema(summary="Скачать QR код", description="Скачать QR код")
     @action(detail=True, methods=['get'], url_path='download-qr-code')
     def download_qr_code(self, request, pk=None):
         """Возвращает файл QR-кода для скачивания."""
@@ -186,7 +194,7 @@ class ApplyPromoCodeView(APIView):
         description="Применение промокода",
         request={
             'application/json': {
-                'type': 'object',  # Объект JSON
+                'type': 'object',
                 'properties': {
                     'promocode': {
                         'type': 'string',
@@ -241,3 +249,84 @@ class ApplyPromoCodeView(APIView):
         promo_code.save()
 
         return Response({'message': 'Промокод успешно применен.'})
+
+
+class ContactCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Добавить контакт",
+        description="Добавить контакт",
+        request={'application/json': {
+                'type': 'object',
+                'properties': {
+                    'contact_type': {
+                        'type': 'string',
+                        'description': 'Тип контакта'
+                    },
+                    'value': {
+                        'type': 'string',
+                        'description': 'Значение'
+                    },
+                    'is_primary': {
+                        'type': 'boolean',
+                        'description': 'Основной контакт'
+                    }
+                },
+                'required': ['contact_type', 'value']
+            }}
+    )
+    def post(self, request):
+        """
+        Создание нового контакта.
+        Связывает контакт с текущим пользователем и его организацией.
+        """
+
+        user = request.user
+        try:
+            influencer = request.user.influencer
+        except Influencer.DoesNotExist:
+            return Response({"detail": "У пользователя нет связанного с ним инфлюенсера"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not hasattr(user, "influencer") or not user.influencer.organization:
+            return Response(
+                {"detail": "Пользователь не принадлежит к какой-либо организации."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        organization = user.influencer.organization
+
+        data = request.data
+        data["organization"] = organization.id
+
+        serializer = ContactCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            contact = serializer.save()
+            return Response(ContactCreateSerializer(contact).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(summary="Удалить контакт", description="Удаляет контакт")
+class ContactDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        """
+        Удаление контакта по ID.
+        """
+
+        try:
+            contact = Contact.objects.get(pk=pk)
+        except Contact.DoesNotExist:
+            return Response({"detail": "Контакт не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            influencer = request.user.influencer
+        except Influencer.DoesNotExist:
+            return Response({"detail": "У пользователя нет связанного с ним инфлюенсера."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if contact.organization != influencer.organization:
+            return Response({"detail": "Вы не можете удалить этот контакт."}, status=status.HTTP_403_FORBIDDEN)
+
+        contact.delete()
+        return Response({"detail": "Контакт удален."}, status=status.HTTP_204_NO_CONTENT)
