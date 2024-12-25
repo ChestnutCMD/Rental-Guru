@@ -200,7 +200,7 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
     def update_user(self, user, user_data):
         """Обновление данных пользователя."""
-        for field in ['first_name', 'last_name', 'date_of_birth', 'telephone']:
+        for field in ['first_name', 'last_name', 'date_of_birth', 'telephone', 'avatar']:
             if field in user_data:
                 setattr(user, field, user_data[field])
         user.save()
