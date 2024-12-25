@@ -23,7 +23,7 @@ class RegistrationSource(models.Model):
 class Influencer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='influencer', verbose_name='Пользователь')
     referral_code = models.CharField(max_length=20, unique=True, verbose_name='Реферальный код')
-    organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Организация')
+    organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='influencer', verbose_name='Организация')
     commission = models.PositiveIntegerField(default=5, null=True, blank=True)
 
     def __str__(self):
@@ -220,7 +220,7 @@ class PromoCode(models.Model):
 
     title = models.CharField(max_length=50, unique=True, verbose_name='Заголовок')
     influencer = models.ForeignKey('Influencer', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Партнер')
-    type = models.CharField(max_length=10, choices=PROMO_TYPE_CHOICES, verbose_name='Тип промокода')
+    type = models.CharField(max_length=10, default=PERCENT, choices=PROMO_TYPE_CHOICES, verbose_name='Тип промокода')
     total = models.PositiveIntegerField(verbose_name='Количество')
     expiration_date = models.DateTimeField(verbose_name='Срок действия', null=True, blank=True)
     count = models.PositiveIntegerField(default=0, verbose_name='Количество регистраций')
