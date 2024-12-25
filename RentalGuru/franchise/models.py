@@ -41,7 +41,7 @@ class Franchise(models.Model):
     country = models.CharField(max_length=50, verbose_name='Страна')
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name='Город')
 
-    director = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Директор')
+    director = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Директор')
     commission = models.PositiveIntegerField(default=3, verbose_name='Комиссия')
     total_vehicles = models.PositiveIntegerField(default=0, verbose_name='Общее количество транспортных средств')
     categories = models.ManyToManyField(Category, related_name='franchises', verbose_name='Категории')

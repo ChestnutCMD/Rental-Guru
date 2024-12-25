@@ -3,11 +3,12 @@ from django.db.models.expressions import RawSQL
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app.models import Lessor
+from app.models import Lessor, User
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
 from .models import VehiclePark, Franchise, RequestFranchise, City
@@ -152,8 +153,8 @@ class FranchiseViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        franchise = serializer.save()
+        return Response(FranchiseRetrieveSerializer(franchise).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

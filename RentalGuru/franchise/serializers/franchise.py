@@ -5,6 +5,7 @@ from app.models import User, Lessor
 from chat.models import RequestRent
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
+from notification.models import Notification
 from vehicle.models import Vehicle
 
 
@@ -67,18 +68,48 @@ class FranchiseRetrieveSerializer(serializers.ModelSerializer):
 
 
 class FranchiseCreateSerializer(serializers.ModelSerializer):
-    director = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    email = serializers.EmailField(source='user.email')
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    telephone = serializers.CharField(source='user.telephone')
 
     class Meta:
         model = Franchise
-        fields = [
-            'name',
-            'director',
-            'unn',
-            'telephone',
-            'country',
-            'city'
-        ]
+        fields = ['id', 'name', 'unn', 'telephone', 'country', 'city', 'email', 'first_name', 'last_name']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        user_data = validated_data.pop('user')
+        email = user_data.get('email')
+        first_name = user_data.get('first_name')
+        last_name = user_data.get('last_name')
+        telephone = user_data.get('telephone')
+
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
+
+        password = User.objects.make_random_password()
+
+        user = User.objects.create_user(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            telephone=telephone,
+            role='member',
+        )
+
+        franchise = Franchise.objects.create(director=user, telephone=user.telephone, **validated_data)
+
+        Notification.objects.create(
+            user=user,
+            content=f"Добро пожаловать, {first_name}! Вы успешно зарегистрированы как директор франшизы '{franchise.name}'. Ваш пароль: {password}",
+        )
+
+        return franchise
 
 
 class VehicleParkUpdateSerializer(serializers.ModelSerializer):
