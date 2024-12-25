@@ -392,7 +392,7 @@ class PromoCodeSerializer(serializers.ModelSerializer):
                 'Поле "Тип промокода" обязательно для заполнения.'
             )
 
-        if promo_type == PromoCode.TYPE_PERCENT and total > 50:
+        if promo_type == 'percent' and total > 50:
             raise serializers.ValidationError(
                 'Если выбран тип "Процент", "Количество" не может превышать 50.'
             )
