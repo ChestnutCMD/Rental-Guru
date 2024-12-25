@@ -397,3 +397,6 @@ class OauthProviderSerializer(serializers.Serializer):
     provider = serializers.ChoiceField(choices=['vk', 'mailru', 'yandex'], required=True)
     code = serializers.CharField()
     fcm_token = serializers.CharField(required=False, allow_blank=True)
+    ref = serializers.CharField(required=False, allow_blank=True)
+    referral_code = serializers.CharField(required=False, allow_blank=True)
+    promocode = serializers.CharField(required=False, allow_blank=True)

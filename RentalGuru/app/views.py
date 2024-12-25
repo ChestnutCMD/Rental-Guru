@@ -709,29 +709,31 @@ class VerifiedEmailView(APIView):
 )
 class OauthCallback(APIView):
     def post(self, request):
+
         serializer = OauthProviderSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
+        ref = request.data.get('ref')
+        referral_code = request.data.get('referral_code')
+        promocode = request.data.get('promocode')
+        fcm_token = request.data.get('fcm_token', '')
         provider = serializer.validated_data['provider']
         code = serializer.validated_data['code']
-        fcm_token = request.data.get('fcm_token', '')
-
+        print(f"Request data: {request.data}")
+        print(f"данные получены {ref}, {referral_code}, {promocode}")
         if not code or not provider:
             return Response({"error": "Код или провайдер не переданы"}, status=400)
 
-        if provider == 'mailru':
-            return self.handle_mailru(code, fcm_token)
-        if provider == 'vk':
-            return self.handle_vk(code, fcm_token)
-        if provider == 'yandex':
-            return self.handle_yandex(code, fcm_token)
+        handler = getattr(self, f"handle_{provider}", None)
+        if handler:
+            return handler(code, fcm_token, ref, referral_code, promocode)
         else:
-            return Response({"error": "Не правильно указан провайдер"}, status=400)
+            return Response({"error": "Неправильный провайдер"}, status=400)
 
-    def handle_mailru(self, code, fcm_token):
+    def handle_mailru(self, code, fcm_token, ref, referral_code, promocode):
         token_url = 'https://oauth.mail.ru/token'
-
+        print(f"данные переданы в хэндл {ref}, {referral_code}, {promocode}")
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
         data = {
             'grant_type': 'authorization_code',
@@ -776,7 +778,7 @@ class OauthCallback(APIView):
 
             if created:
                 Renter.objects.create(user=user)
-
+                referal_check(user, ref, referral_code, promocode)  # Проверка реферрала
             if not created:
                 user.last_login = timezone.now()
                 user.save()
@@ -810,7 +812,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_vk(self, code, fcm_token):
+    def handle_vk(self, code, fcm_token, ref, referral_code, promocode):
         token_url = 'https://oauth.vk.com/access_token'
 
         data = {
@@ -873,14 +875,15 @@ class OauthCallback(APIView):
                 'last_login': timezone.now()
             })
 
+            if created:
+                Renter.objects.create(user=user)
+                referal_check(user, ref, referral_code, promocode)  # Проверка реферрала
+
             if not created:
                 user.last_login = timezone.now()
                 user.save()
 
             self.update_fcm_token(user=user, fcm_token=fcm_token)
-
-            if created:
-                Renter.objects.create(user=user)
 
             if avatar_url:
                 avatar_response = requests.get(avatar_url)
@@ -909,7 +912,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_yandex(self, code, fcm_token):
+    def handle_yandex(self, code, fcm_token, ref, referral_code, promocode):
         token_url = 'https://oauth.yandex.com/token'
         redirect_uri = settings.YANDEX_REDIRECT_URI
 
@@ -957,14 +960,15 @@ class OauthCallback(APIView):
                 'telephone': phone
             })
 
+            if created:
+                Renter.objects.create(user=user)
+                referal_check(user, ref, referral_code, promocode)  # Проверка реферрала
+
             if not created:
                 user.last_login = timezone.now()
                 user.save()
 
             self.update_fcm_token(user=user, fcm_token=fcm_token)
-
-            if created:
-                Renter.objects.create(user=user)
 
             if avatar_url:
                 avatar_url_full = f"https://avatars.yandex.net/get-yapic/{avatar_url}/islands-retina-50"
