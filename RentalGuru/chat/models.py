@@ -166,6 +166,8 @@ class RequestRent(models.Model):
                 amount -= bonus
             renter.save()
 
+        influencer = getattr(self.organizer.renter, 'influencer', None)
+
         # Создание записи о платеже
         Payment.objects.create(
             request_rent=self,
@@ -173,7 +175,8 @@ class RequestRent(models.Model):
             deposite=self.deposit_cost,
             delivery=self.delivery_cost,
             promo_code=self.promocode,
-            discount_amount=discount_amount
+            discount_amount=discount_amount,
+            influencer=influencer
         )
 
     def __str__(self):

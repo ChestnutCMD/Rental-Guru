@@ -40,15 +40,31 @@ class InfluencerViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return Influencer.objects.select_related(
-            'user',
-            'organization',
-            'organization__bank_details'
-        ).prefetch_related(
-            'referral_links',
-            'user__trip_organized_trips',
-            'organization__contact_set'  # Changed from contacts to contact_set
-        )
+        user = self.request.user
+
+        if user.role in ['admin', 'manager']:
+            return Influencer.objects.select_related(
+                'user',
+                'organization',
+                'organization__bank_details'
+            ).prefetch_related(
+                'referral_links',
+                'user__trip_organized_trips',
+                'organization__contact_set'
+            )
+
+        if hasattr(user, 'influencer') and user.influencer:
+            return Influencer.objects.filter(id=user.influencer.id).select_related(
+                'user',
+                'organization',
+                'organization__bank_details'
+            ).prefetch_related(
+                'referral_links',
+                'user__trip_organized_trips',
+                'organization__contact_set'
+            )
+
+        return Influencer.objects.none()
 
     @extend_schema(
         summary="Список инфлюенсеров",

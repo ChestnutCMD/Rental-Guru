@@ -19,12 +19,42 @@ class InfluencerListSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(source='user.avatar', required=False, read_only=True)
     telephone = serializers.CharField(source='user.telephone', read_only=True)
 
+    turnover = serializers.SerializerMethodField()
+    income = serializers.SerializerMethodField()
+    total_clicks = serializers.SerializerMethodField()
+
     class Meta:
         model = Influencer
         fields = [
-            'id', 'user_id', 'email', 'first_name', 'last_name',
-            'date_of_birth', 'avatar', 'telephone', 'referral_code',
+            'id', 'user_id', 'email', 'first_name', 'last_name', 'turnover', 'income', 'total_clicks',
+            'date_of_birth', 'avatar', 'telephone', 'referral_code', 'commission'
         ]
+
+    def get_turnover(self, obj):
+        """
+        Возвращает оборот (turnover) для инфлюенсера.
+        """
+        from payment.models import Payment
+
+        turnover = Payment.objects.filter(influencer=obj, status='paid').aggregate(total=Sum('amount'))['total']
+        return turnover or 0
+
+    def get_income(self, obj):
+        """
+        Возвращает доход (income) для инфлюенсера.
+        """
+        turnover = self.get_turnover(obj)
+        return turnover / 100 * float(obj.commission) if turnover else 0
+
+    def get_total_clicks(self, obj):
+        """
+        Возвращает общее количество кликов (total_clicks) для инфлюенсера.
+        """
+        from app.models import Renter, Lessor
+
+        renter_clicks = Renter.objects.filter(influencer=obj).count()
+        lessor_clicks = Lessor.objects.filter(influencer=obj).count()
+        return renter_clicks + lessor_clicks
 
 
 class InfluencerSerializer(serializers.ModelSerializer):
@@ -171,8 +201,9 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Influencer
         fields = ['id', 'user_id', 'first_name', 'last_name', 'referral_code', 'referral_links', 'total_clicks',
-                  'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email', 'telephone']
-        read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income', 'email']
+                  'commission', 'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email',
+                  'telephone']
+        read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income', 'email', 'commission']
 
     def get_total_clicks(self, obj):
         return obj.referral_links.aggregate(total_count=Sum('count'))['total_count'] or 0
