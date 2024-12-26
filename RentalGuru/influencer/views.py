@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils.timezone import now
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
@@ -117,11 +118,17 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
     queryset = ReferralLink.objects.all()
     serializer_class = ReferralLinkSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['influencer__id']
 
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
-            return ReferralLink.objects.select_related('influencer__user')
+            queryset = ReferralLink.objects.select_related('influencer__user')
+            influencer_id = self.request.query_params.get('influencer_id')
+            if influencer_id:
+                queryset = queryset.filter(influencer__id=influencer_id)
+            return queryset
         return ReferralLink.objects.filter(influencer__user=user).select_related('influencer__user')
 
     def perform_create(self, serializer):
@@ -133,13 +140,19 @@ class QRCodeViewSet(viewsets.ModelViewSet):
     queryset = QRCode.objects.all()
     serializer_class = QRCodeSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['influencer__id']
 
     def get_queryset(self):
         """Возвращает QR-коды только текущего пользователя."""
         user = self.request.user
         if user.role == 'admin':
-            return QRCode.objects.select_related('influencer__user')
-        return QRCode.objects.filter(influencer__user=self.request.user).select_related('influencer', 'influencer__user')
+            queryset = QRCode.objects.select_related('influencer', 'influencer__user')
+            influencer_id = self.request.query_params.get('influencer_id')
+            if influencer_id:
+                queryset = queryset.filter(influencer__id=influencer_id)
+            return queryset
+        return QRCode.objects.filter(influencer__user=user).select_related('influencer', 'influencer__user')
 
     def perform_create(self, serializer):
         """Добавляет текущего пользователя как инфлюенсера."""
@@ -168,13 +181,22 @@ class PromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer
     permission_classes = [IsAdminOrManagerForRequest]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['influencer__id']
 
     def get_queryset(self):
         user = self.request.user
+        queryset = PromoCode.objects.all()
+
         if user.role in ['admin', 'manager']:
-            return PromoCode.objects.all()
-        elif hasattr(user, 'influencer') and user.influencer:
-            return PromoCode.objects.filter(influencer=user.influencer)
+            influencer_id = self.request.query_params.get('influencer_id')
+            if influencer_id:
+                queryset = queryset.filter(influencer__id=influencer_id)
+            return queryset
+
+        if hasattr(user, 'influencer') and user.influencer:
+            return queryset.filter(influencer=user.influencer)
+
         return PromoCode.objects.none()
 
     def get_permissions(self):

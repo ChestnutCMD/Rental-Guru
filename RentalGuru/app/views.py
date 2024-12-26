@@ -720,8 +720,7 @@ class OauthCallback(APIView):
         fcm_token = request.data.get('fcm_token', '')
         provider = serializer.validated_data['provider']
         code = serializer.validated_data['code']
-        print(f"Request data: {request.data}")
-        print(f"данные получены {ref}, {referral_code}, {promocode}")
+
         if not code or not provider:
             return Response({"error": "Код или провайдер не переданы"}, status=400)
 
@@ -733,7 +732,7 @@ class OauthCallback(APIView):
 
     def handle_mailru(self, code, fcm_token, ref, referral_code, promocode):
         token_url = 'https://oauth.mail.ru/token'
-        print(f"данные переданы в хэндл {ref}, {referral_code}, {promocode}")
+
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
         data = {
             'grant_type': 'authorization_code',
