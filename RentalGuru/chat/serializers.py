@@ -11,11 +11,27 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 
 
 class TripSerializer(serializers.ModelSerializer):
+    set_rating = serializers.SerializerMethodField()
+    set_feedback = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
-        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status']
-        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost']
+        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status', 'set_rating', 'set_feedback']
+        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'set_rating', 'set_feedback']
+
+    def get_set_rating(self, instance):
+        return RatingUpdateLog.objects.filter(
+            user=instance.organizer,
+            content_type=instance.content_type,
+            object_id=instance.object_id
+        ).exists()
+
+    def get_set_feedback(self, instance):
+        return Feedback.objects.filter(
+            user=instance.organizer,
+            content_type=instance.content_type,
+            object_id=instance.object_id
+        ).exists()
 
     def create(self, validated_data):
         request = self.context.get('request')
@@ -25,20 +41,6 @@ class TripSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['content_type'] = instance.content_type.model
-
-        request = self.context.get('request')
-        if request and request.user == instance.vehicle.owner:
-            representation['set_rating'] = RatingUpdateLog.objects.filter(
-                                                                    user=instance.organizer,
-                                                                    content_type=instance.content_type,
-                                                                    object_id=instance.object_id
-                                                                ).exists()
-            representation['set_feedback'] = Feedback.objects.filter(
-                                                                    user=instance.organizer,
-                                                                    content_type=instance.content_type,
-                                                                    object_id=instance.object_id
-                                                                ).exists()
-
         return representation
 
     def update(self, instance, validated_data):
@@ -50,14 +52,11 @@ class TripSerializer(serializers.ModelSerializer):
         if previous_status != 'finished' and new_status == 'finished':
             Notification.objects.create(
                 user=instance.organizer,
-                content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку"
+                content=f"Поездка c транспортом {instance.vehicle} была завершена."
             )
-            rating = RatingUpdateLog.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
-            feedback = Feedback.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
             Notification.objects.create(
                 user=instance.vehicle.owner,
-                content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
-                url=f"{HOST_URL}/?trip={instance.id}&vehicle={instance.vehicle}organizer={instance.organizer}&rating={rating}&feedback={feedback}"
+                content=f"Поездка c транспортом {instance.vehicle} была завершена."
             )
         return instance
 
