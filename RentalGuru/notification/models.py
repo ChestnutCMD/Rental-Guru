@@ -14,7 +14,7 @@ class Notification(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     content = models.CharField(max_length=255, verbose_name='Сообщение')
     read_it = models.BooleanField(default=False, verbose_name='Прочитано')
-    url = models.URLField(max_length=255, null=True, blank=True)
+    url = models.URLField(max_length=1000, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
 
     class Meta:
