@@ -52,11 +52,14 @@ class TripSerializer(serializers.ModelSerializer):
         if previous_status != 'finished' and new_status == 'finished':
             Notification.objects.create(
                 user=instance.organizer,
-                content=f"Поездка c транспортом {instance.vehicle} была завершена."
+                content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку"
             )
+            rating = RatingUpdateLog.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
+            feedback = Feedback.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
             Notification.objects.create(
                 user=instance.vehicle.owner,
-                content=f"Поездка c транспортом {instance.vehicle} была завершена."
+                content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
+                url=f"{HOST_URL}/?trip={instance.id}&vehicle={instance.vehicle}organizer={instance.organizer}&rating={rating}&feedback={feedback}"
             )
         return instance
 
