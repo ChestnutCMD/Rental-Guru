@@ -59,7 +59,7 @@ class TripSerializer(serializers.ModelSerializer):
             Notification.objects.create(
                 user=instance.vehicle.owner,
                 content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
-                url=f"{HOST_URL}/?trip={instance.id}&vehicle={instance.vehicle}organizer={instance.organizer}&rating={rating}&feedback={feedback}"
+                url=f"{HOST_URL}/?trip={instance.id}&trip_start_time={instance.start_time}&trip_start_date={instance.start_date}&trip_end_date={instance.end_date}&trip_end_time={instance.end_time}&vehicle={instance.vehicle}&vehicle_id={instance.object_id}&vehicle_type={instance.content_type.model}&user_id={instance.organizer.id}&user_avater={instance.organizer.avatar}&rating={rating}&feedback={feedback}"
             )
         return instance
 
