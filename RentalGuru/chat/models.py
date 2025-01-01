@@ -47,7 +47,7 @@ class RequestRent(models.Model):
     def rental_days(self):
         """Подсчитывает количество дней аренды."""
         if self.start_date and self.end_date:
-            return (self.end_date - self.start_date).days
+            return (self.end_date - self.start_date).days + 1
         return 0
 
     def create_chat(self):
