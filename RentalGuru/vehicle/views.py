@@ -74,7 +74,9 @@ class VehicleModelViewSet(viewsets.ModelViewSet):
 
 class BaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
-        if self.action == 'list':
+        if hasattr(self.request.user, 'manager') and self.request.user.manager:
+            return [ManagerObjectPermission()]
+        elif self.action == 'list':
             self.permission_classes = [AllowAny]
         elif self.action == 'retrieve':
             self.permission_classes = [IsAuthenticated]
