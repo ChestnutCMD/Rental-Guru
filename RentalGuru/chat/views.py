@@ -2,9 +2,9 @@ from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, permissions, status, filters
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -317,13 +317,28 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
     permissions = [IsAuthenticated]
 
 
-class ChatSupportPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+class ChatSupportPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
 
 
-@extend_schema(summary="Список чатов техподдержки", description="""\nЧат с техподдержкой. Доступен по адресу:\n
+@extend_schema(summary="Список чатов техподдержки",
+               parameters=[
+                            OpenApiParameter(
+                                name="limit",
+                                description="Количество объектов на странице",
+                                required=False,
+                                type=int
+                            ),
+                            OpenApiParameter(
+                                name="offset",
+                                description="Начальная позиция (смещение)",
+                                required=False,
+                                type=int
+                            ),
+                        ],
+
+               description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                     Чат создается при создании обращения\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
