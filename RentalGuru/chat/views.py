@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from RentalGuru import settings
+from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
 from .filters import MessageFilter
@@ -90,6 +91,10 @@ class ChatViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return Chat.objects.filter(participants=user)
 
+    def get_permissions(self):
+        if hasattr(self.request.user, 'manager') and self.request.user.manager:
+            return [ManagerObjectPermission]
+        return super().get_permissions()
 
 @extend_schema(summary="Сообщения чата арендодателя и арендатора", description="Сообщения чата арендодателя и "
                                                                                "арендатора")
