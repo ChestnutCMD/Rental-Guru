@@ -52,7 +52,7 @@ class User(AbstractUser):
     language = models.ForeignKey(Language, default=1, null=True, on_delete=models.SET_NULL, verbose_name='Язык')
     avatar = models.ImageField(upload_to=upload_avatar, null=True, blank=True, verbose_name='Аватар')
     about = models.TextField(null=True, blank=True, verbose_name='О себе')
-    email_notification = models.BooleanField(default=False, verbose_name='Email уведомления')
+    email_notification = models.BooleanField(default=True, verbose_name='Email уведомления')
     push_notification = models.BooleanField(default=False, verbose_name='Push уведомления')
     telegram_id = models.CharField(max_length=100, unique=True, null=True, blank=True, verbose_name='Telegram ID')
 
