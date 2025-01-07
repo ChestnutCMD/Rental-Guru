@@ -1,10 +1,13 @@
 from django.contrib.contenttypes.models import ContentType
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from manager.filters import ManagerPermissionFilter
 from manager.models import ManagerPermission, Manager
 from manager.permissions import IsAdminOrSelf, IsAdmin
 from manager.serializers import ManagerPermissionSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
@@ -19,12 +22,23 @@ class ManagerPermissionViewSet(ModelViewSet):
     queryset = ManagerPermission.objects.all()
     serializer_class = ManagerPermissionSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ManagerPermissionFilter
 
-    def get_queryset(self):
-        manager_id = self.request.query_params.get('manager_id')
-        if manager_id:
-            return self.queryset.filter(manager_id=manager_id)
-        return self.queryset
+    def perform_create(self, serializer):
+        """
+        Создание доступа с валидацией переданных данных.
+        """
+        content_type = serializer.validated_data.get('content_type')
+        object_id = serializer.validated_data.get('object_id')
+        is_global = serializer.validated_data.get('is_global', False)
+
+        if not is_global and (not content_type or not object_id):
+            raise serializers.ValidationError({
+                "detail": "Для локального доступа необходимо указать content_type и object_id."
+            })
+
+        serializer.save()
 
 
 @extend_schema(
