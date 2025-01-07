@@ -86,5 +86,5 @@ class ManagerViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
-            return [IsAuthenticated, IsAdmin]
+            return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()

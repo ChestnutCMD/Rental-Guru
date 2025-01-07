@@ -93,8 +93,9 @@ class ChatViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if hasattr(self.request.user, 'manager') and self.request.user.manager:
-            return [ManagerObjectPermission]
+            return [ManagerObjectPermission()]
         return super().get_permissions()
+
 
 @extend_schema(summary="Сообщения чата арендодателя и арендатора", description="Сообщения чата арендодателя и "
                                                                                "арендатора")

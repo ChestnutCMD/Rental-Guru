@@ -68,7 +68,7 @@ class VehicleModelViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if hasattr(self.request.user, 'manager') and self.request.user.manager:
-            return [ManagerObjectPermission]
+            return [ManagerObjectPermission()]
         return super().get_permissions()
 
 
