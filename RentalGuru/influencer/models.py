@@ -19,6 +19,10 @@ class RegistrationSource(models.Model):
     source_details = models.CharField(max_length=100, blank=True, verbose_name='Детали источника (ссылка, qr код и т.д.)')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
 
+    class Meta:
+        verbose_name = 'Информация о реферальной регистрации'
+        verbose_name_plural = 'Информация о реферальной регистрации'
+
 
 class Influencer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='influencer', verbose_name='Пользователь')
@@ -88,6 +92,10 @@ class Organization(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = 'Организация инфлюенсера'
+        verbose_name_plural = 'Организации инфлюенсеров'
+
 
 class Contact(models.Model):
     CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
@@ -98,6 +106,10 @@ class Contact(models.Model):
 
     def __str__(self):
         return f"{CONTACT_TYPE_CHOICES_DICT.get(str(self.contact_type), self.contact_type)}: {self.value}"
+
+    class Meta:
+        verbose_name = 'Контакты инфлюенсера'
+        verbose_name_plural = 'Контакты инфлюенсеров'
 
 
 CONTACT_TYPE_CHOICES_DICT = dict(Contact.CONTACT_TYPE_CHOICES)
@@ -112,6 +124,10 @@ class BankDetails(models.Model):
 
     def __str__(self):
         return f"ИНН: {self.inn}, Счет: {self.account_number}"
+
+    class Meta:
+        verbose_name = 'Банковские данные инфлюенсера'
+        verbose_name_plural = 'Банковские данные инфлюенсеров'
 
 
 class ReferralLink(models.Model):
@@ -264,3 +280,5 @@ class UsedPromoCode(models.Model):
 
     class Meta:
         unique_together = ('user', 'promo_code')
+        verbose_name = 'Использованный промокод'
+        verbose_name_plural = 'Использованные промокоды'

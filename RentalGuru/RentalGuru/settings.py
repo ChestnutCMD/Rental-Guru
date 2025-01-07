@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'journal',
     'payment',
     'complaint',
+    'manager',
     'drf_spectacular',
     'polymorphic',
 ]

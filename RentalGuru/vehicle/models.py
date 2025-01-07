@@ -237,6 +237,10 @@ class Vehicle(PolymorphicModel):
     def __str__(self):
         return f'Vehicle id-{self.pk}'
 
+    class Meta:
+        verbose_name = 'Транспорт'
+        verbose_name_plural = 'Транспорт'
+
 
 class RentPrice(models.Model):
     RENT_PERIOD = (
@@ -565,3 +569,5 @@ class RatingUpdateLog(models.Model):
 
     class Meta:
         unique_together = ('user', 'content_type', 'object_id')
+        verbose_name = 'Лог обновления рейтинга транспорта'
+        verbose_name_plural = 'Логи обновления рейтингов транспорта'

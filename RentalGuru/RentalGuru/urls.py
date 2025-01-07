@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -15,6 +14,7 @@ urlpatterns = [
     path('chat/', include('chat.urls')),
     path('notification/', include('notification.urls')),
     path('franchise/', include('franchise.urls')),
+    path('manager/', include('manager.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('influencer/', include('influencer.urls')),
