@@ -33,6 +33,14 @@ class ManagerObjectPermission(BasePermission):
         ).exists()
 
 
+    """
+    def get_permissions(self):
+        if hasattr(self.request.user, 'manager') and self.request.user.manager:
+            return [ManagerObjectPermission]
+        return super().get_permissions()
+    """
+
+
 class IsAdminOrReadOnly(BasePermission):
     """
     Разрешает чтение всем, а изменение только администраторам.

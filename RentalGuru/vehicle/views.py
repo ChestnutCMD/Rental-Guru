@@ -26,6 +26,7 @@ from transliterate import translit
 from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
+from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
     VehicleModelFilter
@@ -64,6 +65,11 @@ class VehicleModelViewSet(viewsets.ModelViewSet):
     filterset_class = VehicleModelFilter
     serializer_class = VehicleModelSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_permissions(self):
+        if hasattr(self.request.user, 'manager') and self.request.user.manager:
+            return [ManagerObjectPermission]
+        return super().get_permissions()
 
 
 class BaseViewSet(viewsets.ModelViewSet):
