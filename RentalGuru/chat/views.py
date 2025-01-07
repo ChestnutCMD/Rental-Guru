@@ -4,6 +4,7 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions, status, filters
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +12,7 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from notification.models import Notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
-from .filters import  MessageFilter
+from .filters import MessageFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 from .permissions import IsAdminOrOwner
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
@@ -316,6 +317,12 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
     permissions = [IsAuthenticated]
 
 
+class ChatSupportPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @extend_schema(summary="Список чатов техподдержки", description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
                     Чат создается при создании обращения\n
@@ -338,11 +345,16 @@ class ChatSupportListView(APIView):
         user = request.user
         if user.role in ['admin', 'manager']:
             chats = ChatSupport.objects.all()
+            paginator = ChatSupportPagination()
+            paginated_chats = paginator.paginate_queryset(chats, request)
+            if paginated_chats is None:
+                return Response({"detail": "На этой странице нет доступных чатов."}, status=status.HTTP_404_NOT_FOUND)
+            serializer = ChatSupportSerializer(paginated_chats, many=True)
+            return paginator.get_paginated_response(serializer.data)
         else:
             chats = ChatSupport.objects.filter(creator=user)
-
-        serializer = ChatSupportSerializer(chats, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = ChatSupportSerializer(chats, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(summary="Детальное отображение чата", description="""\nЧат с техподдержкой. Доступен по адресу:\n
