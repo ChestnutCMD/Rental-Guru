@@ -323,11 +323,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         data["user_id"] = user.id
 
-        # # Проверка last_login
-        # if not user.last_login:
-        #     data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
-        # user.last_login = timezone.now()
-        # user.save(update_fields=['last_login'])
+        if hasattr(user, 'manager'):
+            if not user.last_login:
+                data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
+            else:
+                message = user.manager.check_password_expiry()
+                if message:
+                    data["message"] = message
+
+        user.last_login = timezone.now()
+        try:
+            user.save(update_fields=['last_login'])
+        except Exception as e:
+            raise ValidationError({'detail': f'Ошибка сохранения данных: {e}'})
 
         # Если FCM-токен передан, то обновляем его
         fcm_token = attrs.get('fcm_token')

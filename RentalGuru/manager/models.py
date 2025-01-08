@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
@@ -8,9 +11,17 @@ from RentalGuru import settings
 
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
+    password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
+
+    def check_password_expiry(self):
+        if not self.password_updated_at:
+            return "Пароль никогда не обновлялся. Рекомендуем сменить пароль."
+        if self.password_updated_at + timedelta(days=30) < timezone.now():
+            return "Пароль устарел. Пожалуйста, обновите пароль."
+        return None
 
     class Meta:
         verbose_name = 'Менеджер'

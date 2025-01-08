@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import now
 from rest_framework import serializers
 
 from app.models import User
@@ -189,6 +190,8 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
         if 'password' in validated_data:
             password = validated_data.pop('password')
             user.set_password(password)
+            instance.password_updated_at = now()
+            instance.save()
 
         for field, value in user_data.items():
             setattr(user, field, value)
