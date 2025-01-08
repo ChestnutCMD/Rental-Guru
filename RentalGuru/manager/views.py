@@ -20,25 +20,10 @@ from manager.serializers import ManagerPermissionSerializer, ManagerUpdateSerial
     )
 class ManagerPermissionViewSet(ModelViewSet):
     queryset = ManagerPermission.objects.all()
-    serializer_class = ManagerPermissionSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ManagerPermissionFilter
-
-    def perform_create(self, serializer):
-        """
-        Создание доступа с валидацией переданных данных.
-        """
-        content_type = serializer.validated_data.get('content_type')
-        object_id = serializer.validated_data.get('object_id')
-        is_global = serializer.validated_data.get('is_global', False)
-
-        if not is_global and (not content_type or not object_id):
-            raise serializers.ValidationError({
-                "detail": "Для локального доступа необходимо указать content_type и object_id."
-            })
-
-        serializer.save()
+    serializer_class = ManagerPermissionSerializer
 
 
 @extend_schema(

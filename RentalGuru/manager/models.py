@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
 
@@ -58,5 +59,34 @@ class ManagerPermission(models.Model):
         verbose_name_plural = "Права менеджеров"
 
     def __str__(self):
-        scope = "Глобальный" if self.is_global else f"Объект ID {self.object_id}"
-        return f"{self.manager.user} — {self.permission_type} на {scope}"
+        if self.is_global:
+            return f"{self.manager.user} — {self.permission_type} на все объекты {self.content_type.model}"
+        return f"{self.manager.user} — {self.permission_type} на объект {self.content_type.model} ID {self.object_id}"
+
+    def clean(self):
+        """
+        Валидация модели перед сохранением.
+        """
+        if not self.content_type:
+            raise ValidationError({
+                'content_type': "content_type обязателен для указания модели."
+            })
+
+        if self.is_global:
+            if self.object_id is not None:
+                raise ValidationError({
+                    'object_id': "object_id должно быть пустым для глобального доступа."
+                })
+        else:
+            if self.object_id is None:
+                raise ValidationError({
+                    'object_id': "object_id обязателен для локального доступа."
+                })
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        """
+        Вызываем clean перед сохранением.
+        """
+        self.clean()
+        super().save(*args, **kwargs)

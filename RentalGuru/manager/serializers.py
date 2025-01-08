@@ -13,27 +13,67 @@ class ManagerDocumentSerializer(serializers.ModelSerializer):
 
 
 class ManagerPermissionSerializer(serializers.ModelSerializer):
-    """ Сериализатор доступа """
+    """Сериализатор для работы с доступами"""
     model_name = serializers.SerializerMethodField()
     object_display = serializers.SerializerMethodField()
     content_type = serializers.PrimaryKeyRelatedField(
         queryset=ContentType.objects.all(),
-        required=False,
-        allow_null=True,
+        required=False
     )
     object_id = serializers.IntegerField(required=False, allow_null=True)
+    is_global = serializers.BooleanField(default=False)
+    manager = serializers.PrimaryKeyRelatedField(
+        queryset=Manager.objects.all(),
+        required=False
+    )
+    permission_type = serializers.ChoiceField(
+        choices=[
+            ('read', 'Чтение'),
+            ('edit', 'Редактирование'),
+            ('delete', 'Удаление'),
+        ],
+        required=False
+    )
 
     class Meta:
         model = ManagerPermission
         fields = ['id', 'manager', 'content_type', 'object_id', 'model_name', 'object_display', 'permission_type', 'is_global']
 
+    def to_internal_value(self, data):
+        """Обработка данных перед валидацией"""
+        data = data.copy()
+        if data.get('is_global', False):
+            data['object_id'] = None
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        """Общая валидация для создания и обновления"""
+        instance = self.instance
+
+        is_global = attrs.get('is_global', instance.is_global if instance else False)
+        content_type = attrs.get('content_type', instance.content_type if instance else None)
+        object_id = attrs.get('object_id', instance.object_id if instance else None)
+
+        if not instance:
+            if not content_type:
+                raise serializers.ValidationError({"content_type": "content_type обязателен при создании."})
+            if not attrs.get('manager'):
+                raise serializers.ValidationError({"manager": "manager обязателен при создании."})
+            if 'permission_type' not in attrs:
+                raise serializers.ValidationError({"permission_type": "permission_type обязателен при создании."})
+
+        if is_global:
+            attrs['object_id'] = None
+        elif object_id is None:
+            raise serializers.ValidationError({"object_id": "object_id обязателен для локального доступа."})
+
+        return attrs
+
     def get_model_name(self, obj):
-        return obj.content_type.model
+        return obj.content_type.model if obj.content_type else None
 
     def get_object_display(self, obj):
-        if obj.content_object:
-            return str(obj.content_object)
-        return None
+        return str(obj.content_object) if obj.content_object else None
 
 
 class ManagerListSerializer(serializers.ModelSerializer):
