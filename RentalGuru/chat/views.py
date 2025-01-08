@@ -233,7 +233,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         content = f'Вам поступила заявка на аренду {vehicle_instance}'
         Notification.objects.create(user=vehicle_instance.owner, content=content, url=url)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response_data = serializer.data
+
+        if request_rent.on_request:
+            chat = Chat.objects.filter(request_rent=request_rent).first()
+            if chat:
+                response_data['chat_id'] = chat.id
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer):
         instance = self.get_object()
