@@ -614,12 +614,13 @@ class ChatConsumer(BaseChatConsumer):
                 and Franchise.objects.filter(city=chat.request_rent.vehicle.city, director=user).exists()
         )
 
-        return (
-            user in chat.participants.all() or
-            user == chat.request_rent.organizer or
-            user == chat.request_rent.vehicle.owner or
-            is_franchise_director
+        has_direct_access = (
+                user in chat.participants.all() or
+                user == chat.request_rent.organizer or
+                user == chat.request_rent.vehicle.owner
         )
+
+        return has_direct_access or is_franchise_director
 
     async def chat_message_translated(self, event):
         """ Обработчик для переведенных сообщений """
