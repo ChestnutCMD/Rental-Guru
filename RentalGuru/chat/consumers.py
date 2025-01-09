@@ -17,6 +17,7 @@ import json
 
 from RentalGuru.settings import HOST_URL
 from chat.models import MessageSupport, ChatSupport, Message, Chat
+from franchise.models import Franchise
 from notification.models import Notification
 from .tasks import translate_message
 
@@ -609,9 +610,8 @@ class ChatConsumer(BaseChatConsumer):
             return True
 
         is_franchise_director = (
-            hasattr(chat.request_rent.vehicle, 'owner') and
-            chat.request_rent.vehicle.owner.lessor.franchise and
-            chat.request_rent.vehicle.owner.lessor.franchise.director == user
+                chat.request_rent.vehicle.city
+                and Franchise.objects.filter(city=chat.request_rent.vehicle.city, director=user).exists()
         )
 
         return (
