@@ -1,9 +1,11 @@
-from app.models import Lessor
-from chat.models import Trip
-
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from decimal import Decimal
-from django.db.models import Sum, Max
+from django.db.models import Sum, Max, Q
+
+from app.models import Lessor
+from chat.models import Trip
+from vehicle.models import Vehicle
 
 
 class LessorReportSerializer(serializers.ModelSerializer):
@@ -19,13 +21,26 @@ class LessorReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lessor
         fields = ['id', 'last_name', 'first_name', 'avatar', 'telephone',
-                 'total_revenue', 'commission_amount', 'last_rent_date']
+                  'total_revenue', 'commission_amount', 'last_rent_date']
 
     def get_trips_for_lessor(self, lessor):
-        view = self.context.get('view')
-        if view:
-            return view.get_trips_for_lessor(lessor)
-        return Trip.objects.none()
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+
+        content_type_query = Q()
+        for vehicle_type in vehicle_types:
+            content_type = ContentType.objects.get(model=vehicle_type)
+            vehicles = Vehicle.objects.filter(
+                owner=lessor.user,
+                polymorphic_ctype=content_type
+            ).values_list('id', flat=True)
+
+            if vehicles:
+                content_type_query |= Q(
+                    content_type=content_type,
+                    object_id__in=vehicles
+                )
+
+        return Trip.objects.filter(content_type_query)
 
     def get_total_revenue(self, obj):
         trips = self.get_trips_for_lessor(obj)
