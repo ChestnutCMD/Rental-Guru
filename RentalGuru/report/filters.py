@@ -1,4 +1,6 @@
 from datetime import timedelta
+
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django_filters import rest_framework as filters
 
@@ -19,11 +21,14 @@ class LessorReportFilter(filters.FilterSet):
     )
     city = filters.ModelChoiceFilter(
         queryset=City.objects.all(),
-        field_name='user__vehicle__city'
+        method='filter_by_city'
     )
     lessor = filters.ModelChoiceFilter(
         queryset=Lessor.objects.all()
     )
+
+    def filter_by_city(self, queryset, name, value):
+        return queryset.filter(user__vehicle__city=value).distinct()
 
     def filter_period(self, queryset, name, value):
         today = timezone.now().date()
@@ -41,10 +46,20 @@ class LessorReportFilter(filters.FilterSet):
         else:
             return queryset
 
-        return queryset.filter(
-            user__vehicle__trips__end_date__gte=start_date,
-            user__vehicle__trips__status='finished'
-        ).distinct()
+        # Фильтруем по периоду через связанные поездки
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+        filtered_queryset = queryset.none()
+
+        for vehicle_type in vehicle_types:
+            content_type = ContentType.objects.get(model=vehicle_type)
+            lessors = queryset.filter(
+                user__vehicle__trips__content_type=content_type,
+                user__vehicle__trips__end_date__gte=start_date,
+                user__vehicle__trips__status='finished'
+            ).distinct()
+            filtered_queryset = filtered_queryset.union(lessors)
+
+        return filtered_queryset
 
     class Meta:
         model = Lessor
