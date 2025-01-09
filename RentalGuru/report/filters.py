@@ -25,7 +25,6 @@ class LessorReportFilter(filters.FilterSet):
 
     def filter_period(self, queryset, name, value):
         today = timezone.now().date()
-        end_date = today
 
         if value == 'day':
             start_date = today - timedelta(days=1)
@@ -40,10 +39,16 @@ class LessorReportFilter(filters.FilterSet):
         else:
             return queryset
 
-        return queryset.filter(
-            user__vehicle__trips__end_date__range=(start_date, end_date),
+        filtered_queryset = queryset.filter(
+            user__vehicle__trips__end_date__gte=start_date,
+            user__vehicle__trips__end_date__lte=today,
             user__vehicle__trips__status='finished'
         ).distinct()
+
+        from django.db import connection
+        print(connection.queries[-1])
+
+        return filtered_queryset
 
     class Meta:
         model = Lessor
