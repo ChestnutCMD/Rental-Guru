@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from decimal import Decimal
 
 from app.models import Lessor
@@ -24,20 +24,27 @@ class LessorReportView(ListAPIView):
 
     def get_trips_for_lessor(self, lessor):
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
-        trips = Trip.objects.none()
 
+        # Создаем Q-объект для фильтрации по всем типам транспорта
+        content_type_query = Q()
         for vehicle_type in vehicle_types:
             content_type = ContentType.objects.get(model=vehicle_type)
-            vehicle_trips = Trip.objects.filter(
-                content_type=content_type,
-                object_id__in=Vehicle.objects.filter(
-                    owner=lessor.user
-                ).values_list('id', flat=True),
-                status='finished'
-            )
-            trips = trips.union(vehicle_trips)
+            vehicles = Vehicle.objects.filter(
+                owner=lessor.user,
+                polymorphic_ctype=content_type
+            ).values_list('id', flat=True)
 
-        return trips
+            if vehicles:
+                content_type_query |= Q(
+                    content_type=content_type,
+                    object_id__in=vehicles
+                )
+
+        # Получаем все поездки одним запросом
+        return Trip.objects.filter(
+            content_type_query,
+            status='finished'
+        )
 
     def get_summary_stats(self, queryset):
         total_revenue = Decimal('0.00')
@@ -45,7 +52,9 @@ class LessorReportView(ListAPIView):
 
         for lessor in queryset:
             trips = self.get_trips_for_lessor(lessor)
-            revenue = trips.aggregate(total=Sum('total_cost'))['total'] or Decimal('0.00')
+            revenue = trips.aggregate(
+                total=Sum('total_cost', default=Decimal('0.00'))
+            )['total']
 
             total_revenue += revenue
             total_commission += (revenue * lessor.commission) / 100
