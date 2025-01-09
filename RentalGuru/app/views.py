@@ -24,7 +24,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from RentalGuru import settings
 from RentalGuru.settings import redis_1
 from chat.models import Trip
-from franchise.models import Franchise
 from influencer.models import Influencer, RegistrationSource, ReferralLink, QRCode, PromoCode, UsedPromoCode
 from notification.models import Notification, FCMToken
 from vehicle.models import Vehicle
@@ -168,13 +167,11 @@ class SetPasswordView(APIView):
 
             # Привязка к франшизе или инфлюенсеру
             member_type = cache_data.get('member_type')
-            franchise_id = cache_data.get('franchise_id')
             influencer_id = cache_data.get('influencer_id')
 
             if member_type == 'lessor':
-                franchise = Franchise.objects.filter(id=franchise_id).first()
                 influencer = Influencer.objects.filter(id=influencer_id).first()
-                Lessor.objects.create(user=user, franchise=franchise, influencer=influencer)
+                Lessor.objects.create(user=user, influencer=influencer)
             elif member_type == 'renter':
                 influencer = Influencer.objects.filter(id=influencer_id).first()
                 Renter.objects.create(user=user, influencer=influencer)

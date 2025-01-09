@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Q, Sum
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
 from chat.models import Trip
@@ -52,9 +53,7 @@ class Franchise(models.Model):
 
     def get_vehicles(self):
         from vehicle.models import Vehicle
-        return Vehicle.objects.filter(
-            Q(owner__lessor__franchise=self) | Q(owner=self.director)
-        )
+        return Vehicle.objects.filter(city=self.city)
 
     def get_total_vehicles(self):
         return self.get_vehicles().count()
@@ -114,6 +113,14 @@ class Franchise(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.country}, {self.city})"
+
+    def clean(self):
+        if self.city and Franchise.objects.filter(city=self.city).exclude(id=self.id).exists():
+            raise ValidationError(f'Для города {self.city} уже зарегистрирована франшиза.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Франшиза'

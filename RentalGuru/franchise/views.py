@@ -180,9 +180,7 @@ class RequestsByFranchiseView(APIView):
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Получаем все транспорты, которые связаны с франшизой через арендодателя или владельца транспорта
-        vehicles = Vehicle.objects.filter(
-            Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
-        )
+        vehicles = Vehicle.objects.filter(city=franchise.city)
 
         # Фильтруем заявки на аренду по этим транспортам
         requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related('content_type')
@@ -235,9 +233,7 @@ class ChatsByFranchiseView(APIView):
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Получаем все транспорты, которые связаны с франшизой через арендодателя или владельца транспорта
-        vehicles = Vehicle.objects.filter(
-            Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
-        )
+        vehicles = Vehicle.objects.filter(city=franchise.city)
 
         # Фильтруем поездки, связанные с этими транспортами
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True))
@@ -259,10 +255,15 @@ class LessorsByFranchiseView(APIView):
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Получаем всех арендодателей, связанных с этой франшизой
-        lessors = Lessor.objects.filter(franchise=franchise)
-        serializer = LessorSerializer(lessors, many=True)
+        vehicles = Vehicle.objects.filter(city=franchise.city)
 
+        # Получаем уникальных пользователей-владельцев этих транспортных средств
+        owners = vehicles.values_list('owner', flat=True).distinct()
+
+        # Получаем арендодателей, связанных с этими владельцами
+        lessors = Lessor.objects.filter(user__id__in=owners)
+
+        serializer = LessorSerializer(lessors, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -277,9 +278,7 @@ class VehiclesByFranchiseView(APIView):
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Получаем все транспортные средства, связанные с франшизой через арендодателя или владельца (директора франшизы)
-        vehicles = Vehicle.objects.filter(
-            Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
-        )
+        vehicles = Vehicle.objects.filter(city=franchise.city)
 
         serializer = VehicleSerializer(vehicles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

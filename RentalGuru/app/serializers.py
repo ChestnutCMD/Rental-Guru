@@ -24,6 +24,7 @@ from .task import send_verification_email
 import logging
 logger = logging.getLogger(__name__)
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True)
@@ -42,6 +43,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         ref = request.query_params.get('ref', None)
         ref_code = request.query_params.get('code', None)
         promocode = request.query_params.get('promocode', None)
+
         # Проверка свободного Email
         user = User.objects.filter(email=validated_data['email'])
         if user:
@@ -62,13 +64,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             'code': code
         }
 
-        # Обработка франшизы
-        if current_user and Franchise.objects.filter(director=current_user).exists():
-            franchise = Franchise.objects.get(director=current_user)
-            cache_data['franchise_id'] = franchise.id
-
         # Обработка инфлюенсера по реферальному коду
-        elif ref:
+        if ref:
             try:
                 referral_link = ReferralLink.objects.get(influencer__referral_code=ref, link__icontains=ref_code)
                 cache_data['influencer_id'] = referral_link.influencer.id
