@@ -48,41 +48,41 @@ class LessorReportView(ListAPIView):
 
         return queryset.distinct()
 
-    # def get_trips_for_lessor(self, lessor):
-    #     vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
-    #
-    #     base_query = Q(status='finished')
-    #
-    #     period = self.request.query_params.get('period')
-    #     if period:
-    #         today = timezone.now().date()
-    #         if period == 'day':
-    #             start_date = today
-    #         elif period == 'week':
-    #             start_date = today - timedelta(days=7)
-    #         elif period == 'month':
-    #             start_date = today - timedelta(days=30)
-    #         elif period == 'quarter':
-    #             start_date = today - timedelta(days=90)
-    #         elif period == 'year':
-    #             start_date = today - timedelta(days=365)
-    #
-    #         base_query &= Q(end_date__gte=start_date)
-    #
-    #     content_type_query = Q()
-    #     for vehicle_type in vehicle_types:
-    #         content_type = ContentType.objects.get(model=vehicle_type)
-    #         vehicles = Vehicle.objects.filter(
-    #             owner=lessor.user,
-    #             polymorphic_ctype=content_type
-    #         ).values_list('id', flat=True)
-    #
-    #         if vehicles:
-    #             content_type_query |= Q(
-    #                 content_type=content_type,
-    #                 object_id__in=vehicles
-    #             )
-    #
-    #     return Trip.objects.filter(
-    #         content_type_query & base_query
-    #     )
+    def get_trips_for_lessor(self, lessor):
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+
+        base_query = Q(status='finished')
+
+        period = self.request.query_params.get('period')
+        if period:
+            today = timezone.now().date()
+            if period == 'day':
+                start_date = today
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+            elif period == 'quarter':
+                start_date = today - timedelta(days=90)
+            elif period == 'year':
+                start_date = today - timedelta(days=365)
+
+            base_query &= Q(end_date__gte=start_date)
+
+        content_type_query = Q()
+        for vehicle_type in vehicle_types:
+            content_type = ContentType.objects.get(model=vehicle_type)
+            vehicles = Vehicle.objects.filter(
+                owner=lessor.user,
+                polymorphic_ctype=content_type
+            ).values_list('id', flat=True)
+
+            if vehicles:
+                content_type_query |= Q(
+                    content_type=content_type,
+                    object_id__in=vehicles
+                )
+
+        return Trip.objects.filter(
+            content_type_query & base_query
+        )
