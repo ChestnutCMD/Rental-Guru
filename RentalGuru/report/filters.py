@@ -1,4 +1,7 @@
 from datetime import timedelta
+
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.utils import timezone
 from django_filters import rest_framework as filters
 
@@ -25,9 +28,10 @@ class LessorReportFilter(filters.FilterSet):
 
     def filter_period(self, queryset, name, value):
         today = timezone.now().date()
+        print(f"Фильтр периода: {value}, сегодня: {today}")
 
         if value == 'day':
-            start_date = today - timedelta(days=1)
+            start_date = today
         elif value == 'week':
             start_date = today - timedelta(days=7)
         elif value == 'month':
@@ -39,13 +43,24 @@ class LessorReportFilter(filters.FilterSet):
         else:
             return queryset
 
-        filtered_queryset = queryset.filter(
-            user__vehicle__trips__end_date__gte=start_date,
-            user__vehicle__trips__end_date__lte=today,
-            user__vehicle__trips__status='finished'
-        ).distinct()
+        print(f"Дата начала периода: {start_date}")
 
-        return filtered_queryset
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+        date_query = Q()
+
+        for vehicle_type in vehicle_types:
+            try:
+                content_type = ContentType.objects.get(model=vehicle_type)
+                date_query |= Q(
+                    user__vehicle__trips__content_type=content_type,
+                    user__vehicle__trips__end_date__gte=start_date,
+                    user__vehicle__trips__status='finished'
+                )
+            except ContentType.DoesNotExist:
+                print(f"ContentType не найден для {vehicle_type}")
+
+        print(f"Сформированный запрос: {date_query}")
+        return queryset.filter(date_query).distinct()
 
     class Meta:
         model = Lessor
