@@ -343,12 +343,12 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         user = self.scope['user']
 
         if hasattr(chat, 'request_rent'):
-            show_all_messages = (
-                    user.role in ['admin', 'manager'] or
-                    (hasattr(chat.request_rent.vehicle, 'owner') and
-                     chat.request_rent.vehicle.owner.lessor.franchise and
-                     chat.request_rent.vehicle.owner.lessor.franchise.director == user)
+            is_admin_or_manager = user.role in ['admin', 'manager']
+            is_franchise_director = (
+                    hasattr(chat.request_rent.vehicle, 'city')
+                    and Franchise.objects.filter(city=chat.request_rent.vehicle.city, director=user).exists()
             )
+            show_all_messages = is_admin_or_manager or is_franchise_director
         else:
             show_all_messages = user.role in ['admin', 'manager']
 
