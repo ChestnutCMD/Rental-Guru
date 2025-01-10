@@ -1,7 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -73,3 +74,17 @@ class ManagerViewSet(ModelViewSet):
         if self.action == 'create':
             return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()
+
+    def destroy(self, request, *args, **kwargs):
+        """Удаление инфлюенсера и связанного пользователя."""
+        instance = self.get_object()
+
+        with transaction.atomic():
+            user = instance.user
+            user.delete()
+            instance.delete()
+
+        return Response(
+            {"message": "Менеджер и связанный пользователь успешно удалены."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
