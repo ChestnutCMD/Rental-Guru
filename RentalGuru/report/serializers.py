@@ -8,6 +8,7 @@ from django.db.models import Sum, Max, Q
 
 from app.models import Lessor
 from chat.models import Trip
+from franchise.models import Franchise
 from influencer.models import Influencer
 from vehicle.models import Vehicle
 
@@ -161,3 +162,95 @@ class InfluencerReportSerializer(serializers.ModelSerializer):
         )['last_date']
 
         return last_date
+
+
+class FranchiseReportSerializer(serializers.ModelSerializer):
+    completed_orders_amount = serializers.SerializerMethodField()
+    lessors_commission = serializers.SerializerMethodField()
+    avg_lessors_commission = serializers.SerializerMethodField()
+    canceled_orders_count = serializers.SerializerMethodField()
+    canceled_orders_amount = serializers.SerializerMethodField()
+    franchise_commission_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Franchise
+        fields = ['id', 'name', 'city', 'completed_orders_amount',
+                  'lessors_commission', 'avg_lessors_commission',
+                  'canceled_orders_count', 'canceled_orders_amount',
+                  'franchise_commission_amount']
+
+    def get_trips_for_franchise(self, obj, status=None):
+        """Получает все поездки для транспортных средств в городе франшизы"""
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+        trips_query = Q()
+
+        for vehicle_type in vehicle_types:
+            content_type = ContentType.objects.get(model=vehicle_type)
+            vehicles = Vehicle.objects.filter(
+                city=obj.city,
+                polymorphic_ctype=content_type
+            ).values_list('id', flat=True)
+
+            if vehicles:
+                trips_query |= Q(
+                    content_type=content_type,
+                    object_id__in=vehicles
+                )
+
+        filters = {'status': status} if status else {}
+        return Trip.objects.filter(trips_query, **filters)
+
+    def get_completed_orders_amount(self, obj):
+        """Сумма выполненных заказов"""
+        completed_trips = self.get_trips_for_franchise(obj, status='finished')
+        total = completed_trips.aggregate(
+            total=Sum('total_cost')
+        )['total']
+        return float(total) if total else 0.00
+
+    def get_lessors_commission(self, obj):
+        """Комиссия арендодателей"""
+        completed_trips = self.get_trips_for_franchise(obj, status='finished')
+
+        total_commission = Decimal('0.00')
+        for trip in completed_trips:
+            vehicle = trip.vehicle
+            if hasattr(vehicle, 'owner') and hasattr(vehicle.owner, 'lessor'):
+                lessor = vehicle.owner.lessor
+                commission = (Decimal(str(trip.total_cost)) * lessor.commission) / 100
+                total_commission += commission
+
+        return float(total_commission)
+
+    def get_avg_lessors_commission(self, obj):
+        """Средний процент комиссии у lessors"""
+        lessors = Lessor.objects.filter(
+            user__vehicle__city=obj.city
+        ).distinct()
+
+        avg_commission = lessors.aggregate(
+            avg_commission=Avg('commission')
+        )['avg_commission']
+
+        return float(avg_commission) if avg_commission else 0.00
+
+    def get_canceled_orders_count(self, obj):
+        """Количество отмененных заказов"""
+        return self.get_trips_for_franchise(obj, status='canceled').count()
+
+    def get_canceled_orders_amount(self, obj):
+        """Сумма отмененных заказов"""
+        canceled_trips = self.get_trips_for_franchise(obj, status='canceled')
+        total = canceled_trips.aggregate(
+            total=Sum('total_cost')
+        )['total']
+        return float(total) if total else 0.00
+
+    def get_franchise_commission_amount(self, obj):
+        """Комиссия франшизы от всех заказов"""
+        all_trips = self.get_trips_for_franchise(obj)
+        total_cost = all_trips.aggregate(
+            total=Sum('total_cost')
+        )['total'] or Decimal('0.00')
+
+        return float((Decimal(str(total_cost)) * obj.commission) / 100)

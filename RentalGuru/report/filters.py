@@ -6,7 +6,7 @@ from django_filters import rest_framework as filters
 
 from app.models import Lessor, Renter
 from chat.models import Trip
-from franchise.models import City
+from franchise.models import City, Franchise
 from influencer.models import Influencer
 from vehicle.models import Vehicle
 
@@ -128,3 +128,25 @@ class InfluencerReportFilter(filters.FilterSet):
 
         # Фильтруем инфлюенсеров, у которых есть рентеры с поездками в указанном городе
         return queryset.filter(renters__in=renters_in_city).distinct()
+
+
+class FranchiseReportFilter(filters.FilterSet):
+    period = filters.ChoiceFilter(
+        choices=[
+            ('day', 'День'),
+            ('week', 'Неделя'),
+            ('month', 'Месяц'),
+            ('quarter', 'Квартал'),
+            ('year', 'Год')
+        ],
+        method='filter_period'
+    )
+    city = filters.ModelChoiceFilter(queryset=City.objects.all(), field_name='city')
+    franchise_id = filters.NumberFilter(field_name='id')
+
+    class Meta:
+        model = Franchise
+        fields = ['period', 'city', 'franchise_id']
+
+    def filter_period(self, queryset, name, value):
+        return queryset

@@ -1,20 +1,20 @@
 from decimal import Decimal
+
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
 from app.models import Lessor
+from franchise.models import Franchise
 from influencer.models import Influencer
-from report.filters import LessorReportFilter, InfluencerReportFilter
+from report.filters import LessorReportFilter, InfluencerReportFilter, FranchiseReportFilter
 from report.permissions import IsAdminRole
-from report.serializers import LessorReportSerializer, InfluencerReportSerializer
+from report.serializers import LessorReportSerializer, InfluencerReportSerializer, FranchiseReportSerializer
 
 
-@extend_schema(
-    summary="Отчеты. Арендодатели",
-    description="Отчеты. Арендодатели."
-)
+@extend_schema(summary="Отчеты. Арендодатели", description="Отчеты. Арендодатели.")
 class LessorReportView(ListAPIView):
     serializer_class = LessorReportSerializer
     filter_backends = [DjangoFilterBackend]
@@ -83,10 +83,7 @@ class LessorReportView(ListAPIView):
         })
 
 
-@extend_schema(
-    summary="Отчеты. Партнеры",
-    description="Отчеты. Партнеры."
-)
+@extend_schema(summary="Отчеты. Партнеры", description="Отчеты. Партнеры.")
 class InfluencerReportView(ListAPIView):
     serializer_class = InfluencerReportSerializer
     filter_backends = [DjangoFilterBackend]
@@ -146,3 +143,54 @@ class InfluencerReportView(ListAPIView):
             })
         except Exception as e:
             raise
+
+
+@extend_schema(summary="Отчеты. Франшизы", description="Отчеты. Франшизы.")
+class FranchiseReportView(ListAPIView):
+    serializer_class = FranchiseReportSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = FranchiseReportFilter
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        return Franchise.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            result = self.get_paginated_response(serializer.data)
+            data = result.data
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
+
+        total_completed_amount = sum(item['completed_orders_amount'] for item in serializer.data)
+        total_lessors_commission = sum(item['lessors_commission'] for item in serializer.data)
+        total_canceled_amount = sum(item['canceled_orders_amount'] for item in serializer.data)
+        total_franchise_commission = sum(item['franchise_commission_amount'] for item in serializer.data)
+        total_canceled_count = sum(item['canceled_orders_count'] for item in serializer.data)
+
+        avg_commission = queryset.aggregate(
+            avg=Avg('commission')
+        )['avg'] or 0
+
+        response_data = {
+            'total_completed_amount': total_completed_amount,
+            'total_lessors_commission': total_lessors_commission,
+            'avg_lessors_commission': float(avg_commission),
+            'total_canceled_count': total_canceled_count,
+            'total_canceled_amount': total_canceled_amount,
+            'total_franchise_commission': total_franchise_commission
+        }
+
+        if isinstance(data, dict):
+            data.update(response_data)
+            return Response(data)
+
+        return Response({
+            **response_data,
+            'results': data
+        })
