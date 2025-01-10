@@ -4,9 +4,11 @@ from django.db.models import Q
 from django.utils import timezone
 from django_filters import rest_framework as filters
 
-from app.models import Lessor
+from app.models import Lessor, Renter
 from chat.models import Trip
 from franchise.models import City
+from influencer.models import Influencer
+from vehicle.models import Vehicle
 
 
 class LessorReportFilter(filters.FilterSet):
@@ -69,3 +71,60 @@ class LessorReportFilter(filters.FilterSet):
     class Meta:
         model = Lessor
         fields = ['period', 'city', 'lessor_id']
+
+
+class InfluencerReportFilter(filters.FilterSet):
+    period = filters.ChoiceFilter(
+        choices=[
+            ('day', 'День'),
+            ('week', 'Неделя'),
+            ('month', 'Месяц'),
+            ('quarter', 'Квартал'),
+            ('year', 'Год')
+        ],
+        method='filter_period'
+    )
+    city = filters.ModelChoiceFilter(
+        queryset=City.objects.all(),
+        method='filter_by_city'
+    )
+    influencer_id = filters.NumberFilter(field_name='id')
+
+    class Meta:
+        model = Influencer
+        fields = ['period', 'city', 'influencer_id']
+
+    def filter_period(self, queryset, name, value):
+        return queryset
+
+    def filter_by_city(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        # Получаем ID рентеров, у которых есть поездки в указанном городе
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+        city_vehicles_query = Q()
+
+        for vehicle_type in vehicle_types:
+            content_type = ContentType.objects.get(model=vehicle_type)
+            vehicles = Vehicle.objects.filter(
+                city=value,
+                polymorphic_ctype=content_type
+            ).values_list('id', flat=True)
+
+            if vehicles:
+                city_vehicles_query |= Q(
+                    content_type=content_type,
+                    object_id__in=vehicles
+                )
+
+        # Находим поездки в указанном городе
+        trips_in_city = Trip.objects.filter(city_vehicles_query)
+
+        # Получаем ID рентеров из этих поездок
+        renters_in_city = Renter.objects.filter(
+            user__in=trips_in_city.values_list('organizer_id', flat=True)
+        )
+
+        # Фильтруем инфлюенсеров, у которых есть рентеры с поездками в указанном городе
+        return queryset.filter(renters__in=renters_in_city).distinct()

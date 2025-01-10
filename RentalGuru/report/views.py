@@ -1,15 +1,20 @@
 from decimal import Decimal
-
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
 from app.models import Lessor
-from report.filters import LessorReportFilter
+from influencer.models import Influencer
+from report.filters import LessorReportFilter, InfluencerReportFilter
 from report.permissions import IsAdminRole
-from report.serializers import LessorReportSerializer
+from report.serializers import LessorReportSerializer, InfluencerReportSerializer
 
 
+@extend_schema(
+    summary="Отчеты. Арендодатели",
+    description="Отчеты. Арендодатели."
+)
 class LessorReportView(ListAPIView):
     serializer_class = LessorReportSerializer
     filter_backends = [DjangoFilterBackend]
@@ -76,3 +81,68 @@ class LessorReportView(ListAPIView):
             **response_data,
             'results': data
         })
+
+
+@extend_schema(
+    summary="Отчеты. Партнеры",
+    description="Отчеты. Партнеры."
+)
+class InfluencerReportView(ListAPIView):
+    serializer_class = InfluencerReportSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = InfluencerReportFilter
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        return Influencer.objects.select_related('user').all()
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+
+            # Передаем период и город в контекст сериализатора
+            period = request.query_params.get('period')
+            city = request.query_params.get('city')
+            serializer_context = {
+                'period': period,
+                'city': city
+            }
+
+            # Считаем общие суммы
+            total_revenue = Decimal('0.00')
+            total_commission = Decimal('0.00')
+
+            # Получаем данные по каждому инфлюенсеру
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context=serializer_context)
+                result = self.get_paginated_response(serializer.data)
+                data = result.data
+            else:
+                serializer = self.get_serializer(queryset, many=True, context=serializer_context)
+                data = serializer.data
+
+            # Подсчитываем общие суммы
+            for item in serializer.data:
+                total_revenue += Decimal(str(item['revenue']))
+                total_commission += Decimal(str(item['commission']))
+
+            # Формируем итоговый ответ
+            response_data = {
+                'total_revenue': float(total_revenue),
+                'total_commission': float(total_commission),
+                'lessors_count': queryset.count(),
+            }
+
+            # Если есть пагинация
+            if isinstance(data, dict):
+                data.update(response_data)
+                return Response(data)
+
+            # Если нет пагинации
+            return Response({
+                **response_data,
+                'results': data
+            })
+        except Exception as e:
+            raise
