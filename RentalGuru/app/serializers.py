@@ -409,10 +409,11 @@ class OauthProviderSerializer(serializers.Serializer):
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """ Сериализатор создания пользователей """
+    role = serializers.ChoiceField(choices=[('lessor', 'Арендодатель'), ('renter', 'Арендатор')], required=True)
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'role']
+        fields = ['email', 'first_name', 'last_name', 'telephone', 'role']
 
     def create(self, validated_data):
         email = validated_data.pop('email')
