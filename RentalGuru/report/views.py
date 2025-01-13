@@ -33,39 +33,34 @@ class LessorReportView(ListAPIView):
         if lessor_id:
             filters['id'] = lessor_id
 
-        if filters:
-            queryset = queryset.filter(**filters)
+        return queryset.filter(**filters) if filters else queryset
 
-        period = self.request.query_params.get('period')
-        if period:
-            filter_instance = self.filterset_class()
-            queryset = filter_instance.get_filtered_queryset(queryset, period)
-
-        return queryset.distinct()
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['period'] = self.request.query_params.get('period')
+        return context
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        lessor_ids = queryset.values_list('id', flat=True)
-
         total_revenue = Decimal('0.00')
         total_commission = Decimal('0.00')
 
-        for lessor in queryset:
-            serializer = self.get_serializer(lessor)
-            revenue = Decimal(str(serializer.data['total_revenue']))
-            commission = Decimal(str(serializer.data['commission_amount']))
-            total_revenue += revenue
-            total_commission += commission
-
+        # Get paginated queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            result = self.get_paginated_response(serializer.data)
-            data = result.data
+            queryset_to_serialize = page
         else:
-            serializer = self.get_serializer(queryset, many=True)
-            data = serializer.data
+            queryset_to_serialize = queryset
+
+        # Calculate totals using the serializer
+        serializer = self.get_serializer(queryset_to_serialize, many=True)
+        data = serializer.data
+
+        # Sum up the total revenue and commission from serialized data
+        for item in data:
+            total_revenue += Decimal(str(item['total_revenue']))
+            total_commission += Decimal(str(item['commission_amount']))
 
         response_data = {
             'total_revenue': round(float(total_revenue), 2),
@@ -73,9 +68,10 @@ class LessorReportView(ListAPIView):
             'lessors_count': queryset.count(),
         }
 
-        if isinstance(data, dict):
-            data.update(response_data)
-            return Response(data)
+        if page is not None:
+            result = self.get_paginated_response(data)
+            result.data.update(response_data)
+            return result
 
         return Response({
             **response_data,

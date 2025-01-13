@@ -30,6 +30,7 @@ class LessorReportSerializer(serializers.ModelSerializer):
 
     def get_trips_for_lessor(self, lessor):
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+        period = self.context.get('period')
 
         content_type_query = Q()
         for vehicle_type in vehicle_types:
@@ -45,7 +46,25 @@ class LessorReportSerializer(serializers.ModelSerializer):
                     object_id__in=vehicles
                 )
 
-        return Trip.objects.filter(content_type_query)
+        trips = Trip.objects.filter(content_type_query, status='finished')
+
+        # Apply period filter if specified
+        if period:
+            today = timezone.now().date()
+            if period == 'day':
+                start_date = today
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+            elif period == 'quarter':
+                start_date = today - timedelta(days=90)
+            elif period == 'year':
+                start_date = today - timedelta(days=365)
+
+            trips = trips.filter(end_date__gte=start_date)
+
+        return trips
 
     def get_total_revenue(self, obj):
         trips = self.get_trips_for_lessor(obj)
@@ -58,7 +77,6 @@ class LessorReportSerializer(serializers.ModelSerializer):
     def get_last_rent_date(self, obj):
         trips = self.get_trips_for_lessor(obj)
         return trips.aggregate(last_date=Max('end_date'))['last_date']
-
 
 class InfluencerReportSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
