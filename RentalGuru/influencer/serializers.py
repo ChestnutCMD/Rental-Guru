@@ -1,3 +1,5 @@
+import random
+
 from django.db.models import Sum
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -83,6 +85,9 @@ class InfluencerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
 
         password = User.objects.make_random_password()
+        digit = random.choice('0123456789')
+        position = random.randint(0, len(password))
+        password = password[:position] + digit + password[position:]
 
         user = User.objects.create_user(
             email=email,

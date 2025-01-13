@@ -1,3 +1,5 @@
+import random
+
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -141,6 +143,9 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
 
         password = User.objects.make_random_password()
+        digit = random.choice('0123456789')
+        position = random.randint(0, len(password))
+        password = password[:position] + digit + password[position:]
 
         user = User.objects.create_user(
             email=email,
@@ -152,7 +157,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         )
 
         manager = Manager.objects.create(user=user, **validated_data)
-        content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер в нашей системе. Ваш пароль для входа: {password}\n\nС уважением, Команда RentalGuru."
+        content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}."
         Notification.objects.create(user=user, content=content)
         return manager
 
