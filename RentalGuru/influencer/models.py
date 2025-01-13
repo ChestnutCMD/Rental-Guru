@@ -29,6 +29,10 @@ class Influencer(models.Model):
     referral_code = models.CharField(max_length=20, unique=True, verbose_name='Реферальный код')
     organization = models.OneToOneField('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='influencer', verbose_name='Организация')
     commission = models.PositiveIntegerField(default=5, null=True, blank=True)
+    email_1 = models.EmailField(max_length=100, null=True, blank=True, verbose_name='Почта №1')
+    email_2 = models.EmailField(max_length=100, null=True, blank=True, verbose_name='Почта №2')
+    telephone_1 = models.CharField(max_length=13, null=True, blank=True, verbose_name='Телефон №1')
+    telephone_2 = models.CharField(max_length=13, null=True, blank=True, verbose_name='Телефон №2')
 
     def __str__(self):
         return f'{self.user.first_name} - {self.referral_code}'
@@ -97,22 +101,22 @@ class Organization(models.Model):
         verbose_name_plural = 'Организации инфлюенсеров'
 
 
-class Contact(models.Model):
-    CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
-    contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, verbose_name="Тип контакта")
-    value = models.CharField(max_length=100, verbose_name="Значение")
-    is_primary = models.BooleanField(default=False, verbose_name="Основной контакт")
-
-    def __str__(self):
-        return f"{CONTACT_TYPE_CHOICES_DICT.get(str(self.contact_type), self.contact_type)}: {self.value}"
-
-    class Meta:
-        verbose_name = 'Контакты инфлюенсера'
-        verbose_name_plural = 'Контакты инфлюенсеров'
-
-
-CONTACT_TYPE_CHOICES_DICT = dict(Contact.CONTACT_TYPE_CHOICES)
+# class Contact(models.Model):
+#     CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
+#     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
+#     contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, verbose_name="Тип контакта")
+#     value = models.CharField(max_length=100, verbose_name="Значение")
+#     is_primary = models.BooleanField(default=False, verbose_name="Основной контакт")
+#
+#     def __str__(self):
+#         return f"{CONTACT_TYPE_CHOICES_DICT.get(str(self.contact_type), self.contact_type)}: {self.value}"
+#
+#     class Meta:
+#         verbose_name = 'Контакты инфлюенсера'
+#         verbose_name_plural = 'Контакты инфлюенсеров'
+#
+#
+# CONTACT_TYPE_CHOICES_DICT = dict(Contact.CONTACT_TYPE_CHOICES)
 
 
 class BankDetails(models.Model):

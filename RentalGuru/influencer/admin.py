@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from influencer.models import Influencer, ReferralLink, BankDetails, Contact, Organization, InfluencerDocuments, QRCode, \
+from influencer.models import Influencer, ReferralLink, BankDetails, Organization, InfluencerDocuments, QRCode, \
     PromoCode
 
 
@@ -11,6 +11,7 @@ class ReferralLinkInline(admin.TabularInline):
     readonly_fields = ('count', 'created_at')
     verbose_name = "Реферальная ссылка"
     verbose_name_plural = "Реферальные ссылки"
+
 
 class QRCodeInline(admin.TabularInline):
     model = QRCode
@@ -26,11 +27,13 @@ class QRCodeInline(admin.TabularInline):
         return "QR-код не создан"
     qr_code_image_preview.short_description = "Предпросмотр QR-кода"
 
+
 class InfluencerDocumentsInline(admin.StackedInline):
     model = InfluencerDocuments
     can_delete = False
     verbose_name = "Документы"
     verbose_name_plural = "Документы"
+
 
 @admin.register(Influencer)
 class InfluencerAdmin(admin.ModelAdmin):
@@ -40,8 +43,7 @@ class InfluencerAdmin(admin.ModelAdmin):
     readonly_fields = (
         'referral_code',
         'org_name', 'org_country', 'org_city', 'org_address',
-        'bank_inn', 'bank_ogrn', 'bank_account', 'bank_owner',
-        'org_contacts'
+        'bank_inn', 'bank_ogrn', 'bank_account', 'bank_owner'
     )
 
     inlines = [
@@ -52,11 +54,11 @@ class InfluencerAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Основная информация', {
-            'fields': ('user', 'referral_code', 'commission', 'organization')
+            'fields': ('user', 'referral_code', 'commission', 'organization', 'email_1', 'email_2', 'telephone_1', 'telephone_2')
         }),
         ('Информация об организации', {
             'classes': ('collapse',),
-            'fields': ('org_name', 'org_country', 'org_city', 'org_address', 'org_contacts'),
+            'fields': ('org_name', 'org_country', 'org_city', 'org_address'),
         }),
         ('Банковские реквизиты', {
             'classes': ('collapse',),
@@ -99,13 +101,6 @@ class InfluencerAdmin(admin.ModelAdmin):
     def bank_owner(self, obj):
         return obj.organization.bank_details.account_owner if obj.organization and obj.organization.bank_details else '-'
     bank_owner.short_description = "Владелец счета"
-
-    def org_contacts(self, obj):
-        if not obj.organization or not obj.organization.contacts.exists():
-            return '-'
-        contacts = obj.organization.contacts.all()
-        return format_html('<br>'.join([f"{c.get_contact_type_display()}: {c.value}" for c in contacts]))
-    org_contacts.short_description = "Контакты"
 
 
 @admin.register(PromoCode)

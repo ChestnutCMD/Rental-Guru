@@ -3,7 +3,7 @@ from django.utils.timezone import now
 from rest_framework import serializers
 
 from chat.models import Trip, RequestRent
-from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, Contact, BankDetails, Organization, \
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, BankDetails, Organization, \
     InfluencerDocuments, PromoCode, RegistrationSource
 from notification.models import Notification
 from payment.models import Payment
@@ -109,17 +109,6 @@ class LinkSerializer(serializers.ModelSerializer):
         fields = ['channel', 'link', 'count']
 
 
-class ContactSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Contact
-        fields = ['id', 'contact_type', 'value', 'is_primary']
-
-
-class ContactCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Contact
-        fields = ['id', 'organization', 'contact_type', 'value', 'is_primary']
-
 
 class BankDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -128,15 +117,13 @@ class BankDetailsSerializer(serializers.ModelSerializer):
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    contacts = ContactSerializer(source='contact_set', many=True)
     bank_details = BankDetailsSerializer()
 
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'country', 'city', 'address', 'contacts', 'bank_details']
+        fields = ['id', 'name', 'country', 'city', 'address', 'bank_details']
 
     def create(self, validated_data):
-        contacts_data = validated_data.pop('contact_set', [])
         bank_details_data = validated_data.pop('bank_details', None)
 
         bank_details = None
@@ -145,13 +132,9 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
         organization = Organization.objects.create(bank_details=bank_details, **validated_data)
 
-        for contact_data in contacts_data:
-            Contact.objects.create(organization=organization, **contact_data)
-
         return organization
 
     def update(self, instance, validated_data):
-        contacts_data = validated_data.pop('contact_set', [])
         bank_details_data = validated_data.pop('bank_details', None)
 
         # Обновление данных организации
@@ -169,11 +152,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
                 bank_details = BankDetails.objects.create(**bank_details_data)
                 instance.bank_details = bank_details
                 instance.save()
-
-        # Обновить контакты - удалить старые и создать новые
-        instance.contact_set.all().delete()
-        for contact_data in contacts_data:
-            Contact.objects.create(organization=instance, **contact_data)
 
         return instance
 
@@ -209,7 +187,7 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
         model = Influencer
         fields = ['id', 'user_id', 'first_name', 'last_name', 'referral_code', 'referral_links', 'total_clicks',
                   'commission', 'total_rent_income', 'organization', 'document', 'date_of_birth', 'avatar', 'email',
-                  'telephone']
+                  'telephone', 'email_1', 'email_2', 'telephone_1', 'telephone_2']
         read_only_fields = ['referral_code', 'total_clicks', 'total_rent_income', 'email', 'commission']
 
     def get_total_clicks(self, obj):
@@ -258,7 +236,6 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     def update_organization(self, instance, organization_data):
         """Обновление или создание организации и связанных объектов."""
         organization = instance.organization
-        contacts_data = organization_data.pop('contact_set', [])
         bank_details_data = organization_data.pop('bank_details', None)
 
         if not organization:
@@ -276,11 +253,6 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
             if bank_details_data:
                 self.update_bank_details(organization, bank_details_data)
-
-        # Update contacts
-        organization.contact_set.all().delete()
-        for contact_data in contacts_data:
-            Contact.objects.create(organization=organization, **contact_data)
 
     def update_bank_details(self, organization, bank_details_data):
         """Обновление или создание банковских данных."""
