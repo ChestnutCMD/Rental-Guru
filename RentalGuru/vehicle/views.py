@@ -1,16 +1,10 @@
 import os
-from itertools import chain
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
-from django.db import models
-from django.db.models import F, Q, TextField, Value, Func, Min, Avg
-from django.db.models.functions import Cast
-from django.utils.datastructures import MultiValueDictKeyError
+from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import Q, Min
 from django_filters.rest_framework import DjangoFilterBackend
-from googletrans import Translator
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.decorators import api_view, permission_classes, action
@@ -20,8 +14,6 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ReadOnlyModelViewSet
-from transliterate import translit
 
 from RentalGuru import settings
 from app.models import Lessor
@@ -74,9 +66,7 @@ class VehicleModelViewSet(viewsets.ModelViewSet):
 
 class BaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
-        if hasattr(self.request.user, 'manager') and self.request.user.manager:
-            return [ManagerObjectPermission()]
-        elif self.action == 'list':
+        if self.action == 'list':
             self.permission_classes = [AllowAny]
         elif self.action == 'retrieve':
             self.permission_classes = [IsAuthenticated]
