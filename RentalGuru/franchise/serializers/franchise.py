@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from app.models import User, Lessor
 from chat.models import RequestRent
+from franchise.add_lessor import RequestAddLessor
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
 from notification.models import Notification
@@ -238,3 +239,76 @@ class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = ['id', 'title', 'finished_trips_count']
+
+
+class RequestAddLessorCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestAddLessor
+        fields = ['id', 'franchise', 'lessor']
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        request = self.context['request']
+
+        if hasattr(request.user, 'franchise'):
+            attrs['franchise'] = request.user.franchise
+        elif not attrs.get('franchise'):
+            raise serializers.ValidationError(
+                "Франшиза обязательна, если пользователь не является директором."
+            )
+
+        if RequestAddLessor.objects.filter(
+            franchise=attrs['franchise'],
+            lessor=attrs['lessor'],
+            status='on_consideration'
+        ).exists():
+            raise serializers.ValidationError(
+                "Активная заявка для данного арендодателя уже существует."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        content = f"Новая заявка на добавление в франшизу {instance.franchise.name}."
+        Notification.objects.create(user=instance.lessor.user, content=content)
+
+        return instance
+
+
+class RequestAddLessorUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestAddLessor
+        fields = ['status']
+
+    def validate_status(self, value):
+        if value not in ['approved', 'rejected']:
+            raise serializers.ValidationError(
+                "Статус может быть изменен только на 'approved' или 'rejected'."
+            )
+        return value
+
+    def validate(self, attrs):
+        if self.instance and attrs.get('status') == 'approved':
+            if self.instance.lessor.franchise and \
+                    self.instance.lessor.franchise != self.instance.franchise:
+                raise serializers.ValidationError(
+                    "Арендодатель уже привязан к другой франшизе."
+                )
+        return attrs
+
+    def update(self, instance, validated_data):
+        if validated_data['status'] == 'approved':
+            instance.lessor.franchise = instance.franchise
+            instance.lessor.save()
+
+        instance.status = validated_data['status']
+        instance.save()
+
+        if instance.status == 'approved':
+            content = f"Ваша заявка на добавление в франшизу {instance.franchise.name} была подтверждена."
+        elif instance.status == 'rejected':
+            content = f"Ваша заявка на добавление в франшизу {instance.franchise.name} была отклонена."
+
+        Notification.objects.create(user=instance.franchise.director, content=content)
+        return instance

@@ -1,8 +1,10 @@
+from django.db import transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,14 +12,17 @@ from rest_framework.views import APIView
 from app.models import Lessor, User
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
+from .add_lessor import RequestAddLessor
 from .models import VehiclePark, Franchise, RequestFranchise, City
-from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin
+from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin, \
+    IsAdminOrFranchiseOwner
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
 from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSerializer, \
     FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer, LessorSerializer, \
-    FranchiseStatisticsSerializer, RequestFranchiseSerializer, CitySerializer
+    FranchiseStatisticsSerializer, RequestFranchiseSerializer, CitySerializer, RequestAddLessorUpdateSerializer, \
+    RequestAddLessorCreateSerializer
 
 
 @extend_schema(summary="Автопарк CRUD", description="CRUD Автопарка")
@@ -345,3 +350,46 @@ class CityView(generics.ListAPIView):
     ).order_by('-finished_trips_count')
 
 
+@extend_schema(summary="Добавление арендодателей в франшизу", description="""Статусы: \n
+                                                                          "'on_consideration', 'На рассмотрении',
+        'approved', 'Подтверждено',
+        'rejected', 'Отклонено'""")
+class RequestAddLessorViewSet(viewsets.ModelViewSet):
+    queryset = RequestAddLessor.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            return RequestAddLessorUpdateSerializer
+        return RequestAddLessorCreateSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated(), IsAdminOrFranchiseOwner()]
+        elif self.action in ['update', 'partial_update']:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == 'admin':
+            return self.queryset
+        if hasattr(user, 'franchise'):
+            return self.queryset.filter(franchise=user.franchise)
+        if hasattr(user, 'lessor'):
+            return self.queryset.filter(lessor=user.lessor)
+
+        return self.queryset.none()
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj)
+
+        if self.action in ['update', 'partial_update']:
+            if not (
+                request.user.role == 'admin' or
+                (hasattr(request.user, 'lessor') and request.user.lessor == obj.lessor)
+            ):
+                raise PermissionDenied(
+                    "Только администратор или указанный арендодатель могут изменять статус заявки."
+                )
