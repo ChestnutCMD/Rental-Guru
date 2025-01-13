@@ -28,7 +28,7 @@ from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, Sp
     BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
-    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer, BaseVehicleListSerializer
+    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
     AutoTransmissionSerializer, AutoBodyTypeSerializer

@@ -106,6 +106,11 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
     document_number = serializers.CharField(source='manager_document.number', read_only=True)
     permissions = ManagerPermissionSerializer(many=True, read_only=True)
 
+    franchise_name = serializers.CharField(source='franchise.name', read_only=True)
+    franchise_city = serializers.CharField(source='franchise.city.name', read_only=True)
+    franchise_director = serializers.CharField(source='franchise.director', read_only=True)
+    franchise_total_vehicles = serializers.SerializerMethodField()
+
     class Meta:
         model = Manager
         fields = [
@@ -119,7 +124,16 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
             'document_photo',
             'document_number',
             'permissions',
+            'franchise_name',
+            'franchise_city',
+            'franchise_director',
+            'franchise_total_vehicles',
         ]
+
+    def get_franchise_total_vehicles(self, obj):
+        if obj.franchise:
+            return obj.franchise.get_total_vehicles()
+        return 0
 
 
 class ManagerCreateSerializer(serializers.ModelSerializer):

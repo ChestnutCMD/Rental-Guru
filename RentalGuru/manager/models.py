@@ -8,11 +8,13 @@ from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
+from franchise.models import Franchise
 
 
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
     password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
+    franchise = models.ForeignKey(Franchise, null=True, blank=True, default=None, on_delete=models.SET_NULL, verbose_name='Франшиза', related_name='managers')
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
