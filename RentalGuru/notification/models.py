@@ -58,7 +58,10 @@ class FCMToken(models.Model):
 @shared_task
 def send_email_notification(notification_id):
     notification = Notification.objects.select_related('user').get(id=notification_id)
-    message = f'{notification.content}\n{notification.url}'
+    if notification.url:
+        message = f'{notification.content}\n{notification.url}'
+    else:
+        message = f'{notification.content}'
     send_mail(
         subject='Rental-Guru',
         message=message,
