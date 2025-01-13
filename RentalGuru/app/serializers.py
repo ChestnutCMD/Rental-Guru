@@ -10,7 +10,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from franchise.models import Franchise
 from influencer.models import Influencer, ReferralLink, QRCode, PromoCode
-from notification.models import FCMToken
+from notification.models import FCMToken, Notification
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
 from vehicle.serializers.bike import BikeListSerializer
@@ -405,3 +405,55 @@ class OauthProviderSerializer(serializers.Serializer):
     ref = serializers.CharField(required=False, allow_blank=True)
     referral_code = serializers.CharField(required=False, allow_blank=True)
     promocode = serializers.CharField(required=False, allow_blank=True)
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
+    """ Сериализатор создания пользователей """
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'role']
+
+    def create(self, validated_data):
+        email = validated_data.pop('email')
+        first_name = validated_data.pop('first_name', '')
+        last_name = validated_data.pop('last_name', '')
+        telephone = validated_data.pop('telephone', None)
+        role = validated_data.pop('role')
+
+        # Проверка существования пользователя с таким email
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
+
+        # Генерация пароля с обязательной цифрой
+        password = User.objects.make_random_password(length=8)
+        digit = random.choice('0123456789')
+        position = random.randint(0, len(password))
+        password = password[:position] + digit + password[position:]
+
+        # Создание пользователя
+        user = User.objects.create_user(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            telephone=telephone,
+            password=password,
+            role='member',
+        )
+
+        if role == 'renter':
+            Renter.objects.create(user=user)
+            user_role = 'арендатор'
+        elif role == 'lessor':
+            Lessor.objects.create(user=user)
+            user_role = 'арендодатель'
+        else:
+            raise serializers.ValidationError({"role": "Указана неверная роль пользователя."})
+
+        content = (
+            f"Здравствуйте, {first_name}!\n\n"
+            f"Вы зарегистрированы как {user_role}. Ваш пароль: {password}."
+        )
+        Notification.objects.create(user=user, content=content)
+
+        return user

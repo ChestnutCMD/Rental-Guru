@@ -9,6 +9,9 @@ class ManagerObjectPermission(BasePermission):
     Проверяет права менеджера на доступ к объекту.
     """
     def has_object_permission(self, request, view, obj):
+        if request.user.is_authenticated and request.user.role == 'admin':
+            return True
+
         if not request.user.is_authenticated or not hasattr(request.user, 'manager'):
             return False
 

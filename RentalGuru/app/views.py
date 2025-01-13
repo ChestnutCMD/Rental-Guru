@@ -25,6 +25,7 @@ from RentalGuru import settings
 from RentalGuru.settings import redis_1
 from chat.models import Trip
 from influencer.models import Influencer, RegistrationSource, ReferralLink, QRCode, PromoCode, UsedPromoCode
+from manager.permissions import ManagerObjectPermission
 from notification.models import Notification, FCMToken
 from vehicle.models import Vehicle
 from .filters import RenterDocumentsFilter
@@ -34,7 +35,8 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListS
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
     BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer, \
-    TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList, OauthProviderSerializer
+    TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList, OauthProviderSerializer, \
+    UserCreateSerializer
 from .task import send_verification_email, send_sms
 from .utils import referal_check
 
@@ -1004,3 +1006,30 @@ class OauthCallback(APIView):
                 )
             except IntegrityError:
                 pass
+
+
+@extend_schema(summary="Регистрация пользователей от имени администратора или менеджера")
+class UserCreateView(APIView):
+    """
+    Вью для создания пользователя от имени администратора.
+    """
+    permission_classes = [ManagerObjectPermission]
+
+    def post(self, request, *args, **kwargs):
+        serializer = UserCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Пользователь успешно создан.",
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "role": user.role,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

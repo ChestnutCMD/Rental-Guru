@@ -88,3 +88,4 @@ class ManagerViewSet(ModelViewSet):
             {"message": "Менеджер и связанный пользователь успешно удалены."},
             status=status.HTTP_204_NO_CONTENT,
         )
+
