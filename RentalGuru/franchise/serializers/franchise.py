@@ -82,8 +82,14 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
-        user_data = validated_data.pop('user')
+        user_data = validated_data.pop('user', None)
+        if not user_data:
+            raise serializers.ValidationError({"user": "Данные пользователя обязательны."})
+
         email = user_data.get('email')
+        if not email:
+            raise serializers.ValidationError({"email": "Поле email обязательно для заполнения."})
+
         first_name = user_data.get('first_name')
         last_name = user_data.get('last_name')
         telephone = user_data.get('telephone')
@@ -102,6 +108,7 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
             role='member',
         )
 
+        validated_data["email"] = email
         franchise = Franchise.objects.create(director=user, telephone=user.telephone, **validated_data)
 
         Notification.objects.create(

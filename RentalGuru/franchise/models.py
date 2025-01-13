@@ -53,7 +53,9 @@ class Franchise(models.Model):
 
     def get_vehicles(self):
         from vehicle.models import Vehicle
-        return Vehicle.objects.filter(city=self.city)
+        return Vehicle.objects.filter(
+            Q(owner__lessor__franchise=self) | Q(owner=self.director)
+        )
 
     def get_total_vehicles(self):
         return self.get_vehicles().count()

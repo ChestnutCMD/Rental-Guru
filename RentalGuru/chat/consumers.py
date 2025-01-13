@@ -343,12 +343,12 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         user = self.scope['user']
 
         if hasattr(chat, 'request_rent'):
-            is_admin_or_manager = user.role in ['admin', 'manager']
-            is_franchise_director = (
-                    hasattr(chat.request_rent.vehicle, 'city')
-                    and Franchise.objects.filter(city=chat.request_rent.vehicle.city, director=user).exists()
+            show_all_messages = (
+                    user.role in ['admin', 'manager'] or
+                    (hasattr(chat.request_rent.vehicle, 'owner') and
+                     chat.request_rent.vehicle.owner.lessor.franchise and
+                     chat.request_rent.vehicle.owner.lessor.franchise.director == user)
             )
-            show_all_messages = is_admin_or_manager or is_franchise_director
         else:
             show_all_messages = user.role in ['admin', 'manager']
 
@@ -610,17 +610,17 @@ class ChatConsumer(BaseChatConsumer):
             return True
 
         is_franchise_director = (
-                chat.request_rent.vehicle.city
-                and Franchise.objects.filter(city=chat.request_rent.vehicle.city, director=user).exists()
+            hasattr(chat.request_rent.vehicle, 'owner') and
+            chat.request_rent.vehicle.owner.lessor.franchise and
+            chat.request_rent.vehicle.owner.lessor.franchise.director == user
         )
 
-        has_direct_access = (
-                user in chat.participants.all() or
-                user == chat.request_rent.organizer or
-                user == chat.request_rent.vehicle.owner
+        return (
+            user in chat.participants.all() or
+            user == chat.request_rent.organizer or
+            user == chat.request_rent.vehicle.owner or
+            is_franchise_director
         )
-
-        return has_direct_access or is_franchise_director
 
     async def chat_message_translated(self, event):
         """ Обработчик для переведенных сообщений """
