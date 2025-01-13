@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from manager.permissions import ManagerObjectPermission
+
 
 class IsAdminOrManager(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -11,12 +13,14 @@ class IsAdminOrManager(permissions.BasePermission):
         return self.has_permission(request, view)
 
 
-class IsAdminOrInfluencer(permissions.BasePermission):
+class IsAdminOrInfluencer(ManagerObjectPermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        return request.user.role in ['admin', 'manager'] or obj.user == request.user
+        if super().has_object_permission(request, view, obj):
+            return True
+        return obj.user == request.user
 
 
 class IsAdminOrManagerForRequest(permissions.BasePermission):

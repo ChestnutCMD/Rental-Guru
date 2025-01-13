@@ -1,9 +1,13 @@
 from rest_framework.permissions import BasePermission
 
+from manager.permissions import ManagerObjectPermission
 
-class IsOwnerOrAdmin(BasePermission):
+
+class IsOwnerOrAdmin(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
-        return request.user == obj.owner or request.user.role == 'admin'
+        if super().has_object_permission(request, view, obj):
+            return True
+        return request.user == obj.owner
 
     def has_permission(self, request, view):
         if view.action in ['list', 'retrieve']:
@@ -11,18 +15,15 @@ class IsOwnerOrAdmin(BasePermission):
         return True
 
 
-class IsOwnerOrAdminForGet(BasePermission):
+class IsOwnerOrAdminForGet(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
-        if request.method not in ['GET']:
-            return request.user == obj.owner or request.user.role == 'admin' or request.user.role == 'manager'
-
-        if request.user.role == 'admin':
+        if super().has_object_permission(request, view, obj):
             return True
-
+        if request.method not in ['GET']:
+            return request.user == obj.owner
         if hasattr(obj, 'franchise'):
             if obj.franchise and request.user == obj.franchise.director:
                 return True
-
         return request.user == obj.owner
 
     def has_permission(self, request, view):
@@ -31,9 +32,11 @@ class IsOwnerOrAdminForGet(BasePermission):
         return super().has_permission(request, view)
 
 
-class IsDirectorOrAdminForGet(BasePermission):
+class IsDirectorOrAdminForGet(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
-        return request.user == obj.director or request.user.role == 'admin'
+        if super().has_object_permission(request, view, obj):
+            return True
+        return request.user == obj.director
 
 
 class IsAdminOrManager(BasePermission):
@@ -46,28 +49,19 @@ class IsAdmin(BasePermission):
         return request.user.is_authenticated and request.user.role == 'admin'
 
 
-class IsAdminOrFranchiseOwner(BasePermission):
+class IsAdminOrFranchiseOwner(ManagerObjectPermission):
     def has_permission(self, request, view):
-        if request.user.role == 'admin':
+        if request.user.role in ['admin', 'manager']:
             return True
-
-        # Для создания заявки проверяем, является ли пользователь директором какой-либо франшизы
         if request.method == 'POST':
             return hasattr(request.user, 'franchise')
-
         return True
 
     def has_object_permission(self, request, view, obj):
-        # Админ имеет полный доступ
-        if request.user.role == 'admin':
+        if super().has_object_permission(request, view, obj):
             return True
-
-        # Директор франшизы имеет доступ только к своим заявкам
         if hasattr(request.user, 'franchise'):
             return obj.franchise == request.user.franchise
-
-        # Арендодатель имеет доступ только к заявкам, где он указан
         if hasattr(request.user, 'lessor'):
             return obj.lessor == request.user.lessor
-
         return False

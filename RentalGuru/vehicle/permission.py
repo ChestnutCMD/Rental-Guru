@@ -1,7 +1,9 @@
 from rest_framework import permissions
 
+from manager.permissions import ManagerObjectPermission
 
-class IsAdminOrReadOnly(permissions.BasePermission):
+
+class IsAdminOrReadOnly(ManagerObjectPermission):
     """
     Пользовательское разрешение, позволяющее создавать, редактировать и удалять объекты только администраторам.
     Доступ на чтение разрешен всем пользователям.
@@ -14,7 +16,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user and request.user.role == 'admin'
+        if super().has_object_permission(request, view, obj):
+            return True
 
 
 class IsAdminOrLessor(permissions.BasePermission):
@@ -22,12 +25,14 @@ class IsAdminOrLessor(permissions.BasePermission):
     Пользовательское разрешение, позволяющее создавать объекты только администраторам и арендодателям.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.role == 'admin' or hasattr(request.user, 'lessor'))
+        return request.user.is_authenticated and (request.user.role in ['admin', 'manager'] or hasattr(request.user, 'lessor'))
 
 
-class IsAdminOrOwner(permissions.BasePermission):
+class IsAdminOrOwner(ManagerObjectPermission):
     """
     Пользовательское разрешение, позволяющее редактировать объект только администраторам или владельцам объекта.
     """
     def has_object_permission(self, request, view, obj):
-        return request.user.role == 'admin' or obj.owner == request.user
+        if super().has_object_permission(request, view, obj):
+            return True
+        return obj.owner == request.user

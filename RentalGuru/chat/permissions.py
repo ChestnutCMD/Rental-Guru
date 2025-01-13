@@ -2,20 +2,19 @@ from datetime import date
 
 from rest_framework import permissions
 
+from manager.permissions import ManagerObjectPermission
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .models import Trip, Chat, Message
 
 
-class IsAdminOrOwner(permissions.BasePermission):
+class IsAdminOrOwner(ManagerObjectPermission):
     """
     Разрешение позволяет доступ только пользователям с ролью 'admin' или владельцам ресурса.
     """
 
     def has_object_permission(self, request, view, obj):
-        # Администраторы имеют полный доступ
-        if request.user.role == 'admin':
+        if super().has_object_permission(request, view, obj):
             return True
-
         # Проверка принадлежности ресурса пользователю
         if isinstance(obj, Trip):
             return obj.renter == request.user
@@ -27,14 +26,14 @@ class IsAdminOrOwner(permissions.BasePermission):
         return False
 
 
-class IsParticipantOrAdmin(permissions.BasePermission):
+class IsParticipantOrAdmin(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
-        if request.user.role == 'admin':
+        if super().has_object_permission(request, view, obj):
             return True
         return request.user in obj.participants.all()
 
 
-class IsChatCreatorOrAdmin(permissions.BasePermission):
+class IsChatCreatorOrAdmin(ManagerObjectPermission):
     """
     Разрешение для разрешения доступа к действиям чата только создателю чата или администратору.
     """
@@ -44,7 +43,9 @@ class IsChatCreatorOrAdmin(permissions.BasePermission):
         return True
 
     def has_object_permission(self, request, view, obj):
-        return obj.creator == request.user or request.user.role == 'admin'
+        if super().has_object_permission(request, view, obj):
+            return True
+        return obj.creator == request.user
 
 
 class IsOrganizerAndEndDateToday(permissions.BasePermission):

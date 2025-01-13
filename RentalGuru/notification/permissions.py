@@ -1,12 +1,16 @@
 from rest_framework.permissions import BasePermission
 
+from manager.permissions import ManagerObjectPermission
 
-class IsAdminOrOwner(BasePermission):
+
+class IsAdminOrOwner(ManagerObjectPermission):
     """
     Пользовательское разрешение, позволяющее редактировать объект только администраторам или владельцам объекта.
     """
     def has_object_permission(self, request, view, obj):
-        return request.user.role in ['admin', 'manager'] or obj.user == request.user
+        if super().has_object_permission(request, view, obj):
+            return True
+        return obj.user == request.user
 
 
 class IsAdmin(BasePermission):

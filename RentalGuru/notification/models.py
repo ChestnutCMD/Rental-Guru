@@ -109,5 +109,5 @@ def send_web_push_notification(user_id, notification_body, notification_url):
 
 @shared_task
 def remove_old_tokens():
-    expiration_date = timezone.now() - timedelta(days=90)  # Удаляем токены старше 90 дней
+    expiration_date = timezone.now() - timedelta(days=90)
     FCMToken.objects.filter(last_used_at__lt=expiration_date).delete()

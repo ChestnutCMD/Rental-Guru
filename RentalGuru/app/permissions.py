@@ -1,10 +1,7 @@
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
-
-class IsAdmin(BasePermission):
-    def has_permission(self, request, view):
-        return request.user and request.user.role == 'admin' or request.user.role == 'manager'
+from manager.permissions import ManagerObjectPermission
 
 
 class IsManager(BasePermission):
@@ -12,22 +9,27 @@ class IsManager(BasePermission):
         return request.user and request.user.role == 'manager'
 
 
-class IsAdminOrSelf(BasePermission):
+class IsAdminOrSelf(ManagerObjectPermission):
+    """
+    Пермишн для проверки прав администратора или принадлежности объекта пользователю.
+    """
     def has_object_permission(self, request, view, obj):
-        if request.user.role in ('admin', 'manager'):
+        if super().has_object_permission(request, view, obj):
             return True
-        elif hasattr(request.user, 'renter'):
-            return obj.renter == request.user.renter
-        elif hasattr(request.user, 'lessor'):
-            return obj.lessor == request.user.lessor
+
+        if hasattr(request.user, 'renter') and obj.renter == request.user.renter:
+            return True
+        if hasattr(request.user, 'lessor') and obj.lessor == request.user.lessor:
+            return True
+
         return False
 
 
-class IsAdminOrOwner(BasePermission):
+class IsAdminOrOwner(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
-        if request.user.role == 'admin':
+        if super().has_object_permission(request, view, obj):
             return True
         if hasattr(request.user, 'renter') and obj.renter == request.user.renter:
             return True
