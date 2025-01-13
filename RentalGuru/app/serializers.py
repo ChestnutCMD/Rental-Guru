@@ -422,17 +422,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
         telephone = validated_data.pop('telephone', None)
         role = validated_data.pop('role')
 
-        # Проверка существования пользователя с таким email
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
 
-        # Генерация пароля с обязательной цифрой
         password = User.objects.make_random_password(length=8)
         digit = random.choice('0123456789')
         position = random.randint(0, len(password))
         password = password[:position] + digit + password[position:]
 
-        # Создание пользователя
         user = User.objects.create_user(
             email=email,
             first_name=first_name,

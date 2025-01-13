@@ -1010,7 +1010,7 @@ class OauthCallback(APIView):
 
 @extend_schema(
     summary="Регистрация пользователей от имени администратора или менеджера",
-    parameters=[UserCreateSerializer])
+    request=UserCreateSerializer)
 class UserCreateView(APIView):
     """
     Вью для создания пользователя от имени администратора.
