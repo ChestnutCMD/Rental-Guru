@@ -157,11 +157,18 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         return manager
 
 
+class CustomAvatarField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if data == "" or data is None:
+            return None
+        return super().to_internal_value(data)
+
+
 class ManagerUpdateSerializer(serializers.ModelSerializer):
     """ Сериализатор обновления менеджера """
     first_name = serializers.CharField(source='user.first_name', required=False)
     last_name = serializers.CharField(source='user.last_name', required=False)
-    avatar = serializers.ImageField(source='user.avatar', required=False)
+    avatar = CustomAvatarField(source='user.avatar', required=False)
     telephone = serializers.CharField(source='user.telephone', required=False)
     date_of_birth = serializers.DateField(source='user.date_of_birth', required=False)
     password = serializers.CharField(write_only=True, required=False)
@@ -186,6 +193,17 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
         document_data = validated_data.pop('manager_document', None)
         permissions_data = validated_data.pop('permissions', None)
         user = instance.user
+
+        for field, value in user_data.items():
+            if field == 'avatar':
+                if value is None:
+                    if user.avatar:
+                        user.avatar.delete(save=False)
+                        user.avatar = None
+                else:
+                    setattr(user, field, value)
+            else:
+                setattr(user, field, value)
 
         if 'password' in validated_data:
             password = validated_data.pop('password')

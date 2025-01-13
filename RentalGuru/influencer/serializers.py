@@ -184,11 +184,18 @@ class InfluencerDocumentsSerializer(serializers.ModelSerializer):
         fields = ['number', 'photo', 'status']
 
 
+class CustomAvatarField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if data == "" or data is None:
+            return None
+        return super().to_internal_value(data)
+
+
 class InfluencerDetailSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     date_of_birth = serializers.DateField(source='user.date_of_birth')
-    avatar = serializers.ImageField(source='user.avatar', required=False)
+    avatar = CustomAvatarField(source='user.avatar', required=False)
     email = serializers.EmailField(source='user.email', read_only=True)
     telephone = serializers.CharField(source='user.telephone')
     user_id = serializers.IntegerField(source='user.id', read_only=True)
@@ -217,6 +224,18 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         self.update_user(instance.user, user_data)
+        user = instance.user
+
+        for field, value in user_data.items():
+            if field == 'avatar':
+                if value is None:
+                    if user.avatar:
+                        user.avatar.delete(save=False)
+                        user.avatar = None
+                else:
+                    setattr(user, field, value)
+            else:
+                setattr(user, field, value)
 
         organization_data = validated_data.pop('organization', None)
         if organization_data:
