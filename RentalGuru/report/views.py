@@ -43,21 +43,18 @@ class LessorReportView(ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        total_revenue = Decimal('0.00')
-        total_commission = Decimal('0.00')
-
-        # Get paginated queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             queryset_to_serialize = page
         else:
             queryset_to_serialize = queryset
 
-        # Calculate totals using the serializer
         serializer = self.get_serializer(queryset_to_serialize, many=True)
         data = serializer.data
 
-        # Sum up the total revenue and commission from serialized data
+        total_revenue = Decimal('0.00')
+        total_commission = Decimal('0.00')
+
         for item in data:
             total_revenue += Decimal(str(item['total_revenue']))
             total_commission += Decimal(str(item['commission_amount']))

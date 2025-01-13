@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from rest_framework import serializers
 from decimal import Decimal
-from django.db.models import Sum, Max, Q
+from django.db.models import Sum, Max, Q, Avg
 
 from app.models import Lessor
 from chat.models import Trip
@@ -32,23 +32,41 @@ class LessorReportSerializer(serializers.ModelSerializer):
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         period = self.context.get('period')
 
-        content_type_query = Q()
+        print(f"\nProcessing lessor: {lessor.id} - {lessor.user.first_name} {lessor.user.last_name}")
+
+        trips_query = None
+
+        # Собираем все транспортные средства арендодателя по типам
         for vehicle_type in vehicle_types:
             content_type = ContentType.objects.get(model=vehicle_type)
             vehicles = Vehicle.objects.filter(
                 owner=lessor.user,
                 polymorphic_ctype=content_type
-            ).values_list('id', flat=True)
+            )
 
-            if vehicles:
-                content_type_query |= Q(
+            if vehicles.exists():
+                print(f"Found {vehicle_type} vehicles: {list(vehicles.values_list('id', flat=True))}")
+
+                current_query = Q(
                     content_type=content_type,
-                    object_id__in=vehicles
+                    object_id__in=vehicles.values_list('id', flat=True)
                 )
 
-        trips = Trip.objects.filter(content_type_query, status='finished')
+                if trips_query is None:
+                    trips_query = current_query
+                else:
+                    trips_query |= current_query
 
-        # Apply period filter if specified
+        if trips_query is None:
+            print("No vehicles found for lessor")
+            return Trip.objects.none()
+
+        # Базовый запрос поездок для конкретного арендодателя
+        trips = Trip.objects.filter(trips_query, status='finished')
+        print(f"Initial trips query: {trips.query}")
+        print(f"Found trips count: {trips.count()}")
+
+        # Применяем фильтр по периоду
         if period:
             today = timezone.now().date()
             if period == 'day':
@@ -63,20 +81,32 @@ class LessorReportSerializer(serializers.ModelSerializer):
                 start_date = today - timedelta(days=365)
 
             trips = trips.filter(end_date__gte=start_date)
+            print(f"After period filter trips count: {trips.count()}")
+
+        # Выводим детали найденных поездок
+        for trip in trips:
+            print(
+                f"Trip id: {trip.id}, content_type: {trip.content_type}, object_id: {trip.object_id}, total_cost: {trip.total_cost}")
 
         return trips
 
     def get_total_revenue(self, obj):
         trips = self.get_trips_for_lessor(obj)
-        return trips.aggregate(total=Sum('total_cost'))['total'] or Decimal('0.00')
+        total = trips.aggregate(total=Sum('total_cost'))['total'] or Decimal('0.00')
+        print(f"Total revenue for lessor {obj.id}: {total}")
+        return total
 
     def get_commission_amount(self, obj):
         total_revenue = self.get_total_revenue(obj)
-        return (total_revenue * obj.commission) / 100
+        commission = Decimal(str(total_revenue * obj.commission / 100))
+        print(f"Commission for lessor {obj.id}: {commission}")
+        return commission
 
     def get_last_rent_date(self, obj):
         trips = self.get_trips_for_lessor(obj)
-        return trips.aggregate(last_date=Max('end_date'))['last_date']
+        last_date = trips.aggregate(last_date=Max('end_date'))['last_date']
+        print(f"Last rent date for lessor {obj.id}: {last_date}")
+        return last_date
 
 class InfluencerReportSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
