@@ -30,7 +30,7 @@ class Manager(models.Model):
 
 
 def upload_manager_document(instance, filename):
-    return f'media/images/users/{instance.renter.user.id}/documents/{filename}'
+    return f'media/images/users/{instance.manager.user.id}/documents/{filename}'
 
 
 class ManagerDocuments(models.Model):

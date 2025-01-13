@@ -326,7 +326,7 @@ class ContactCreateAPIView(APIView):
         except Influencer.DoesNotExist:
             return Response({"detail": "У пользователя нет связанного с ним инфлюенсера"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not hasattr(user, "influencer") or not user.influencer.organization:
+        if not hasattr(user, "influencer") or not user.influencer.organization or user.role != 'admin':
             return Response(
                 {"detail": "Пользователь не принадлежит к какой-либо организации."},
                 status=status.HTTP_403_FORBIDDEN,

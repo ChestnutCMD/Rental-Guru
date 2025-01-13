@@ -197,10 +197,15 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
             setattr(user, field, value)
         user.save()
 
-        if document_data and self.context['request'].user.role == 'admin':
+        if document_data:
+            defaults = {}
+            if 'number' in document_data:
+                defaults['number'] = document_data['number']
+            if 'photo' in document_data:
+                defaults['photo'] = document_data['photo']
             document, created = ManagerDocuments.objects.update_or_create(
                 manager=instance,
-                defaults=document_data
+                defaults=defaults
             )
 
         if permissions_data and self.context['request'].user.role == 'admin':
