@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from rest_framework import serializers
 
 from app.models import User
+from franchise.models import Franchise
 from manager.models import ManagerPermission, Manager, ManagerDocuments
 from notification.models import Notification
 
@@ -142,16 +143,23 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
     telephone = serializers.CharField(write_only=True, required=False)
+    franchise_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Manager
-        fields = ['id', 'email', 'first_name', 'last_name', 'telephone']
+        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'franchise_id']
 
     def create(self, validated_data):
         email = validated_data.pop('email')
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
         telephone = validated_data.pop('telephone', None)
+        franchise_id = validated_data.pop('franchise_id')
+
+        try:
+            franchise = Franchise.objects.get(id=franchise_id)
+        except Franchise.DoesNotExist:
+            raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
@@ -170,7 +178,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
             role='manager',
         )
 
-        manager = Manager.objects.create(user=user, **validated_data)
+        manager = Manager.objects.create(user=user, franchise=franchise)
         content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}."
         Notification.objects.create(user=user, content=content)
         return manager
@@ -193,6 +201,7 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     document = ManagerDocumentSerializer(source='manager_document', required=False)
     permissions = ManagerPermissionSerializer(many=True, required=False)
+    franchise_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Manager
@@ -204,13 +213,15 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
             'date_of_birth',
             'password',
             'document',
-            'permissions'
+            'permissions',
+            'franchise_id'
         ]
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         document_data = validated_data.pop('manager_document', None)
         permissions_data = validated_data.pop('permissions', None)
+        franchise_id = validated_data.pop('franchise_id', None)
         user = instance.user
 
         for field, value in user_data.items():
@@ -250,4 +261,12 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
             for perm_data in permissions_data:
                 ManagerPermission.objects.create(manager=instance, **perm_data)
 
+        if franchise_id:
+            try:
+                franchise = Franchise.objects.get(id=franchise_id)
+                instance.franchise = franchise
+            except Franchise.DoesNotExist:
+                raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
+
+        instance.save()
         return instance
