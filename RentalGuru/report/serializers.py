@@ -290,11 +290,12 @@ class InfluencerReportSerializer(serializers.ModelSerializer):
         )
 
         last_date = max(
-            renter_trips.aggregate(last_date=Max('end_date'))['last_date'] or timezone.datetime.min,
-            lessor_trips.aggregate(last_date=Max('end_date'))['last_date'] or timezone.datetime.min
+            renter_trips.aggregate(last_date=Max('end_date'))['last_date'],
+            lessor_trips.aggregate(last_date=Max('end_date'))['last_date']
         )
 
         return last_date
+
 
 class FranchiseReportSerializer(serializers.ModelSerializer):
     completed_orders_amount = serializers.SerializerMethodField()
