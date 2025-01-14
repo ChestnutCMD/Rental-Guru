@@ -73,6 +73,61 @@ class LessorReportFilter(filters.FilterSet):
         fields = ['period', 'city', 'lessor_id']
 
 
+# class InfluencerReportFilter(filters.FilterSet):
+#     period = filters.ChoiceFilter(
+#         choices=[
+#             ('day', 'День'),
+#             ('week', 'Неделя'),
+#             ('month', 'Месяц'),
+#             ('quarter', 'Квартал'),
+#             ('year', 'Год')
+#         ],
+#         method='filter_period'
+#     )
+#     city = filters.ModelChoiceFilter(
+#         queryset=City.objects.all(),
+#         method='filter_by_city'
+#     )
+#     influencer_id = filters.NumberFilter(field_name='id')
+#
+#     class Meta:
+#         model = Influencer
+#         fields = ['period', 'city', 'influencer_id']
+#
+#     def filter_period(self, queryset, name, value):
+#         return queryset
+#
+#     def filter_by_city(self, queryset, name, value):
+#         if not value:
+#             return queryset
+#
+#         # Получаем ID рентеров, у которых есть поездки в указанном городе
+#         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+#         city_vehicles_query = Q()
+#
+#         for vehicle_type in vehicle_types:
+#             content_type = ContentType.objects.get(model=vehicle_type)
+#             vehicles = Vehicle.objects.filter(
+#                 city=value,
+#                 polymorphic_ctype=content_type
+#             ).values_list('id', flat=True)
+#
+#             if vehicles:
+#                 city_vehicles_query |= Q(
+#                     content_type=content_type,
+#                     object_id__in=vehicles
+#                 )
+#
+#         # Находим поездки в указанном городе
+#         trips_in_city = Trip.objects.filter(city_vehicles_query)
+#
+#         # Получаем ID рентеров из этих поездок
+#         renters_in_city = Renter.objects.filter(
+#             user__in=trips_in_city.values_list('organizer_id', flat=True)
+#         )
+#
+#         # Фильтруем инфлюенсеров, у которых есть рентеры с поездками в указанном городе
+#         return queryset.filter(renters__in=renters_in_city).distinct()
 class InfluencerReportFilter(filters.FilterSet):
     period = filters.ChoiceFilter(
         choices=[
@@ -101,7 +156,7 @@ class InfluencerReportFilter(filters.FilterSet):
         if not value:
             return queryset
 
-        # Получаем ID рентеров, у которых есть поездки в указанном городе
+        # Получаем ID рентеров и арендодателей, связанных с указанным городом
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         city_vehicles_query = Q()
 
@@ -118,16 +173,19 @@ class InfluencerReportFilter(filters.FilterSet):
                     object_id__in=vehicles
                 )
 
-        # Находим поездки в указанном городе
         trips_in_city = Trip.objects.filter(city_vehicles_query)
 
-        # Получаем ID рентеров из этих поездок
         renters_in_city = Renter.objects.filter(
             user__in=trips_in_city.values_list('organizer_id', flat=True)
         )
 
-        # Фильтруем инфлюенсеров, у которых есть рентеры с поездками в указанном городе
-        return queryset.filter(renters__in=renters_in_city).distinct()
+        lessors_in_city = Lessor.objects.filter(
+            user__vehicle__in=trips_in_city.values_list('object_id', flat=True)
+        )
+
+        return queryset.filter(
+            Q(renters__in=renters_in_city) | Q(lessors__in=lessors_in_city)
+        ).distinct()
 
 
 class FranchiseReportFilter(filters.FilterSet):
