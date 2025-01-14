@@ -36,6 +36,46 @@ class ManagerObjectPermission(BasePermission):
         ).exists()
 
 
+class WebSocketPermissionChecker:
+    """
+    Класс для проверки прав доступа пользователя к объектам через WebSocket.
+    """
+
+    @staticmethod
+    def has_permission(user, obj):
+        """
+        Проверяет, есть ли у пользователя права на доступ к объекту.
+        """
+        if user.role == 'admin':
+            return True
+
+        if not user.is_authenticated or not hasattr(user, 'manager'):
+            return False
+
+        content_type = ContentType.objects.get_for_model(obj)
+
+        if ManagerPermission.objects.filter(
+            manager=user.manager,
+            content_type=content_type,
+            permission_type='read',
+            is_global=True
+        ).exists():
+            return True
+
+        return ManagerPermission.objects.filter(
+            manager=user.manager,
+            content_type=content_type,
+            object_id=obj.id,
+            permission_type='read'
+        ).exists()
+
+    @staticmethod
+    def check_chat_permission(user, chat):
+        """
+        Проверка прав доступа пользователя к чату.
+        """
+        return WebSocketPermissionChecker.has_permission(user, chat)
+
     """
     def get_permissions(self):
         if hasattr(self.request.user, 'manager') and self.request.user.manager:

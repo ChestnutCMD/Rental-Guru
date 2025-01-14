@@ -17,7 +17,7 @@ import json
 
 from RentalGuru.settings import HOST_URL
 from chat.models import MessageSupport, ChatSupport, Message, Chat
-from franchise.models import Franchise
+from manager.permissions import WebSocketPermissionChecker
 from notification.models import Notification
 from .tasks import translate_message
 
@@ -655,7 +655,7 @@ class ChatSupportConsumer(BaseChatConsumer):
         return chat.message_support.select_related('sender').order_by('timestamp')
 
     def check_user_access(self, user, chat):
-        if user.is_superuser or user.is_staff:
+        if WebSocketPermissionChecker.check_chat_permission(user, chat):
             return True
         return chat.creator == user
 
