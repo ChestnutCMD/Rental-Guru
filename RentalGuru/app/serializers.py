@@ -1,7 +1,9 @@
 import json
 import random
 from datetime import datetime
-from django.core.exceptions import ValidationError
+
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
@@ -455,3 +457,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
         Notification.objects.create(user=user, content=content)
 
         return user
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    """ Сериализатор для смены пароля пользователя """
+    user_id = serializers.IntegerField()
+    new_password = serializers.CharField(min_length=8)
+
+    def validate_user_id(self, value):
+        try:
+            user = get_user_model().objects.get(id=value)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError("Пользователь с таким ID не найден.")
+        return value

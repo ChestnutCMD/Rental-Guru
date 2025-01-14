@@ -5,6 +5,7 @@ import random
 from datetime import datetime, timedelta, date
 from urllib.parse import urlparse
 import requests
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction, IntegrityError
@@ -36,7 +37,7 @@ from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListS
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
     BecomeLessorSerializer, CurrencySerializer, LanguageSerializer, CodeVerificationSerializer, \
     TelegramRegisterSerializer, EmailVerifiedSerializer, VehicleFavoriteList, OauthProviderSerializer, \
-    UserCreateSerializer
+    UserCreateSerializer, PasswordChangeSerializer
 from .task import send_verification_email, send_sms
 from .utils import referal_check
 
@@ -1034,4 +1035,25 @@ class UserCreateView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Представление для смены пароля пользователя",
+    request=PasswordChangeSerializer)
+class PasswordChangeView(APIView):
+    permission_classes = [ManagerObjectPermission]
+
+    def post(self, request):
+        """ Обработка запроса на смену пароля """
+        serializer = PasswordChangeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user_id = serializer.validated_data['user_id']
+            new_password = serializer.validated_data['new_password']
+            user = get_user_model().objects.get(id=user_id)
+            user.set_password(new_password)
+            user.save()
+            return Response({"detail": "Пароль успешно изменен."}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
