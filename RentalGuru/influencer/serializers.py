@@ -206,8 +206,12 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
-        self.update_user(instance.user, user_data)
+        self.update_user(instance, user_data)
         user = instance.user
+
+        for field in ['email_1', 'email_2', 'telephone_1', 'telephone_2']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
 
         for field, value in user_data.items():
             if field == 'avatar':
@@ -231,8 +235,9 @@ class InfluencerDetailSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def update_user(self, user, user_data):
+    def update_user(self, instance, user_data):
         """Обновление данных пользователя."""
+        user = instance.user
         for field in ['first_name', 'last_name', 'date_of_birth', 'telephone', 'avatar']:
             if field in user_data:
                 setattr(user, field, user_data[field])
