@@ -143,7 +143,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
     telephone = serializers.CharField(write_only=True, required=False)
-    franchise_id = serializers.IntegerField(write_only=True)
+    franchise_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Manager
@@ -154,12 +154,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
         telephone = validated_data.pop('telephone', None)
-        franchise_id = validated_data.pop('franchise_id')
-
-        try:
-            franchise = Franchise.objects.get(id=franchise_id)
-        except Franchise.DoesNotExist:
-            raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
+        franchise_id = validated_data.get('franchise_id')
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
@@ -177,8 +172,15 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
             password=password,
             role='manager',
         )
+        if franchise_id:
+            try:
+                franchise = Franchise.objects.get(id=franchise_id)
+                manager = Manager.objects.create(user=user, franchise=franchise)
+            except Franchise.DoesNotExist:
+                raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
+        else:
+            manager = Manager.objects.create(user=user)
 
-        manager = Manager.objects.create(user=user, franchise=franchise)
         content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}."
         Notification.objects.create(user=user, content=content)
         return manager
