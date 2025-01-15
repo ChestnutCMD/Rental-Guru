@@ -69,7 +69,7 @@ class Franchise(models.Model):
         ).aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or 0.00
 
     def get_total_margin(self):
-        revenue = self.get_total_revenue()
+        revenue = Decimal(self.get_total_revenue())
         commission_decimal = Decimal(self.commission) / 100
         return revenue * (1 - commission_decimal)
 
