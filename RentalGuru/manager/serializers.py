@@ -108,7 +108,7 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
     permissions = ManagerPermissionSerializer(many=True, read_only=True)
 
     franchise_name = serializers.CharField(source='franchise.name', read_only=True)
-    franchise_city = serializers.CharField(source='franchise.city.name', read_only=True)
+    franchise_city = serializers.CharField(source='franchise.city.title', read_only=True)
     franchise_director = serializers.CharField(source='franchise.director', read_only=True)
     franchise_total_vehicles = serializers.SerializerMethodField()
 
