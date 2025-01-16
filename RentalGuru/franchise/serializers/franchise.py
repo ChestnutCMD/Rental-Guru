@@ -19,11 +19,13 @@ class CategorySerializer(serializers.ModelSerializer):
 class FranchiseListSerializer(serializers.ModelSerializer):
     director = serializers.StringRelatedField()
     categories = CategorySerializer(many=True)
+    avatar = serializers.ImageField(source='user.avatar', read_only=True)
 
     class Meta:
         model = Franchise
         fields = [
             'id',
+            'avatar',
             'director',
             'name',
             'unn',
@@ -41,10 +43,12 @@ class FranchiseListSerializer(serializers.ModelSerializer):
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
     vehicle_parks = serializers.SerializerMethodField()
     vehicles = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(source='user.avatar', read_only=True)
 
     class Meta:
         model = Franchise
         fields = [
+            'avatar',
             'telephone',
             'country',
             'city',
