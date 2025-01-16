@@ -97,6 +97,7 @@ class ManagerListSerializer(serializers.ModelSerializer):
 
 class ManagerDetailSerializer(serializers.ModelSerializer):
     """ Сериализато детального отображения менеджера """
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     avatar = serializers.ImageField(source='user.avatar', read_only=True)
@@ -116,6 +117,7 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
         model = Manager
         fields = [
             'id',
+            'user_id',
             'first_name',
             'last_name',
             'avatar',
