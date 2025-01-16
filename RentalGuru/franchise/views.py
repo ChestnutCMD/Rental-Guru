@@ -149,11 +149,6 @@ class FranchiseViewSet(viewsets.ModelViewSet):
             return FranchiseDeleteSerializer
         return FranchiseListSerializer
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({'results': serializer.data})
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

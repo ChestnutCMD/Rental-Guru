@@ -90,17 +90,10 @@ class Lessor(models.Model):
         """
         Удаляет все транспортные средства пользователей, связанных с удаляемой франшизой через их записи Lessor
         """
-
-        # Получаем ID пользователей, которые являются арендодателями в данной франшизе
         lessor_user_ids = Lessor.objects.filter(franchise=instance).values_list('user_id', flat=True)
-
-        # Удаляем транспортные средства этих пользователей
         vehicles = Vehicle.objects.filter(owner_id__in=lessor_user_ids)
         vehicles_count = vehicles.count()
-
         vehicles.delete()
-
-
 
     def __str__(self):
         return str(self.user)
