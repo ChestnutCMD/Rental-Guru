@@ -7,6 +7,7 @@ import qrcode
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import models
+from django.utils import timezone
 from django.utils.timezone import now
 
 from RentalGuru import settings
@@ -99,24 +100,6 @@ class Organization(models.Model):
     class Meta:
         verbose_name = 'Организация инфлюенсера'
         verbose_name_plural = 'Организации инфлюенсеров'
-
-
-# class Contact(models.Model):
-#     CONTACT_TYPE_CHOICES = [('phone', 'Телефон'), ('email', 'Эл.почта'),]
-#     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
-#     contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, verbose_name="Тип контакта")
-#     value = models.CharField(max_length=100, verbose_name="Значение")
-#     is_primary = models.BooleanField(default=False, verbose_name="Основной контакт")
-#
-#     def __str__(self):
-#         return f"{CONTACT_TYPE_CHOICES_DICT.get(str(self.contact_type), self.contact_type)}: {self.value}"
-#
-#     class Meta:
-#         verbose_name = 'Контакты инфлюенсера'
-#         verbose_name_plural = 'Контакты инфлюенсеров'
-#
-#
-# CONTACT_TYPE_CHOICES_DICT = dict(Contact.CONTACT_TYPE_CHOICES)
 
 
 class BankDetails(models.Model):
@@ -286,3 +269,24 @@ class UsedPromoCode(models.Model):
         unique_together = ('user', 'promo_code')
         verbose_name = 'Использованный промокод'
         verbose_name_plural = 'Использованные промокоды'
+
+
+class RequestWithdraw(models.Model):
+    STATUS_CHOISE = [('completed', 'Выполнено'), ('in_progress', 'В процессе'), ('rejected', 'Отказано')]
+    influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, verbose_name='Инфлюенсер', related_name='withdraw')
+    amount = models.DateTimeField(verbose_name='Сумма')
+    status = models.CharField(choices=STATUS_CHOISE, default='In_progress', verbose_name='Статус')
+    created_at = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
+    payment_date = models.DateTimeField(null=True, blank=True, verbose_name='Дата выплаты')
+
+    class Meta:
+        verbose_name = 'Заявка на вывод средств'
+        verbose_name_plural = 'Заявки на вывод средств'
+
+    def save(self, *args, **kwargs):
+        if self.status == 'completed' and not self.payment_date:
+            self.payment_date = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Заявка {self.id} от {self.influencer}"

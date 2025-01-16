@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -11,11 +12,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode
+from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
+    RequestWithdraw
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
-    InfluencerListSerializer
+    InfluencerListSerializer, RequestWithdrawSerializer
+from manager.permissions import ManagerObjectPermission
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -286,3 +289,40 @@ class ApplyPromoCodeView(APIView):
         promo_code.save()
 
         return Response({'message': 'Промокод успешно применен.'})
+
+
+class RequestWithdrawViewSet(viewsets.ModelViewSet):
+    serializer_class = RequestWithdrawSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Переопределяем метод get_permissions для разных операций.
+        """
+        if self.action in ['create', 'list', 'retrieve']:
+            return [IsAuthenticated()]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), ManagerObjectPermission()]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'influencer'):
+            return RequestWithdraw.objects.filter(influencer=user.influencer)
+        elif user.role in ['admin', 'manager']:
+            return RequestWithdraw.objects.all()
+        return RequestWithdraw.objects.none()
+
+    def perform_update(self, serializer):
+        if serializer.validated_data.get('status') == 'completed' and not serializer.validated_data.get('payment_date'):
+            serializer.validated_data['payment_date'] = timezone.now()
+        serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status == 'completed' and instance.payment_date is None:
+            return Response({"detail": "Дата выплаты должна быть установлена при статусе 'Выполнено'."}, status=400)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

@@ -291,11 +291,11 @@ class RenterDocumentsViewSet(viewsets.ModelViewSet):
 
         if user.role == 'admin' or user.role == 'manager':
             if serializer.validated_data.get('status') == 'approved':
-                url = f'{settings.HOST_URL}/documents/{document.id}/'  # Пример ссылки на документ
+                url = f'{settings.HOST_URL}/documents/{document.id}/'
                 content = 'Ваш документ проверен'
                 Notification.objects.create(user=document.renter.user, url=url, content=content)
             elif serializer.validated_data.get('status') == 'rejected':
-                url = f'{settings.HOST_URL}/documents/{document.id}/'  # Пример ссылки на документ
+                url = f'{settings.HOST_URL}/documents/{document.id}/'
                 content = 'Ваш документ отклонен'
                 Notification.objects.create(user=document.renter.user, url=url, content=content)
             serializer.save()

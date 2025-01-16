@@ -3,10 +3,11 @@ import random
 from django.db.models import Sum
 from django.utils.timezone import now
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from chat.models import Trip, RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, BankDetails, Organization, \
-    InfluencerDocuments, PromoCode, RegistrationSource
+    InfluencerDocuments, PromoCode, RegistrationSource, RequestWithdraw
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -501,3 +502,24 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         turnover = self.get_turnover(obj)
         commission = getattr(obj.influencer, 'commission', 0)
         return (turnover * commission) / 100
+
+
+class RequestWithdrawSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestWithdraw
+        fields = '__all__'
+
+    def validate(self, data):
+        if data.get('status') == 'completed' and not data.get('payment_date'):
+            raise serializers.ValidationError('Дата выплаты должна быть установлена при статусе "Выполнено".')
+        return data
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+
+        if hasattr(user, 'influencer'):
+            validated_data['influencer'] = user.influencer
+        else:
+            raise ValidationError('Текущий пользователь не является инфлюенсером.')
+
+        return super().create(validated_data)

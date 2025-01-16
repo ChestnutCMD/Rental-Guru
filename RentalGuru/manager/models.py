@@ -22,7 +22,7 @@ class Manager(models.Model):
     def check_password_expiry(self):
         if not self.password_updated_at:
             return "Пароль никогда не обновлялся. Рекомендуем сменить пароль."
-        if self.password_updated_at + timedelta(days=30) < timezone.now():
+        if self.password_updated_at + timedelta(days=90) < timezone.now():
             return "Пароль устарел. Пожалуйста, обновите пароль."
         return None
 
