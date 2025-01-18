@@ -274,7 +274,7 @@ class RequestAddLessorCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = super().create(validated_data)
-        content = f"Новая заявка на добавление в франшизу {instance.franchise.name}."
+        content = f"Новая заявка № {instance.id} на добавление в франшизу {instance.franchise.name}."
         Notification.objects.create(user=instance.lessor.user, content=content)
 
         return instance
