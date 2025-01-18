@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -256,9 +257,15 @@ class ChatsByFranchiseView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class CustomLimitOffsetPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
 @extend_schema(summary="Арендодатели франшизы", description="Арендодатели франшизы")
 class LessorsByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
         try:
@@ -266,14 +273,14 @@ class LessorsByFranchiseView(APIView):
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Получаем всех арендодателей, связанных с этой франшизой
         lessors = Lessor.objects.filter(franchise=franchise)
-        serializer = LessorSerializer(lessors, many=True)
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(lessors, request)
+        serializer = LessorSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-@extend_schema(summary="Весь транспорт франшизы", description="Хуй знает зачем это надо, ведь есть /frinchize/{id}")
+@extend_schema(summary="Весь транспорт франшизы", description="")
 class VehiclesByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
 
