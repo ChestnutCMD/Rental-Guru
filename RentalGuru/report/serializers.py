@@ -25,7 +25,7 @@ class LessorReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lessor
-        fields = ['id', 'last_name', 'first_name', 'avatar', 'telephone',
+        fields = ['id', 'last_name', 'first_name', 'avatar', 'telephone', 'franchise',
                   'total_revenue', 'commission_amount', 'last_rent_date']
 
     def get_trips_for_lessor(self, lessor):
