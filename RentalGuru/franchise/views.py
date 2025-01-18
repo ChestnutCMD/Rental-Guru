@@ -23,7 +23,7 @@ from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, Ve
 from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSerializer, \
     FranchiseCreateSerializer, FranchiseUpdateSerializer, FranchiseDeleteSerializer, LessorSerializer, \
     FranchiseStatisticsSerializer, RequestFranchiseSerializer, CitySerializer, RequestAddLessorUpdateSerializer, \
-    RequestAddLessorCreateSerializer
+    RequestAddLessorCreateSerializer, LessorListSerializer
 
 
 @extend_schema(summary="Автопарк CRUD", description="CRUD Автопарка")
@@ -403,3 +403,17 @@ class RequestAddLessorViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied(
                     "Только администратор или указанный арендодатель могут изменять статус заявки."
                 )
+
+
+@extend_schema(summary="Список арендодателей", description="Список арендодателей")
+class LessorListView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomLimitOffsetPagination
+
+    def get(self, request, format=None):
+        lessors = Lessor.objects.all()
+        pagination_class = CustomLimitOffsetPagination
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(lessors, request)
+        serializer = LessorListSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)

@@ -316,3 +316,21 @@ class RequestAddLessorUpdateSerializer(serializers.ModelSerializer):
 
         Notification.objects.create(user=instance.franchise.director, content=content)
         return instance
+
+
+class LessorListSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    avatar = serializers.ImageField(source='user.avatar')
+    telephone = serializers.CharField(source='user.telephone')
+    count_vehicles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lessor
+        fields = [
+            'first_name', 'last_name', 'avatar', 'telephone', 'count_trip',
+            'franchise', 'commission', 'count_vehicles',
+        ]
+
+    def get_count_vehicles(self, obj):
+        return Vehicle.objects.filter(owner=obj.user).count()
