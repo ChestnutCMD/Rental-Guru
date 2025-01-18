@@ -136,6 +136,14 @@ class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = Franchise.objects.all()
     permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['admin', 'manager']:
+            return self.queryset
+        elif hasattr(user, 'franchise'):
+            return Franchise.objects.filter(director=user)
+        return Franchise.objects.none()
+
     def get_serializer_class(self):
         if self.action == 'list':
             return FranchiseListSerializer
