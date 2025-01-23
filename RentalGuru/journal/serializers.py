@@ -27,7 +27,10 @@ class TripSerializer(serializers.ModelSerializer):
                   'organizer', 'organizer_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
 
     def get_organizer_rating(self, obj):
-        return obj.organizer.renter.get_average_rating()
+        renter = getattr(obj.organizer, 'renter', None)
+        if renter:
+            return renter.get_average_rating()
+        return 0
 
     def get_type(self, obj):
         return obj.content_type.model
