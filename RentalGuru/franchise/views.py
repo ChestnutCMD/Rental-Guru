@@ -56,7 +56,7 @@ class VehicleParkViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-@extend_schema(summary="Все заявки на аренду автопарка", description="Заявки на аренду автопарка")
+@extend_schema(summary="Все заявки на аренду автопарка", deprecated=True, description="Заявки на аренду автопарка")
 class RequestsByParkView(APIView):
     permission_classes = [IsOwnerOrAdminForGet]
 
@@ -113,7 +113,7 @@ class RequestsByParkView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Все чаты автопарка", description="Чаты автопарка")
+@extend_schema(summary="Все чаты автопарка", deprecated=True, description="Чаты автопарка")
 class ChatsByParkView(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdminForGet]
 
@@ -312,7 +312,7 @@ def franchise_statistics(request, franchise_id):
     return Response(serializer.data)
 
 
-@extend_schema(summary="Статистика автопарка", description="Статистика автопарка")
+@extend_schema(summary="Статистика автопарка", deprecated=True, description="Статистика автопарка")
 @api_view(['GET'])
 def vehicle_park_statistics(request, vehicle_park_id):
     try:

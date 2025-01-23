@@ -262,9 +262,9 @@ class RequestAddLessorCreateSerializer(serializers.ModelSerializer):
             )
 
         if RequestAddLessor.objects.filter(
-            franchise=attrs['franchise'],
-            lessor=attrs['lessor'],
-            status='on_consideration'
+                franchise=attrs['franchise'],
+                lessor=attrs['lessor'],
+                status='on_consideration'
         ).exists():
             raise serializers.ValidationError(
                 "Активная заявка для данного арендодателя уже существует."
@@ -324,13 +324,14 @@ class LessorListSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(source='user.avatar')
     telephone = serializers.CharField(source='user.telephone')
     count_vehicles = serializers.SerializerMethodField()
+    user_id = serializers.IntegerField(source='user.id')
 
     class Meta:
         model = Lessor
         fields = [
-            'first_name', 'last_name', 'avatar', 'telephone', 'count_trip',
-            'franchise', 'commission', 'count_vehicles',
-        ]
+            'id', 'user_id', 'first_name', 'last_name', 'avatar', 'telephone', 'count_trip', 'franchise',
+            'commission', 'count_vehicles'
+                  ]
 
     def get_count_vehicles(self, obj):
         return Vehicle.objects.filter(owner=obj.user).count()
