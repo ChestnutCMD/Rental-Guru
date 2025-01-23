@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
-from app.models import Renter
 from chat.models import Trip
 from vehicle.models import Vehicle
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -30,6 +32,8 @@ class TripSerializer(serializers.ModelSerializer):
         renter = getattr(obj.organizer, 'renter', None)
         if renter:
             return renter.get_average_rating()
+
+        logger.warning(f"User {obj.organizer} has no related Renter object.")
         return 0
 
     def get_type(self, obj):
