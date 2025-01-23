@@ -305,16 +305,15 @@ class RequestAddLessorUpdateSerializer(serializers.ModelSerializer):
         if validated_data['status'] == 'approved':
             instance.lessor.franchise = instance.franchise
             instance.lessor.save()
-
-        instance.status = validated_data['status']
-        instance.save()
-
-        if instance.status == 'approved':
+            RequestAddLessor.objects.filter(lessor=instance.lessor).delete()
             content = f"Ваша заявка на добавление в франшизу {instance.franchise.name} была подтверждена."
-        elif instance.status == 'rejected':
+            Notification.objects.create(user=instance.franchise.director, content=content)
+        elif validated_data['status'] == 'rejected':
+            instance.status = validated_data['status']
+            instance.save()
             content = f"Ваша заявка на добавление в франшизу {instance.franchise.name} была отклонена."
+            Notification.objects.create(user=instance.franchise.director, content=content)
 
-        Notification.objects.create(user=instance.franchise.director, content=content)
         return instance
 
 
