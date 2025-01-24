@@ -48,6 +48,7 @@ class FranchiseRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Franchise
         fields = [
+            'id',
             'avatar',
             'telephone',
             'country',
@@ -101,6 +102,16 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
+
+        city = validated_data.get('city')
+        if not city:
+            raise serializers.ValidationError({"city": "Поле city обязательно для заполнения."})
+
+        existing_franchise = Franchise.objects.filter(city=city).first()
+        if existing_franchise:
+            raise serializers.ValidationError({
+                "city": f"Для города {existing_franchise.city} уже зарегистрирована франшиза."
+            })
 
         password = User.objects.make_random_password()
 

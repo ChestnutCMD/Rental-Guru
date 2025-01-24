@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import Q
 from django.db.models.expressions import RawSQL
 from drf_spectacular.utils import extend_schema
@@ -10,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app.models import Lessor, User
+from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
 from vehicle.models import Vehicle
 from .add_lessor import RequestAddLessor
@@ -173,7 +172,12 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
+        instance = self.get_object()
+        director = instance.director
+        self.perform_destroy(instance)
+        if director:
+            director.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
