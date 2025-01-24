@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class TripSerializer(serializers.ModelSerializer):
     organizer = serializers.StringRelatedField()
-    organizer_id = serializers.CharField(source='organizer.id')
+    organizer_user_id = serializers.IntegerField(source='organizer.id')
     organizer_telephone = serializers.CharField(source='organizer.telephone')
     organizer_avatar = serializers.ImageField(source='organizer.avatar', allow_null=True)
     organizer_rating = serializers.SerializerMethodField()
@@ -17,7 +17,7 @@ class TripSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
 
-    owner_id = serializers.SerializerMethodField()
+    owner_user_id = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     owner_telephone = serializers.SerializerMethodField()
     owner_avatar = serializers.SerializerMethodField()
@@ -25,8 +25,8 @@ class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
         fields = ['id', 'type', 'status', 'object', 'start_date', 'end_date', 'total_cost',
-                  'owner_id', 'owner', 'owner_telephone', 'owner_avatar',
-                  'organizer', 'organizer_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
+                  'owner_user_id', 'owner', 'owner_telephone', 'owner_avatar',
+                  'organizer', 'organizer_user_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
 
     def get_organizer_rating(self, obj):
         renter = getattr(obj.organizer, 'renter', None)
@@ -47,7 +47,7 @@ class TripSerializer(serializers.ModelSerializer):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return str(vehicle.owner) if vehicle and vehicle.owner else None
 
-    def get_owner_id(self, obj):
+    def get_owner_user_id(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return vehicle.owner.id if vehicle and vehicle.owner else None
 

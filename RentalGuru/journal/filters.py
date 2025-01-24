@@ -1,17 +1,47 @@
+import logging
+from datetime import timedelta
+
 import django_filters
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
+from django.utils import timezone
 
 from chat.models import Trip
+from vehicle.models import Vehicle
+
+logger = logging.getLogger(__name__)
 
 
 class TripFilter(django_filters.FilterSet):
-    start_date = django_filters.DateFilter(field_name='start_date', lookup_expr='gte')
-    end_date = django_filters.DateFilter(field_name='end_date', lookup_expr='lte')
+    period = django_filters.ChoiceFilter(choices=[('day', 'День'),
+                                                  ('week', 'Неделя'),
+                                                  ('month', 'Месяц'),
+                                                  ('quarter', 'Квартал'),
+                                                  ('year', 'Год')],
+                                         method='filter_by_period')
     type = django_filters.CharFilter(method='filter_by_type')
+    lessor_id = django_filters.NumberFilter(method='filter_by_owner')
 
     class Meta:
         model = Trip
-        fields = ['status', 'start_date', 'end_date', 'type']
+        fields = ['status', 'period', 'type', 'lessor_id']
+
+    def filter_by_period(self, queryset, name, value):
+        today = timezone.localdate()
+
+        if value == 'day':
+            start_date = today
+        elif value == 'week':
+            start_date = today - timedelta(days=7)
+        elif value == 'month':
+            start_date = today - timedelta(days=30)
+        elif value == 'quarter':
+            start_date = today - timedelta(days=90)
+        elif value == 'year':
+            start_date = today - timedelta(days=365)
+        else:
+            return queryset
+        return queryset.filter(end_date__gte=start_date)
 
     def filter_by_type(self, queryset, name, value):
         try:
@@ -19,3 +49,7 @@ class TripFilter(django_filters.FilterSet):
             return queryset.filter(content_type=content_type)
         except ContentType.DoesNotExist:
             return queryset.none()
+
+    def filter_by_owner(self, queryset, name, value):
+        vehicles = Vehicle.objects.filter(owner__lessor=value)
+        return queryset.filter(object_id__in=vehicles.values_list('id', flat=True))
