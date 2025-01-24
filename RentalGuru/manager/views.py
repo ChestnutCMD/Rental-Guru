@@ -2,12 +2,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from franchise.models import Franchise
 from manager.filters import ManagerPermissionFilter
 from manager.models import ManagerPermission, Manager
 from manager.permissions import IsAdminOrSelf, IsAdmin
@@ -89,3 +90,12 @@ class ManagerViewSet(ModelViewSet):
             status=status.HTTP_204_NO_CONTENT,
         )
 
+    def get_queryset(self):
+        user = self.request.user
+        franchise = Franchise.objects.filter(director=user).first()
+        if franchise:
+            return Manager.objects.filter(franchise=franchise)
+
+        if user.role in ['admin', 'manager']:
+            return Manager.objects.all()
+        return Manager.objects.none()

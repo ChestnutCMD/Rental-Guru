@@ -89,7 +89,7 @@ class ManagerListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Manager
-        fields = ['id', 'full_name', 'avatar', 'telephone', 'email']
+        fields = ['id', 'full_name', 'avatar', 'telephone', 'email', 'franchise']
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"
