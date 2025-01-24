@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,7 +16,7 @@ from vehicle.models import Vehicle
 from .add_lessor import RequestAddLessor
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin, \
-    IsAdminOrFranchiseOwner
+    IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
@@ -421,3 +422,15 @@ class LessorListView(APIView):
         paginated_queryset = paginator.paginate_queryset(lessors, request)
         serializer = LessorListSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+@extend_schema(summary="Удаление арендодателя", description="Удаление арендодателя из франшизы")
+class DeleteLessorFromFranchiseView(APIView):
+    permission_classes = [IsLessorOrFranchiseDirector]
+
+    def post(self, request, lessor_id):
+        lessor = get_object_or_404(Lessor, id=lessor_id)
+        self.check_object_permissions(request, lessor)
+        lessor.franchise = None
+        lessor.save()
+        return Response({"detail": "Арендодатель успешно удален из франшизы."}, status=status.HTTP_200_OK)

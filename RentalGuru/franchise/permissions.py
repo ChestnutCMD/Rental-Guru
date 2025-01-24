@@ -65,3 +65,16 @@ class IsAdminOrFranchiseOwner(ManagerObjectPermission):
         if hasattr(request.user, 'lessor'):
             return obj.lessor == request.user.lessor
         return False
+
+
+class IsLessorOrFranchiseDirector(ManagerObjectPermission):
+    def has_object_permission(self, request, view, obj):
+        if super().has_object_permission(request, view, obj):
+            return True
+        if not hasattr(obj, 'franchise') or not hasattr(obj, 'user'):
+            return False
+        if obj.user == request.user:
+            return True
+        if obj.franchise and obj.franchise.director == request.user:
+            return True
+        return False
