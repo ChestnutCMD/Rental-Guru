@@ -239,6 +239,7 @@ class FranchiseStatisticsSerializer(serializers.Serializer):
     total_orders = serializers.IntegerField()
     total_completed_orders = serializers.IntegerField()
     total_cancelled_orders = serializers.IntegerField()
+    royalty = serializers.DecimalField(max_digits=10, decimal_places=2)
     active_users_count = serializers.IntegerField()
 
 

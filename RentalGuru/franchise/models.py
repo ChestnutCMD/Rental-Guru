@@ -80,6 +80,10 @@ class Franchise(models.Model):
             object_id__in=self.get_vehicles().values('id')
         ).count()
 
+    def get_royalty(self):
+        revenue = Decimal(self.get_total_revenue())
+        return (revenue/100) * Decimal(self.commission)
+
     def get_total_completed_orders(self):
         return Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
@@ -110,6 +114,7 @@ class Franchise(models.Model):
             'total_orders': self.get_total_orders(),
             'total_completed_orders': self.get_total_completed_orders(),
             'total_cancelled_orders': self.get_total_cancelled_orders(),
+            'royalty': self.get_royalty(),
             'active_users_count': self.get_active_users_count(),
         }
 

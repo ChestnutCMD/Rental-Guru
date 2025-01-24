@@ -26,7 +26,7 @@ from .serializers.franchise import FranchiseListSerializer, FranchiseRetrieveSer
     RequestAddLessorCreateSerializer, LessorListSerializer
 
 
-@extend_schema(summary="Автопарк CRUD", description="CRUD Автопарка")
+@extend_schema(summary="Автопарк CRUD", deprecated=True, description="CRUD Автопарка")
 class VehicleParkViewSet(viewsets.ModelViewSet):
     queryset = VehiclePark.objects.all()
 
