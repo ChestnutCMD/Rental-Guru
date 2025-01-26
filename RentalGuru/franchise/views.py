@@ -1,6 +1,8 @@
-from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
-from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied
@@ -12,11 +14,14 @@ from rest_framework.views import APIView
 
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
+from payment.models import Payment
+from payment.serializers import PaymentSerializer
 from vehicle.models import Vehicle
 from .add_lessor import RequestAddLessor
+from .filters import LessorStatisticsFilter
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin, \
-    IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector
+    IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector, IsAdminManagerOrLessorOrFranchiseDirector
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
@@ -434,3 +439,76 @@ class DeleteLessorFromFranchiseView(APIView):
         lessor.franchise = None
         lessor.save()
         return Response({"detail": "Арендодатель успешно удален из франшизы."}, status=status.HTTP_200_OK)
+
+
+class LessorStatisticsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminManagerOrLessorOrFranchiseDirector]
+    @extend_schema(
+        summary="Статистика арендодателя",
+        description="Вывод статистики",
+        parameters=[
+            OpenApiParameter(
+                name="vehicle_type",
+                description="Тип транспорта (Auto, Bike, Ship, Helicopter, SpecialTechnic)",
+                type=str,
+                enum=["auto", "bike", "ship", "helicopter", "specialtechnic"],
+                required=False,
+            ),
+            OpenApiParameter(
+                name="brand",
+                description="ID бренда транспорта",
+                type=int,
+                required=False,
+            ),
+            OpenApiParameter(
+                name="model",
+                description="ID модели транспорта",
+                type=int,
+                required=False,
+            ),
+        ],
+        responses={200: "Successfully filtered statistics"}
+    )
+    def get(self, request, lessor_id):
+        lessor = get_object_or_404(Lessor, id=lessor_id)
+
+        vehicles = Vehicle.objects.filter(owner=lessor.user)
+        trips = Trip.objects.filter(
+            Q(content_type__in=[ContentType.objects.get_for_model(vehicle) for vehicle in vehicles],
+              object_id__in=[vehicle.pk for vehicle in vehicles])
+        ).select_related(
+            "content_type"
+        ).prefetch_related("vehicle__request_rents")
+
+        # Применение фильтров
+        filterset = LessorStatisticsFilter(request.GET, queryset=trips)
+        if not filterset.is_valid():
+            return Response(filterset.errors, status=400)
+        trips = filterset.qs
+
+        # Статистика
+        total_revenue = trips.aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
+        finished_orders_count = trips.filter(status="finished").count()
+        canceled_orders_count = trips.filter(status="canceled").count()
+
+        # Транзакции
+        vehicle_ct = ContentType.objects.get_for_model(Vehicle)
+
+        # Фильтруем платежи, связанные с транспортом данного владельца
+        payments = Payment.objects.filter(
+            Q(request_rent__content_type=vehicle_ct) &
+            Q(request_rent__object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True))
+        ).select_related(
+            "request_rent"
+        )
+        serialized_payments = PaymentSerializer(payments, many=True)
+
+        result = {
+            "lessor_id": lessor.id,
+            "lessor_name": lessor.user.get_full_name(),
+            "total_revenue": total_revenue,
+            "finished_orders_count": finished_orders_count,
+            "canceled_orders_count": canceled_orders_count,
+            "transactions": serialized_payments.data,
+        }
+        return Response(result)

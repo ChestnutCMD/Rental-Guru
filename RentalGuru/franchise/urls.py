@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import VehicleParkViewSet, RequestsByParkView, ChatsByParkView, FranchiseViewSet, RequestsByFranchiseView, \
     ChatsByFranchiseView, LessorsByFranchiseView, VehiclesByFranchiseView, franchise_statistics, \
     vehicle_park_statistics, RequestFranchiseCreateView, RequestFranchiseListView, RequestFranchiseDeleteView, \
-    CityView, RequestAddLessorViewSet, LessorListView, DeleteLessorFromFranchiseView
+    CityView, RequestAddLessorViewSet, LessorListView, DeleteLessorFromFranchiseView, LessorStatisticsView
 
 router = DefaultRouter()
 router.register(r'vehicle_park', VehicleParkViewSet, basename='vehicle_park')
@@ -23,6 +23,7 @@ urlpatterns = [
     path('franchises/<int:franchise_id>/vehicles/', VehiclesByFranchiseView.as_view(), name='vehicles-by-franchise'),
     path('lessors/', LessorListView.as_view(), name='lessors'),
     path('delete_lessor/<int:lessor_id>/', DeleteLessorFromFranchiseView.as_view(), name='unlink-lessor'),
+    path('lessors_statistic/<int:lessor_id>/', LessorStatisticsView.as_view(), name='lessor-statistic'),
     path('', include(router.urls)),
 
     path('request-franchise/create/', RequestFranchiseCreateView.as_view(), name='request-franchise-create'),

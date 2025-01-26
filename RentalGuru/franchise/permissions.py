@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 
+from app.models import Lessor
 from manager.permissions import ManagerObjectPermission
 
 
@@ -76,5 +77,22 @@ class IsLessorOrFranchiseDirector(ManagerObjectPermission):
         if obj.user == request.user:
             return True
         if obj.franchise and obj.franchise.director == request.user:
+            return True
+        return False
+
+
+class IsAdminManagerOrLessorOrFranchiseDirector(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.role in ['admin', 'manager']:
+            return True
+
+        lessor_id = view.kwargs.get('lessor_id')
+        try:
+            lessor = Lessor.objects.get(id=lessor_id)
+        except Lessor.DoesNotExist:
+            return False
+        if request.user == lessor.user:
+            return True
+        if request.user == lessor.franchise.director:
             return True
         return False
