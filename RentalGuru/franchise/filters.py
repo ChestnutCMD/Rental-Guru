@@ -31,7 +31,7 @@ class LessorStatisticsFilter(django_filters.FilterSet):
 
     def filter_vehicle_brand(self, queryset, name, value):
         vehicle_cts = ContentType.objects.filter(
-            model__in=['auto', 'bike', 'ship', 'helicopter', 'special_technic']
+            model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         )
 
         return queryset.filter(
@@ -41,7 +41,7 @@ class LessorStatisticsFilter(django_filters.FilterSet):
 
     def filter_vehicle_model(self, queryset, name, value):
         vehicle_cts = ContentType.objects.filter(
-            model__in=['auto', 'bike', 'ship', 'helicopter', 'special_technic']
+            model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         )
 
         return queryset.filter(

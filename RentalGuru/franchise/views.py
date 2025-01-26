@@ -203,7 +203,8 @@ class RequestsByFranchiseView(APIView):
         )
 
         # Фильтруем заявки на аренду по этим транспортам
-        requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related('content_type')
+        requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related(
+            'content_type')
         serialized_requests = RequestRentSerializer(requests, many=True).data
 
         # Считаем заявки по типам
@@ -342,7 +343,8 @@ class RequestFranchiseCreateView(generics.CreateAPIView):
     serializer_class = RequestFranchiseSerializer
 
 
-@extend_schema(summary="Получение списка заявок на создание франшизы", description="Получение списка заявок на создание франшизы")
+@extend_schema(summary="Получение списка заявок на создание франшизы",
+               description="Получение списка заявок на создание франшизы")
 class RequestFranchiseListView(generics.ListAPIView):
     queryset = RequestFranchise.objects.all()
     serializer_class = RequestFranchiseSerializer
@@ -407,8 +409,8 @@ class RequestAddLessorViewSet(viewsets.ModelViewSet):
 
         if self.action in ['update', 'partial_update']:
             if not (
-                request.user.role == 'admin' or
-                (hasattr(request.user, 'lessor') and request.user.lessor == obj.lessor)
+                    request.user.role == 'admin' or
+                    (hasattr(request.user, 'lessor') and request.user.lessor == obj.lessor)
             ):
                 raise PermissionDenied(
                     "Только администратор или указанный арендодатель могут изменять статус заявки."
@@ -441,80 +443,9 @@ class DeleteLessorFromFranchiseView(APIView):
         return Response({"detail": "Арендодатель успешно удален из франшизы."}, status=status.HTTP_200_OK)
 
 
-# class LessorStatisticsView(APIView):
-#     permission_classes = [IsAuthenticated, IsAdminManagerOrLessorOrFranchiseDirector]
-#     @extend_schema(
-#         summary="Статистика арендодателя",
-#         description="Вывод статистики",
-#         parameters=[
-#             OpenApiParameter(
-#                 name="vehicle_type",
-#                 description="Тип транспорта (Auto, Bike, Ship, Helicopter, SpecialTechnic)",
-#                 type=str,
-#                 enum=["auto", "bike", "ship", "helicopter", "specialtechnic"],
-#                 required=False,
-#             ),
-#             OpenApiParameter(
-#                 name="brand",
-#                 description="ID бренда транспорта",
-#                 type=int,
-#                 required=False,
-#             ),
-#             OpenApiParameter(
-#                 name="model",
-#                 description="ID модели транспорта",
-#                 type=int,
-#                 required=False,
-#             ),
-#         ],
-#         responses={200: "Successfully filtered statistics"}
-#     )
-#     def get(self, request, lessor_id):
-#         lessor = get_object_or_404(Lessor, id=lessor_id)
-#
-#         vehicles = Vehicle.objects.filter(owner=lessor.user)
-#         trips = Trip.objects.filter(
-#             Q(content_type__in=[ContentType.objects.get_for_model(vehicle) for vehicle in vehicles],
-#               object_id__in=[vehicle.pk for vehicle in vehicles])
-#         ).select_related(
-#             "content_type"
-#         ).prefetch_related("vehicle__request_rents")
-#
-#         # Применение фильтров
-#         filterset = LessorStatisticsFilter(request.GET, queryset=trips)
-#         if not filterset.is_valid():
-#             return Response(filterset.errors, status=400)
-#         trips = filterset.qs
-#
-#         # Статистика
-#         total_revenue = trips.aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
-#         finished_orders_count = trips.filter(status="finished").count()
-#         canceled_orders_count = trips.filter(status="canceled").count()
-#
-#         # Транзакции
-#         vehicle_ct = ContentType.objects.get_for_model(Vehicle)
-#
-#         # Фильтруем платежи, связанные с транспортом данного владельца
-#         payments = Payment.objects.filter(
-#             Q(request_rent__content_type=vehicle_ct) &
-#             Q(request_rent__object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True))
-#         ).select_related(
-#             "request_rent"
-#         )
-#         serialized_payments = PaymentSerializer(payments, many=True)
-#
-#         result = {
-#             "lessor_id": lessor.id,
-#             "lessor_name": lessor.user.get_full_name(),
-#             "total_revenue": total_revenue,
-#             "finished_orders_count": finished_orders_count,
-#             "canceled_orders_count": canceled_orders_count,
-#             "transactions": serialized_payments.data,
-#         }
-#         return Response(result)
-
 class LessorStatisticsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminManagerOrLessorOrFranchiseDirector]
+
     @extend_schema(
         summary="Статистика арендодателя",
         description="Вывод статистики",
@@ -523,7 +454,7 @@ class LessorStatisticsView(APIView):
                 name="vehicle_type",
                 description="Тип транспорта (Auto, Bike, Ship, Helicopter, SpecialTechnic)",
                 type=str,
-                enum=["auto", "bike", "ship", "helicopter", "specialtechnic"],
+                enum=["auto", "bike", "ship", "helicopter", "special_technic"],
                 required=False,
             ),
             OpenApiParameter(
@@ -545,7 +476,7 @@ class LessorStatisticsView(APIView):
         lessor = get_object_or_404(Lessor, id=lessor_id)
 
         vehicle_cts = ContentType.objects.filter(
-            model__in=['auto', 'bike', 'ship', 'helicopter', 'special_technic']
+            model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         )
 
         trips = Trip.objects.filter(
@@ -558,22 +489,29 @@ class LessorStatisticsView(APIView):
             return Response(filterset.errors, status=400)
         trips = filterset.qs
 
-        # Статистика
         total_revenue = trips.aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
         finished_orders_count = trips.filter(status="finished").count()
         canceled_orders_count = trips.filter(status="canceled").count()
 
-        # Транзакции
         payments = Payment.objects.filter(
             request_rent__content_type__in=vehicle_cts,
-            request_rent__object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True)
-        ).select_related(
-            "request_rent"
-        )
+            request_rent__object_id__in=trips.values_list('object_id', flat=True)
+        ).select_related("request_rent")
+
+        if request.GET.get('vehicle_type') or request.GET.get('brand') or request.GET.get('model'):
+            vehicle_ids = Vehicle.objects.filter(
+                Q(model__vehicle_type=request.GET.get('vehicle_type', None)) if request.GET.get(
+                    'vehicle_type') else Q(),
+                Q(brand_id=request.GET.get('brand', None)) if request.GET.get('brand') else Q(),
+                Q(model_id=request.GET.get('model', None)) if request.GET.get('model') else Q()
+            ).values_list('id', flat=True)
+
+            payments = payments.filter(
+                request_rent__object_id__in=vehicle_ids
+            )
 
         serialized_payments = PaymentSerializer(payments, many=True)
 
-        # Формирование результата
         result = {
             "lessor_id": lessor.id,
             "lessor_name": lessor.user.get_full_name(),
