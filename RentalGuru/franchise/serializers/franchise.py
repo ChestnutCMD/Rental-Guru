@@ -7,6 +7,7 @@ from franchise.add_lessor import RequestAddLessor
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
 from notification.models import Notification
+from payment.models import Payment
 from vehicle.models import Vehicle
 
 
@@ -346,3 +347,18 @@ class LessorListSerializer(serializers.ModelSerializer):
 
     def get_count_vehicles(self, obj):
         return Vehicle.objects.filter(owner=obj.user).count()
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = ['id', 'amount', 'status', 'payment_id', 'date', 'time']
+
+    def get_date(self, obj):
+        return obj.created_at.strftime('%d.%m.%Y')
+
+    def get_time(self, obj):
+        return obj.created_at.strftime('%H:%M')
