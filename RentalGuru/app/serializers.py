@@ -237,7 +237,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'date_joined'
 
         ]
-        read_only_fields = ['role', 'date_joined']
+        read_only_fields = ['role', 'date_joined', 'email']
 
     def update(self, instance, validated_data):
         user_role = self.context['request'].user.role

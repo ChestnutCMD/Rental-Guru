@@ -21,7 +21,8 @@ class IsAdminOrSelf(ManagerObjectPermission):
             return True
         if hasattr(request.user, 'lessor') and obj.lessor == request.user.lessor:
             return True
-
+        if hasattr(request.user, 'franchise') and obj.franchise.director == request.user:
+            return True
         return False
 
 
