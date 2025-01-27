@@ -15,7 +15,7 @@ class RequestRent(models.Model):
         ('unknown', 'Не рассмотрено')
     )
     status = models.CharField(max_length=8, default='unknown', choices=STATUS_CHOICES, verbose_name='Статус')
-    denied_reason = models.TextField(null=True, blank=True, verbose_name='Причина отказа')
+    denied_reason = models.TextField(null=True, blank=True, verbose_name='Причина отказа', max_length=300)
 
     organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                   related_name='request_rent_organized_trips', verbose_name='Арендатор')
