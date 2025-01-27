@@ -8,8 +8,8 @@ from vehicle.models import Vehicle
 
 class BaseComplaint(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь')
-    topic = models.CharField(max_length=50, null=True, blank=True, verbose_name='Причина жалобы')
-    description = models.CharField(max_length=250, null=True, blank=True, verbose_name='Описание')
+    topic = models.CharField(max_length=300, null=True, blank=True, verbose_name='Причина жалобы')
+    description = models.CharField(max_length=300, null=True, blank=True, verbose_name='Описание')
 
     def clean(self):
         if not self.topic and not self.description:
