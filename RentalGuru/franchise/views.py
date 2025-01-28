@@ -3,7 +3,7 @@ from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, generics
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
@@ -216,6 +216,23 @@ class RequestsByFranchiseView(APIView):
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
+        self.check_object_permissions(request, franchise)
+        all_requests = RequestRent.objects.filter(
+            object_id__in=vehicles.values_list('id', flat=True)
+        ).select_related('content_type')
+
+        count_dict = {
+            "auto": 0,
+            "bike": 0,
+            "ship": 0,
+            "helicopter": 0,
+            "special_technic": 0
+        }
+
+        for request_rent in all_requests:
+            content_type_name = request_rent.content_type.model
+            if content_type_name in count_dict:
+                count_dict[content_type_name] += 1
 
         vehicle_type = request.query_params.get('type')
         if vehicle_type:
@@ -230,26 +247,13 @@ class RequestsByFranchiseView(APIView):
             elif vehicle_type == 'special_technic':
                 vehicles = vehicles.instance_of(SpecialTechnic)
 
-        requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related(
-            'content_type'
-        )
+        requests = RequestRent.objects.filter(
+            object_id__in=vehicles.values_list('id', flat=True)
+        ).select_related('content_type')
 
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(requests, request)
         serialized_requests = RequestRentSerializer(paginated_queryset, many=True).data
-
-        count_dict = {
-            "auto": 0,
-            "bike": 0,
-            "ship": 0,
-            "helicopter": 0,
-            "special_technic": 0
-        }
-
-        for request_data in serialized_requests:
-            content_type_name = request_data['type']
-            if content_type_name in count_dict:
-                count_dict[content_type_name] += 1
 
         result = {
             "counts": count_dict,
@@ -261,7 +265,7 @@ class RequestsByFranchiseView(APIView):
 
 @extend_schema(summary="Все чаты франшизы", description="Чаты франшизы")
 class ChatsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -273,6 +277,7 @@ class ChatsByFranchiseView(APIView):
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
+        self.check_object_permissions(request, franchise)
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True))
         chats = Chat.objects.filter(trip__in=trips)
 
@@ -284,7 +289,7 @@ class ChatsByFranchiseView(APIView):
 
 @extend_schema(summary="Арендодатели франшизы", description="Арендодатели франшизы")
 class LessorsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -294,6 +299,7 @@ class LessorsByFranchiseView(APIView):
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         lessors = Lessor.objects.filter(franchise=franchise)
+        self.check_object_permissions(request, franchise)
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(lessors, request)
         serializer = LessorSerializer(paginated_queryset, many=True)
@@ -347,17 +353,21 @@ class VehiclesByFranchiseView(APIView):
 
 
 @extend_schema(summary="Статистика франшизы", description="Статистика франшизы")
-@api_view(['GET'])
-def franchise_statistics(request, franchise_id):
-    try:
-        franchise = Franchise.objects.get(pk=franchise_id)
-    except Franchise.DoesNotExist:
-        return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
+class FranchiseStatisticsView(APIView):
+    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
 
-    statistics = franchise.get_statistics()
-    serializer = FranchiseStatisticsSerializer(statistics)
+    def get(self, request, franchise_id):
+        try:
+            franchise = Franchise.objects.get(pk=franchise_id)
+        except Franchise.DoesNotExist:
+            return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response(serializer.data)
+        self.check_object_permissions(request, franchise)
+
+        statistics = franchise.get_statistics()
+        serializer = FranchiseStatisticsSerializer(statistics)
+
+        return Response(serializer.data)
 
 
 @extend_schema(summary="Статистика автопарка", deprecated=True, description="Статистика автопарка")

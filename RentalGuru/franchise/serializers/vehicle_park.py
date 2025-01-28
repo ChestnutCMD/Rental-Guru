@@ -173,14 +173,32 @@ class VehicleParkUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class OrganizerSerializer(serializers.ModelSerializer):
+    average_rating = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'avatar', 'telephone', 'average_rating']
+
+    def get_average_rating(self, obj):
+        renter = getattr(obj, 'renter', None)
+        if renter:
+            return round(renter.get_average_rating(), 2)
+        return 0
+
+
 class RequestRentSerializer(serializers.ModelSerializer):
-    organizer = serializers.StringRelatedField()
+    organizer = OrganizerSerializer()
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
+    count_days = serializers.SerializerMethodField()
 
     class Meta:
         model = RequestRent
-        fields = ['id', 'organizer', 'type', 'status', 'object', 'start_date', 'end_date', 'total_cost']
+        fields = [
+            'id', 'organizer', 'type', 'status', 'object', 'start_date',
+            'end_date', 'count_days', 'total_cost'
+        ]
 
     def get_type(self, obj):
         return obj.content_type.model
@@ -188,6 +206,11 @@ class RequestRentSerializer(serializers.ModelSerializer):
     def get_object(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return str(vehicle) if vehicle else None
+
+    def get_count_days(self, obj):
+        if obj.start_date and obj.end_date:
+            return (obj.end_date - obj.start_date).days
+        return 0
 
 
 class ChatSerializer(serializers.ModelSerializer):
