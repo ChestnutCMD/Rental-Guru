@@ -252,15 +252,12 @@ class ChatsByFranchiseView(APIView):
             franchise = Franchise.objects.get(id=franchise_id)
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
-
         # Получаем все транспорты, которые связаны с франшизой через арендодателя или владельца транспорта
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
-
         # Фильтруем поездки, связанные с этими транспортами
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True))
-
         # Получаем чаты для этих поездок
         chats = Chat.objects.filter(trip__in=trips)
         serializer = ChatSerializer(chats, many=True)
