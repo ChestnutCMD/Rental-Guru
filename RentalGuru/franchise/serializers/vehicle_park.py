@@ -1,3 +1,6 @@
+from datetime import date
+
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from app.models import Lessor, User
@@ -22,11 +25,11 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 class LessorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lessor
-        fields = ['super_host', 'count_trip']
+        fields = ['id', 'super_host', 'count_trip']
 
 
 class UserSerializer(serializers.ModelSerializer):
-    lessor = LessorSerializer(read_only=True)  # Nested Lessor data
+    lessor = LessorSerializer(read_only=True)
 
     class Meta:
         model = User
@@ -52,6 +55,7 @@ class VehicleSerializer(serializers.ModelSerializer):
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelSerializer(read_only=True)
     type = serializers.SerializerMethodField()
+    current_trip = serializers.SerializerMethodField()
 
     def get_type(self, obj):
         if isinstance(obj, Auto):
@@ -66,9 +70,29 @@ class VehicleSerializer(serializers.ModelSerializer):
             return 'special_technic'
         return 'unknown'
 
+    def get_current_trip(self, obj):
+        today = date.today()
+        current_trip = Trip.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj),
+            object_id=obj.id,
+            start_date__lte=today,
+            end_date__gte=today,
+            status__in=['current', 'started']  # Только активные поездки
+        ).select_related('organizer').first()
+
+        if current_trip:
+            return {
+                'organizer_avatar': current_trip.organizer.avatar.url if current_trip.organizer.avatar else None,
+                'organizer_first_name': current_trip.organizer.first_name,
+                'organizer_last_name': current_trip.organizer.last_name,
+                'start_date': current_trip.start_date,
+                'end_date': current_trip.end_date
+            }
+        return None
+
     class Meta:
         model = Vehicle
-        fields = ['id', 'type', 'brand', 'model', 'photos', 'availabilities', 'ratings', 'owner']
+        fields = ['id', 'type', 'brand', 'model', 'photos', 'availabilities', 'ratings', 'owner', 'current_trip']
 
 
 class VehicleParkRetrieveSerializer(serializers.ModelSerializer):
