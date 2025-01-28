@@ -1,12 +1,10 @@
-from datetime import timedelta, date
-
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import api_view
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -387,7 +385,6 @@ class FranchiseStatisticsView(APIView):
 
         self.check_object_permissions(request, franchise)
 
-        # Получаем период из query параметров
         period = request.query_params.get('period', 'all')
         statistics = franchise.get_statistics(period=period)
         serializer = FranchiseStatisticsSerializer(statistics)

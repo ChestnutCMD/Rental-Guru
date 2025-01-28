@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 
-from app.models import User, Lessor
+from app.models import Lessor
 from chat.models import RequestRent
 from franchise.add_lessor import RequestAddLessor
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
@@ -246,6 +246,10 @@ class FranchiseStatisticsSerializer(serializers.Serializer):
     total_cancelled_orders = serializers.IntegerField()
     royalty = serializers.DecimalField(max_digits=10, decimal_places=2)
     active_users_count = serializers.IntegerField()
+
+    change_margin = serializers.FloatField()
+    change_completed_orders = serializers.FloatField()
+    change_cancelled_orders = serializers.FloatField()
 
 
 class RequestFranchiseSerializer(serializers.ModelSerializer):

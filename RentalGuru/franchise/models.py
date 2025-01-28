@@ -80,27 +80,57 @@ class Franchise(models.Model):
 
         return start_date, end_date
 
-    def get_total_revenue(self, period='all'):
-        start_date, end_date = self.get_date_range(period)
+    def get_previous_date_range(self, period):
+        today = timezone.now().date()
+        if period == 'day':
+            end_date = today - timedelta(days=1)
+            start_date = end_date
+        elif period == 'week':
+            end_date = today - timedelta(days=7)
+            start_date = today - timedelta(days=14)
+        elif period == 'month':
+            end_date = today - timedelta(days=31)
+            start_date = today - timedelta(days=62)
+        elif period == 'year':
+            end_date = today - timedelta(days=365)
+            start_date = today - timedelta(days=730)
+        else:
+            return None, None
+        return start_date, end_date
 
-        query = Trip.objects.filter(
+    def calculate_change_percentage(self, current_value, previous_value):
+        if previous_value == 0:
+            return 0 if current_value == 0 else 100
+        return ((current_value - previous_value) / previous_value) * 100
+
+    def get_total_revenue(self, period='all', is_previous=False):
+        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+        if date_range == (None, None):
+            return self._get_total_revenue_query().aggregate(
+                total_revenue=Sum('total_cost')
+            )['total_revenue'] or Decimal('0.00')
+
+        start_date, end_date = date_range
+        query = self._get_total_revenue_query()
+        query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+        return query.aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or Decimal('0.00')
+
+    def _get_total_revenue_query(self):
+        return Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
         )
 
-        if start_date and end_date:
-            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+    def get_total_margin(self, period='all', is_previous=False):
+        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+        if date_range == (None, None):
+            return self.get_total_revenue(period) * (1 - Decimal(self.commission) / 100)
 
-        return query.aggregate(
-            total_revenue=Sum('total_cost')
-        )['total_revenue'] or Decimal('0.00')
-
-    def get_total_margin(self, period='all'):
-        revenue = Decimal(self.get_total_revenue(period))
-        commission_decimal = Decimal(self.commission) / 100
-        return revenue * (1 - commission_decimal)
+        start_date, end_date = date_range
+        revenue = self.get_total_revenue(period, is_previous)
+        return revenue * (1 - Decimal(self.commission) / 100)
 
     def get_total_orders(self, period='all'):
         start_date, end_date = self.get_date_range(period)
@@ -120,35 +150,41 @@ class Franchise(models.Model):
         revenue = Decimal(self.get_total_revenue(period))
         return (revenue/100) * Decimal(self.commission)
 
-    def get_total_completed_orders(self, period='all'):
-        start_date, end_date = self.get_date_range(period)
+    def get_total_completed_orders(self, period='all', is_previous=False):
+        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+        if date_range == (None, None):
+            return self._get_completed_orders_query().count()
 
-        query = Trip.objects.filter(
+        start_date, end_date = date_range
+        query = self._get_completed_orders_query()
+        query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+        return query.count()
+
+    def _get_completed_orders_query(self):
+        return Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
         )
 
-        if start_date and end_date:
-            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+    def get_total_cancelled_orders(self, period='all', is_previous=False):
+        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+        if date_range == (None, None):
+            return self._get_cancelled_orders_query().count()
 
+        start_date, end_date = date_range
+        query = self._get_cancelled_orders_query()
+        query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
         return query.count()
 
-    def get_total_cancelled_orders(self, period='all'):
-        start_date, end_date = self.get_date_range(period)
-
-        query = Trip.objects.filter(
+    def _get_cancelled_orders_query(self):
+        return Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='canceled'
         )
-
-        if start_date and end_date:
-            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
-
-        return query.count()
 
     def get_active_users_count(self):
         from app.models import User
@@ -157,15 +193,33 @@ class Franchise(models.Model):
         ).count()
 
     def get_statistics(self, period='all'):
+        # Текущие значения
+        current_margin = self.get_total_margin(period)
+        current_completed = self.get_total_completed_orders(period)
+        current_cancelled = self.get_total_cancelled_orders(period)
+
+        # Значения за предыдущий период
+        previous_margin = self.get_total_margin(period, True)
+        previous_completed = self.get_total_completed_orders(period, True)
+        previous_cancelled = self.get_total_cancelled_orders(period, True)
+
+        # Расчет изменений в процентах
+        margin_change = self.calculate_change_percentage(current_margin, previous_margin)
+        completed_change = self.calculate_change_percentage(current_completed, previous_completed)
+        cancelled_change = self.calculate_change_percentage(current_cancelled, previous_cancelled)
+
         return {
             'total_vehicles': self.get_total_vehicles(),
             'total_revenue': self.get_total_revenue(period),
-            'total_margin': self.get_total_margin(period),
+            'total_margin': current_margin,
             'total_orders': self.get_total_orders(period),
-            'total_completed_orders': self.get_total_completed_orders(period),
-            'total_cancelled_orders': self.get_total_cancelled_orders(period),
+            'total_completed_orders': current_completed,
+            'total_cancelled_orders': current_cancelled,
             'royalty': self.get_royalty(period),
             'active_users_count': self.get_active_users_count(),
+            'change_margin': round(margin_change, 1),
+            'change_completed_orders': round(completed_change, 1),
+            'change_cancelled_orders': round(cancelled_change, 1),
         }
 
     def __str__(self):
