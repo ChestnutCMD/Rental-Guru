@@ -192,12 +192,13 @@ class RequestRentSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
     count_days = serializers.SerializerMethodField()
+    chat_id = serializers.SerializerMethodField()
 
     class Meta:
         model = RequestRent
         fields = [
             'id', 'organizer', 'type', 'status', 'object', 'start_date',
-            'end_date', 'count_days', 'total_cost'
+            'end_date', 'count_days', 'total_cost', 'chat_id'
         ]
 
     def get_type(self, obj):
@@ -211,6 +212,10 @@ class RequestRentSerializer(serializers.ModelSerializer):
         if obj.start_date and obj.end_date:
             return (obj.end_date - obj.start_date).days
         return 0
+
+    def get_chat_id(self, obj):
+        chat = Chat.objects.filter(request_rent=obj).first()
+        return chat.id if chat else None
 
 
 class ChatSerializer(serializers.ModelSerializer):
