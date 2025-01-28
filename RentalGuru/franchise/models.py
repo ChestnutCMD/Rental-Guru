@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -5,6 +6,7 @@ from django.db import models
 from django.db.models import Q, Sum
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
@@ -60,45 +62,93 @@ class Franchise(models.Model):
     def get_total_vehicles(self):
         return self.get_vehicles().count()
 
-    def get_total_revenue(self):
-        return Trip.objects.filter(
+    def get_date_range(self, period):
+        today = timezone.now().date()
+        end_date = today
+        if period == 'day':
+            start_date = today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        elif period == 'quarter':
+            start_date = today - timedelta(days=90)
+        elif period == 'year':
+            start_date = today - timedelta(days=365)
+        else:
+            return None, None
+
+        return start_date, end_date
+
+    def get_total_revenue(self, period='all'):
+        start_date, end_date = self.get_date_range(period)
+
+        query = Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
-        ).aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or 0.00
+        )
 
-    def get_total_margin(self):
-        revenue = Decimal(self.get_total_revenue())
+        if start_date and end_date:
+            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+
+        return query.aggregate(
+            total_revenue=Sum('total_cost')
+        )['total_revenue'] or Decimal('0.00')
+
+    def get_total_margin(self, period='all'):
+        revenue = Decimal(self.get_total_revenue(period))
         commission_decimal = Decimal(self.commission) / 100
         return revenue * (1 - commission_decimal)
 
-    def get_total_orders(self):
-        return Trip.objects.filter(
+    def get_total_orders(self, period='all'):
+        start_date, end_date = self.get_date_range(period)
+
+        query = Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id')
-        ).count()
+        )
 
-    def get_royalty(self):
-        revenue = Decimal(self.get_total_revenue())
+        if start_date and end_date:
+            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+
+        return query.count()
+
+    def get_royalty(self, period='all'):
+        revenue = Decimal(self.get_total_revenue(period))
         return (revenue/100) * Decimal(self.commission)
 
-    def get_total_completed_orders(self):
-        return Trip.objects.filter(
+    def get_total_completed_orders(self, period='all'):
+        start_date, end_date = self.get_date_range(period)
+
+        query = Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
-        ).count()
+        )
 
-    def get_total_cancelled_orders(self):
-        return Trip.objects.filter(
+        if start_date and end_date:
+            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+
+        return query.count()
+
+    def get_total_cancelled_orders(self, period='all'):
+        start_date, end_date = self.get_date_range(period)
+
+        query = Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='canceled'
-        ).count()
+        )
+
+        if start_date and end_date:
+            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+
+        return query.count()
 
     def get_active_users_count(self):
         from app.models import User
@@ -106,15 +156,15 @@ class Franchise(models.Model):
             lessor__franchise=self
         ).count()
 
-    def get_statistics(self):
+    def get_statistics(self, period='all'):
         return {
             'total_vehicles': self.get_total_vehicles(),
-            'total_revenue': self.get_total_revenue(),
-            'total_margin': self.get_total_margin(),
-            'total_orders': self.get_total_orders(),
-            'total_completed_orders': self.get_total_completed_orders(),
-            'total_cancelled_orders': self.get_total_cancelled_orders(),
-            'royalty': self.get_royalty(),
+            'total_revenue': self.get_total_revenue(period),
+            'total_margin': self.get_total_margin(period),
+            'total_orders': self.get_total_orders(period),
+            'total_completed_orders': self.get_total_completed_orders(period),
+            'total_cancelled_orders': self.get_total_cancelled_orders(period),
+            'royalty': self.get_royalty(period),
             'active_users_count': self.get_active_users_count(),
         }
 
