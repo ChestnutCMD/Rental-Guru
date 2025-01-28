@@ -165,7 +165,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             logger.info(f"Received data: {data}")
             try:
                 file_data = base64.b64decode(
-                    base64_file.split(',')[-1])  # Используйте split(',')[-1] для удаления префикса
+                    base64_file.split(',')[-1])
                 file_name = data.get('name', 'unnamed_file')
                 content_type = data.get('type', 'application/octet-stream')
 

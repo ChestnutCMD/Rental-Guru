@@ -1,10 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, generics
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
@@ -16,11 +15,11 @@ from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
 from payment.models import Payment
 from .serializers.franchise import PaymentSerializer
-from vehicle.models import Vehicle
+from vehicle.models import Vehicle, Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .add_lessor import RequestAddLessor
 from .filters import LessorStatisticsFilter
 from .models import VehiclePark, Franchise, RequestFranchise, City
-from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, IsAdmin, \
+from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, \
     IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector, IsAdminManagerOrLessorOrFranchiseDirector
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
@@ -289,9 +288,21 @@ class LessorsByFranchiseView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
-@extend_schema(summary="Весь транспорт франшизы", description="")
+@extend_schema(
+    summary="Весь транспорт франшизы",
+    description="",
+    parameters=[
+        OpenApiParameter(
+            name="type",
+            description="Тип транспорта (Auto, Bike, Ship, Helicopter, SpecialTechnic)",
+            type=str,
+            enum=["auto", "bike", "ship", "helicopter", "special_technic"],
+            required=False,
+        )]
+)
 class VehiclesByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
         try:
@@ -299,12 +310,28 @@ class VehiclesByFranchiseView(APIView):
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Получаем все транспортные средства, связанные с франшизой через арендодателя или владельца (директора франшизы)
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
-        serializer = VehicleSerializer(vehicles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        vehicle_type = request.query_params.get('type')
+
+        if vehicle_type:
+            if vehicle_type == 'auto':
+                vehicles = vehicles.instance_of(Auto)
+            elif vehicle_type == 'bike':
+                vehicles = vehicles.instance_of(Bike)
+            elif vehicle_type == 'ship':
+                vehicles = vehicles.instance_of(Ship)
+            elif vehicle_type == 'helicopter':
+                vehicles = vehicles.instance_of(Helicopter)
+            elif vehicle_type == 'special_technic':
+                vehicles = vehicles.instance_of(SpecialTechnic)
+
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(vehicles, request)
+        serializer = VehicleSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(summary="Статистика франшизы", description="Статистика франшизы")
