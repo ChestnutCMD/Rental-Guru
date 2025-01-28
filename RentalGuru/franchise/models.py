@@ -146,8 +146,8 @@ class Franchise(models.Model):
 
         return query.count()
 
-    def get_royalty(self, period='all'):
-        revenue = Decimal(self.get_total_revenue(period))
+    def get_royalty(self, period='all', is_previous=False):
+        revenue = self.get_total_revenue(period, is_previous)
         return (revenue/100) * Decimal(self.commission)
 
     def get_total_completed_orders(self, period='all', is_previous=False):
@@ -194,17 +194,23 @@ class Franchise(models.Model):
 
     def get_statistics(self, period='all'):
         # Текущие значения
+        current_revenue = self.get_total_revenue(period)
         current_margin = self.get_total_margin(period)
+        current_royalty = self.get_royalty(period)
         current_completed = self.get_total_completed_orders(period)
         current_cancelled = self.get_total_cancelled_orders(period)
 
         # Значения за предыдущий период
+        previous_revenue = self.get_total_revenue(period, True)
         previous_margin = self.get_total_margin(period, True)
+        previous_royalty = self.get_royalty(period, True)
         previous_completed = self.get_total_completed_orders(period, True)
         previous_cancelled = self.get_total_cancelled_orders(period, True)
 
         # Расчет изменений в процентах
+        revenue_change = self.calculate_change_percentage(current_revenue, previous_revenue)
         margin_change = self.calculate_change_percentage(current_margin, previous_margin)
+        royalty_change = self.calculate_change_percentage(current_royalty, previous_royalty)
         completed_change = self.calculate_change_percentage(current_completed, previous_completed)
         cancelled_change = self.calculate_change_percentage(current_cancelled, previous_cancelled)
 
@@ -217,7 +223,9 @@ class Franchise(models.Model):
             'total_cancelled_orders': current_cancelled,
             'royalty': self.get_royalty(period),
             'active_users_count': self.get_active_users_count(),
+            'change_revenue': round(revenue_change, 1),
             'change_margin': round(margin_change, 1),
+            'change_royalty': round(royalty_change, 1),
             'change_completed_orders': round(completed_change, 1),
             'change_cancelled_orders': round(cancelled_change, 1),
         }

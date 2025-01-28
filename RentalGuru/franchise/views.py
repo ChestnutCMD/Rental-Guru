@@ -543,7 +543,7 @@ class LessorStatisticsView(APIView):
     )
     def get(self, request, lessor_id):
         lessor = get_object_or_404(Lessor, id=lessor_id)
-
+        self.check_object_permissions(request, lessor)
         vehicle_cts = ContentType.objects.filter(
             model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         )

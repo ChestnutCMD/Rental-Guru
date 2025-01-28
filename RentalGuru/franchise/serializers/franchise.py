@@ -64,14 +64,12 @@ class FranchiseRetrieveSerializer(serializers.ModelSerializer):
         ]
 
     def get_vehicle_parks(self, obj):
-        # Получаем парки у арендодателей, связанных с франшизой, или владельцем которых является директор франшизы
         vehicle_parks = VehiclePark.objects.filter(
             models.Q(owner__franchise=obj) | models.Q(owner=obj.director)
         )
         return VehicleParkRetrieveSerializer(vehicle_parks, many=True).data
 
     def get_vehicles(self, obj):
-        # Получаем транспорт у арендодателей, связанных с франшизой, или владельцем которого является директор франшизы
         vehicles = Vehicle.objects.filter(
             models.Q(owner__lessor__franchise=obj) | models.Q(owner=obj.director)
         )
@@ -241,13 +239,15 @@ class FranchiseStatisticsSerializer(serializers.Serializer):
     total_vehicles = serializers.IntegerField()
     total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_margin = serializers.DecimalField(max_digits=10, decimal_places=2)
+    royalty = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_orders = serializers.IntegerField()
     total_completed_orders = serializers.IntegerField()
     total_cancelled_orders = serializers.IntegerField()
-    royalty = serializers.DecimalField(max_digits=10, decimal_places=2)
     active_users_count = serializers.IntegerField()
 
+    change_revenue = serializers.FloatField()
     change_margin = serializers.FloatField()
+    change_royalty = serializers.FloatField()
     change_completed_orders = serializers.FloatField()
     change_cancelled_orders = serializers.FloatField()
 
