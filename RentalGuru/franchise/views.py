@@ -301,7 +301,7 @@ class LessorsByFranchiseView(APIView):
         )]
 )
 class VehiclesByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -313,7 +313,7 @@ class VehiclesByFranchiseView(APIView):
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
-
+        self.check_object_permissions(request, franchise)
         vehicle_type = request.query_params.get('type')
 
         if vehicle_type:

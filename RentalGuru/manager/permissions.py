@@ -17,11 +17,10 @@ class ManagerObjectPermission(BasePermission):
         elif request.method == 'DELETE':
             return 'delete'
         elif request.method == 'POST':
-            return 'edit'  # или можно добавить специальный тип 'create'
+            return 'edit'
         return 'read'
 
     def has_object_permission(self, request, view, obj):
-        # Админы имеют полный доступ
         if request.user.is_authenticated and request.user.role == 'admin':
             return True
 
@@ -32,7 +31,6 @@ class ManagerObjectPermission(BasePermission):
         content_type = ContentType.objects.get_for_model(obj)
         permission_type = self.get_permission_type(request)
 
-        # Проверяем глобальные права
         if ManagerPermission.objects.filter(
             manager=manager,
             content_type=content_type,
@@ -41,7 +39,6 @@ class ManagerObjectPermission(BasePermission):
         ).exists():
             return True
 
-        # Проверяем объектные права
         return ManagerPermission.objects.filter(
             manager=manager,
             content_type=content_type,
