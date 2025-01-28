@@ -126,6 +126,7 @@ class Franchise(models.Model):
             raise ValidationError(f'Для города {self.city} уже зарегистрирована франшиза.')
 
     def save(self, *args, **kwargs):
+        self.save_total_vehicles()
         self.full_clean()
         super().save(*args, **kwargs)
 

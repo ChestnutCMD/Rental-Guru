@@ -21,6 +21,7 @@ class FranchiseListSerializer(serializers.ModelSerializer):
     director = serializers.StringRelatedField()
     categories = CategorySerializer(many=True)
     avatar = serializers.ImageField(source='director.avatar', read_only=True)
+    total_vehicles = serializers.SerializerMethodField()
 
     class Meta:
         model = Franchise
@@ -39,6 +40,9 @@ class FranchiseListSerializer(serializers.ModelSerializer):
             'total_vehicles',
             'categories'
         ]
+
+    def get_total_vehicles(self, obj):
+        return obj.get_total_vehicles()
 
 
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
