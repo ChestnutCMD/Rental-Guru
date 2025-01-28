@@ -167,23 +167,11 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
 
 class ChatSerializer(serializers.ModelSerializer):
-    participants = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ['id', 'request_rent', 'participants', 'last_message']
-
-    def get_participants(self, obj):
-        other_participants = obj.participants.all()
-        return [
-            {
-                "id": participant.id,
-                "first_name": participant.first_name,
-                "avatar": participant.avatar.url if participant.avatar else None
-            }
-            for participant in other_participants
-        ]
+        fields = ['id', 'request_rent', 'last_message']
 
     def get_last_message(self, obj):
         last_message = obj.messages.order_by('-timestamp').first()
@@ -194,11 +182,13 @@ class ChatSerializer(serializers.ModelSerializer):
                 "sender": {
                     "id": last_message.sender.id,
                     "first_name": last_message.sender.first_name,
+                    "last_name": last_message.sender.last_name,
                     "avatar": last_message.sender.avatar.url if last_message.sender.avatar else None
                 },
                 "timestamp": last_message.timestamp.strftime('%H.%m.%y - %H:%M')
             }
         return None
+
 
 class VehicleParkStatisticsSerializer(serializers.Serializer):
     total_vehicles = serializers.IntegerField()
