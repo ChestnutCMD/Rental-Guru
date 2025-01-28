@@ -186,9 +186,26 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(summary="Все заявки на аренду франшизы", description="Заявки на аренду франшизы")
+class CustomLimitOffsetPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
+@extend_schema(
+    summary="Все заявки на аренду франшизы",
+    description="Заявки на аренду франшизы",
+    parameters=[
+            OpenApiParameter(
+                name="type",
+                description="Тип транспорта (Auto, Bike, Ship, Helicopter, SpecialTechnic)",
+                type=str,
+                enum=["auto", "bike", "ship", "helicopter", "special_technic"],
+                required=False,
+            )]
+)
 class RequestsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
         try:
@@ -196,17 +213,31 @@ class RequestsByFranchiseView(APIView):
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Получаем все транспорты, которые связаны с франшизой через арендодателя или владельца транспорта
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
 
-        # Фильтруем заявки на аренду по этим транспортам
-        requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related(
-            'content_type')
-        serialized_requests = RequestRentSerializer(requests, many=True).data
+        vehicle_type = request.query_params.get('type')
+        if vehicle_type:
+            if vehicle_type == 'auto':
+                vehicles = vehicles.instance_of(Auto)
+            elif vehicle_type == 'bike':
+                vehicles = vehicles.instance_of(Bike)
+            elif vehicle_type == 'ship':
+                vehicles = vehicles.instance_of(Ship)
+            elif vehicle_type == 'helicopter':
+                vehicles = vehicles.instance_of(Helicopter)
+            elif vehicle_type == 'special_technic':
+                vehicles = vehicles.instance_of(SpecialTechnic)
 
-        # Считаем заявки по типам
+        requests = RequestRent.objects.filter(object_id__in=vehicles.values_list('id', flat=True)).select_related(
+            'content_type'
+        )
+
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(requests, request)
+        serialized_requests = RequestRentSerializer(paginated_queryset, many=True).data
+
         count_dict = {
             "auto": 0,
             "bike": 0,
@@ -215,36 +246,17 @@ class RequestsByFranchiseView(APIView):
             "special_technic": 0
         }
 
-        for request in serialized_requests:
-            content_type_name = request['type']
+        for request_data in serialized_requests:
+            content_type_name = request_data['type']
             if content_type_name in count_dict:
                 count_dict[content_type_name] += 1
 
-        # Группируем заявки по типам
-        data = {
-            "auto": [],
-            "bike": [],
-            "ship": [],
-            "helicopter": [],
-            "special_technic": []
-        }
-
-        for request in serialized_requests:
-            content_type_name = request['type']
-            if content_type_name in data:
-                data[content_type_name].append(request)
-
         result = {
             "counts": count_dict,
-            "data": data
+            "data": serialized_requests
         }
 
-        return Response(result, status=status.HTTP_200_OK)
-
-
-class CustomLimitOffsetPagination(LimitOffsetPagination):
-    default_limit = 10
-    max_limit = 100
+        return paginator.get_paginated_response(result)
 
 
 @extend_schema(summary="Все чаты франшизы", description="Чаты франшизы")
