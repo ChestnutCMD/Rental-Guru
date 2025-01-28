@@ -243,31 +243,32 @@ class RequestsByFranchiseView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
+class CustomLimitOffsetPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
 @extend_schema(summary="Все чаты франшизы", description="Чаты франшизы")
 class ChatsByFranchiseView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
         try:
             franchise = Franchise.objects.get(id=franchise_id)
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
-        # Получаем все транспорты, которые связаны с франшизой через арендодателя или владельца транспорта
+
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
-        # Фильтруем поездки, связанные с этими транспортами
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True))
-        # Получаем чаты для этих поездок
         chats = Chat.objects.filter(trip__in=trips)
-        serializer = ChatSerializer(chats, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class CustomLimitOffsetPagination(LimitOffsetPagination):
-    default_limit = 10
-    max_limit = 100
+        paginator = self.pagination_class()
+        paginated_chats = paginator.paginate_queryset(chats, request, view=self)
+        serializer = ChatSerializer(paginated_chats, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(summary="Арендодатели франшизы", description="Арендодатели франшизы")
