@@ -6,6 +6,7 @@ from RentalGuru.settings import HOST_URL
 from feedback.models import Feedback
 from influencer.utils import check_promocode
 from notification.models import Notification
+from payment.models import Payment
 from vehicle.models import RatingUpdateLog
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 
@@ -139,7 +140,8 @@ class RequestRentSerializer(serializers.ModelSerializer):
             representation['renter_last_name'] = trip.organizer.last_name
 
         if instance.status == 'accept':
-            representation['payment_id'] = instance.payments.id
+            payment = Payment.objects.filter(request_rent=instance).first()
+            representation['payment_id'] = payment.id
         return representation
 
     def validate(self, data):
