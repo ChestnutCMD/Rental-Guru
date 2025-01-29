@@ -211,7 +211,7 @@ class RequestsByFranchiseView(APIView):
         try:
             franchise = Franchise.objects.get(id=franchise_id)
         except Franchise.DoesNotExist:
-            return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'Франшиза не найдена.'}, status=status.HTTP_404_NOT_FOUND)
 
         vehicles = Vehicle.objects.filter(
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)

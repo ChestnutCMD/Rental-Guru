@@ -49,7 +49,8 @@ class TripViewSet(viewsets.ModelViewSet):
                                      object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
 
 
-@extend_schema(summary="Чат между арендатором и арендодателем", description="""\nЧат между арендатором и арендодателем. 
+@extend_schema(summary="Чат между арендатором и арендодателем",
+               description="""\nЧат между арендатором и арендодателем. 
                                                                                 Создается автоматически при создании 
                                                                                 заявки на аренду с открытой датой, либо 
                                                                                 при принятии заявки на аренду 
@@ -82,14 +83,80 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                           "update_status": {
                                                                              "status": "accept"
                                                                              }
-                                                                        }""")
+                                                                        }""",
+               parameters=[
+                   OpenApiParameter(
+                       name="lessor_id",
+                       description="ID арендодателя",
+                       type=int,
+                       required=False,
+                   )]
+               )
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
     def get_queryset(self):
         user = self.request.user
-        return Chat.objects.filter(participants=user)
+        lessor_id = self.request.query_params.get('lessor_id')
+
+        # 1. Админ и обычный менеджер (имеют полный доступ)
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
+            queryset = Chat.objects.all()
+            if lessor_id:
+                queryset = queryset.filter(
+                    Q(request_rent__content_type__model='auto',
+                      request_rent__object_id__in=Auto.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='bike',
+                      request_rent__object_id__in=Bike.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='ship',
+                      request_rent__object_id__in=Ship.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='helicopter',
+                      request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='specialtechnic',
+                      request_rent__object_id__in=SpecialTechnic.objects.filter(owner__lessor__id=lessor_id).values(
+                          'id'))
+                )
+
+        # 2. Директор франшизы или франшизный менеджер (ограничение по франшизе)
+        elif hasattr(user, 'franchise') and user.franchise:
+            queryset = Chat.objects.filter(
+                Q(request_rent__content_type__model='auto',
+                  request_rent__object_id__in=Auto.objects.filter(owner__lessor__franchise=user.franchise).values(
+                      'id')) |
+                Q(request_rent__content_type__model='bike',
+                  request_rent__object_id__in=Bike.objects.filter(owner__lessor__franchise=user.franchise).values(
+                      'id')) |
+                Q(request_rent__content_type__model='ship',
+                  request_rent__object_id__in=Ship.objects.filter(owner__lessor__franchise=user.franchise).values(
+                      'id')) |
+                Q(request_rent__content_type__model='helicopter',
+                  request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__franchise=user.franchise).values(
+                      'id')) |
+                Q(request_rent__content_type__model='specialtechnic',
+                  request_rent__object_id__in=SpecialTechnic.objects.filter(
+                      owner__lessor__franchise=user.franchise).values('id'))
+            )
+            if lessor_id:
+                queryset = queryset.filter(
+                    Q(request_rent__content_type__model='auto',
+                      request_rent__object_id__in=Auto.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='bike',
+                      request_rent__object_id__in=Bike.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='ship',
+                      request_rent__object_id__in=Ship.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='helicopter',
+                      request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__id=lessor_id).values('id')) |
+                    Q(request_rent__content_type__model='specialtechnic',
+                      request_rent__object_id__in=SpecialTechnic.objects.filter(owner__lessor__id=lessor_id).values(
+                          'id'))
+                )
+
+        # 3. Обычный пользователь (только его чаты)
+        else:
+            queryset = Chat.objects.filter(participants=user)
+
+        return queryset
 
     def get_permissions(self):
         if hasattr(self.request.user, 'manager') and self.request.user.manager:

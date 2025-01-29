@@ -509,7 +509,8 @@ class AllVehiclesListView(APIView):
             OpenApiParameter('limit', type=int, location=OpenApiParameter.QUERY,
                              description='Number of results to return.'),
             OpenApiParameter('offset', type=int, location=OpenApiParameter.QUERY,
-                             description='The initial index from which to return the results.')
+                             description='The initial index from which to return the results.'),
+            OpenApiParameter("lessor_id", type=OpenApiTypes.INT, description="ID арендодателя"),
         ]
     )
     def get(self, request):
@@ -576,6 +577,11 @@ class AllVehiclesListView(APIView):
         filterset = self.filterset_class(request.GET, queryset=queryset)
         if filterset.is_valid():
             queryset = filterset.qs
+
+        lessor_id = request.GET.get("lessor_id")
+        if lessor_id:
+            queryset = queryset.filter(owner__lessor__id=lessor_id)
+
         return queryset
 
 
