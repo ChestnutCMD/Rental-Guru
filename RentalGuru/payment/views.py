@@ -79,6 +79,8 @@ class PaymentViewSet(viewsets.ViewSet):
         except Payment.DoesNotExist:
             return Response({'detail': 'Платеж не найден.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.error(f"Payment error for payment_id={pk}: {str(e)}")
+            logger.exception(e)
             return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
