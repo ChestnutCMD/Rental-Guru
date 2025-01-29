@@ -17,11 +17,24 @@ class TinkoffAPI:
 
     def _generate_token(self, params):
         """Генерация токена для подписи"""
-        sorted_params = sorted((k, str(v)) for k, v in params.items() if k != 'Token')
-        token_string = ''.join(val for _, val in sorted_params) + self.secret_key
+
+        filtered_params = {
+            k: str(v)
+            for k, v in params.items()
+            if k != 'Token' and v is not None
+        }
+
+        sorted_params = dict(sorted(filtered_params.items()))
+
+        values = ''.join(map(str, sorted_params.values()))
+        token_string = values + self.secret_key
+
+        logger.debug(f"Params for token generation: {sorted_params}")
+        logger.debug(f"Token string: {token_string}")
+
         token = hashlib.sha256(token_string.encode('utf-8')).hexdigest()
-        logger.debug(f"Generated token from string: {token_string}")
-        logger.debug(f"Final token: {token}")
+        logger.debug(f"Generated token: {token}")
+
         return token
 
     def create_payment(self, order_id, amount, description):
