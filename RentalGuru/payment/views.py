@@ -67,6 +67,8 @@ class PaymentViewSet(viewsets.ViewSet):
                 description=f'Аренда транспорта {payment.request_rent.vehicle} (заявка #{payment.request_rent.id})'
             )
 
+            logger.info(f"Tinkoff API response: {response}")
+
             if not response.get('PaymentId') or not response.get('PaymentUrl'):
                 return Response({'detail': 'Ошибка инициализации платежа в Тинькофф.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -110,8 +112,8 @@ class TinkoffCallbackView(APIView):
         data = request.data
 
         # Проверяем подпись
-        # if not self.verify_signature(data):
-        #     return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
+        if not self.verify_signature(data):
+            return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
 
         required_fields = {'PaymentId', 'Status', 'Amount'}
         missing_fields = required_fields - data.keys()
