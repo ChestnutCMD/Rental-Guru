@@ -6,20 +6,8 @@ from rest_framework import serializers
 from app.models import Lessor, User
 from chat.models import RequestRent, Chat, Trip
 from franchise.models import VehiclePark
-from vehicle.models import Vehicle, SpecialTechnic, Helicopter, Ship, Bike, Auto, Availability, VehiclePhoto, \
-    VehicleBrand, VehicleModel
-
-
-class VehiclePhotoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VehiclePhoto
-        fields = ['photo']
-
-
-class AvailabilitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Availability
-        fields = ['start_date', 'end_date']
+from vehicle.models import Vehicle
+from vehicle.serializers.base import BaseVehicleListSerializer
 
 
 class LessorSerializer(serializers.ModelSerializer):
@@ -28,47 +16,8 @@ class LessorSerializer(serializers.ModelSerializer):
         fields = ['id', 'super_host', 'count_trip']
 
 
-class UserSerializer(serializers.ModelSerializer):
-    lessor = LessorSerializer(read_only=True)
-
-    class Meta:
-        model = User
-        fields = ['lessor']
-
-
-class VehicleBrandSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VehicleBrand
-        fields = ['name']
-
-
-class VehicleModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VehicleModel
-        fields = ['name']
-
-
-class VehicleSerializer(serializers.ModelSerializer):
-    photos = VehiclePhotoSerializer(many=True, read_only=True)
-    availabilities = AvailabilitySerializer(many=True, read_only=True)
-    owner = UserSerializer()
-    brand = VehicleBrandSerializer(read_only=True)
-    model = VehicleModelSerializer(read_only=True)
-    type = serializers.SerializerMethodField()
+class VehicleSerializer(BaseVehicleListSerializer):
     current_trip = serializers.SerializerMethodField()
-
-    def get_type(self, obj):
-        if isinstance(obj, Auto):
-            return 'auto'
-        elif isinstance(obj, Bike):
-            return 'bike'
-        elif isinstance(obj, Ship):
-            return 'ship'
-        elif isinstance(obj, Helicopter):
-            return 'helicopter'
-        elif isinstance(obj, SpecialTechnic):
-            return 'special_technic'
-        return 'unknown'
 
     def get_current_trip(self, obj):
         today = date.today()
@@ -77,7 +26,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             object_id=obj.id,
             start_date__lte=today,
             end_date__gte=today,
-            status__in=['current', 'started']  # Только активные поездки
+            status__in=['current', 'started']
         ).select_related('organizer').first()
 
         if current_trip:
@@ -92,7 +41,11 @@ class VehicleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Vehicle
-        fields = ['id', 'type', 'brand', 'model', 'photos', 'availabilities', 'ratings', 'owner', 'current_trip']
+        fields = [
+            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'current_trip'
+        ]
+        read_only_fields = ['average_ratings']
 
 
 class VehicleParkRetrieveSerializer(serializers.ModelSerializer):
