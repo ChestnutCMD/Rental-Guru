@@ -43,7 +43,7 @@ class PaymentViewSet(viewsets.ViewSet):
         Инициализация оплаты платежа через Тинькофф
         """
         try:
-            payment = Payment.objects.get(pk=pk, request_rent__organizer=request.user)
+            payment = Payment.objects.get(pk=pk)#, request_rent__organizer=request.user)
 
             if payment.status != 'pending':
                 return Response({'detail': 'Платеж уже обработан или отменен.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -55,11 +55,27 @@ class PaymentViewSet(viewsets.ViewSet):
             if not payment.request_rent.id:
                 return Response({'detail': 'Некорректная заявка на аренду.'}, status=status.HTTP_400_BAD_REQUEST)
 
+            receipt = {
+                "Email": request.user.email,
+                "Phone": request.user.telephone if hasattr(request.user, 'telephone') else None,
+                "Taxation": "osn",
+                "Items": [
+                    {
+                        "Name": f"Аренда транспорта {payment.request_rent.vehicle}",
+                        "Price": int(payment.amount * 100),
+                        "Quantity": 1,
+                        "Amount": int(payment.amount * 100),
+                        "Tax": "vat20"
+                    }
+                ]
+            }
+
             tinkoff = TinkoffAPI()
             response = tinkoff.create_payment(
                 order_id=str(payment.id),
                 amount=int(payment.amount * 100),
-                description=f'Аренда транспорта {payment.request_rent.vehicle} (заявка #{payment.request_rent.id})'
+                description=f'Аренда транспорта {payment.request_rent.vehicle} (заявка #{payment.request_rent.id})',
+                receipt=receipt
             )
 
             logger.info(f"Tinkoff API response: {response}")

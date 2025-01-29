@@ -32,7 +32,7 @@ class TinkoffAPI:
 
         return hashlib.sha256(token_string.encode("utf-8")).hexdigest()
 
-    def create_payment(self, order_id, amount, description):
+    def create_payment(self, order_id, amount, description, receipt):
         """Создание платежа"""
         payload = {
             'TerminalKey': self.terminal_key,
@@ -41,9 +41,10 @@ class TinkoffAPI:
             'Description': description,
             'SuccessURL': self.success_url,
             'FailURL': self.fail_url,
-            "NotificationURL": f"{HOST_URL}/payment/callback/"
+            'NotificationURL': f'{HOST_URL}/payment/callback/'
         }
         payload['Token'] = self._generate_token(payload)
+        payload['Receipt'] = receipt
         response = requests.post(f'{self.base_url}Init', json=payload)
         response.raise_for_status()
         return response.json()
