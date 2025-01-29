@@ -1,8 +1,10 @@
 import hashlib
-
+import logging
 import requests
 
 from RentalGuru.settings import TINYPAY_TERMINAL_KEY, TINYPAY_PASSWORD, TINYPAY_SUCCESS_URL, TINYPAY_FAIL_URL, HOST_URL
+
+logger = logging.getLogger('payment')
 
 
 class TinkoffAPI:
@@ -17,7 +19,10 @@ class TinkoffAPI:
         """Генерация токена для подписи"""
         sorted_params = sorted((k, str(v)) for k, v in params.items() if k != 'Token')
         token_string = ''.join(val for _, val in sorted_params) + self.secret_key
-        return hashlib.sha256(token_string.encode('utf-8')).hexdigest()
+        token = hashlib.sha256(token_string.encode('utf-8')).hexdigest()
+        logger.debug(f"Generated token from string: {token_string}")
+        logger.debug(f"Final token: {token}")
+        return token
 
     def create_payment(self, order_id, amount, description):
         """Создание платежа"""
