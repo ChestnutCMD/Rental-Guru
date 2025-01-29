@@ -55,11 +55,6 @@ class PaymentViewSet(viewsets.ViewSet):
             if not payment.request_rent.id:
                 return Response({'detail': 'Некорректная заявка на аренду.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            #TODO: генератор PaymentID, после добавления ключей удалить
-            # payment.payment_id = random.randint(100, 100000)
-            # payment.status = 'pending'
-            # payment.save()
-
             tinkoff = TinkoffAPI()
             response = tinkoff.create_payment(
                 order_id=str(payment.id),
@@ -69,7 +64,7 @@ class PaymentViewSet(viewsets.ViewSet):
 
             logger.info(f"Tinkoff API response: {response}")
 
-            if not response.get('PaymentId') or not response.get('PaymentUrl'):
+            if not response.get('PaymentId') or not response.get('PaymentURL'):
                 return Response({'detail': 'Ошибка инициализации платежа в Тинькофф.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -77,7 +72,7 @@ class PaymentViewSet(viewsets.ViewSet):
             payment.status = 'pending'
             payment.save()
 
-            return Response({'detail': 'Платеж успешно инициализирован.', 'payment_url': response['PaymentUrl']})
+            return Response({'detail': 'Платеж успешно инициализирован.', 'payment_url': response['PaymentURL']})
         except Payment.DoesNotExist:
             return Response({'detail': 'Платеж не найден.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:

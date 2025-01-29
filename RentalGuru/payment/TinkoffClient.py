@@ -16,33 +16,28 @@ class TinkoffAPI:
         self.fail_url = TINYPAY_FAIL_URL
 
     def _generate_token(self, params):
-        """Генерация токена для подписи"""
+        """Генерация токена для подписи по спецификации Тинькофф"""
+        token_string = (
+                str(params.get("Amount", "")) +
+                str(params.get("Description", "")) +
+                str(params.get("FailURL", "")) +  #
+                str(params.get("NotificationURL", "")) +  #
+                str(params.get("OrderId", "")) +
+                self.secret_key +
+                str(params.get("SuccessURL", "")) +  #
+                str(params.get('TerminalKey', ""))
+        )
 
-        filtered_params = {
-            k: str(v)
-            for k, v in params.items()
-            if k != 'Token' and v is not None
-        }
+        logger.debug(f"Token string (first/last 10 chars): {token_string[:10]}...{token_string[-10:]}")
 
-        sorted_params = dict(sorted(filtered_params.items()))
-
-        values = ''.join(map(str, sorted_params.values()))
-        token_string = values + self.secret_key
-
-        logger.debug(f"Params for token generation: {sorted_params}")
-        logger.debug(f"Token string: {token_string}")
-
-        token = hashlib.sha256(token_string.encode('utf-8')).hexdigest()
-        logger.debug(f"Generated token: {token}")
-
-        return token
+        return hashlib.sha256(token_string.encode("utf-8")).hexdigest()
 
     def create_payment(self, order_id, amount, description):
         """Создание платежа"""
         payload = {
             'TerminalKey': self.terminal_key,
-            'OrderId': order_id,
             'Amount': amount,
+            'OrderId': order_id,
             'Description': description,
             'SuccessURL': self.success_url,
             'FailURL': self.fail_url,
