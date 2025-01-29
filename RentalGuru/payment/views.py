@@ -43,7 +43,7 @@ class PaymentViewSet(viewsets.ViewSet):
         Инициализация оплаты платежа через Тинькофф
         """
         try:
-            payment = Payment.objects.get(pk=pk)#, request_rent__organizer=request.user)
+            payment = Payment.objects.get(pk=pk, request_rent__organizer=request.user)
 
             if payment.status != 'pending':
                 return Response({'detail': 'Платеж уже обработан или отменен.'}, status=status.HTTP_400_BAD_REQUEST)
