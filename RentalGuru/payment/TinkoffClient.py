@@ -2,7 +2,7 @@ import hashlib
 
 import requests
 
-from RentalGuru.settings import TINYPAY_TERMINAL_KEY, TINYPAY_PASSWORD, TINYPAY_SUCCESS_URL, TINYPAY_FAIL_URL
+from RentalGuru.settings import TINYPAY_TERMINAL_KEY, TINYPAY_PASSWORD, TINYPAY_SUCCESS_URL, TINYPAY_FAIL_URL, HOST_URL
 
 
 class TinkoffAPI:
@@ -28,6 +28,7 @@ class TinkoffAPI:
             'Description': description,
             'SuccessURL': self.success_url,
             'FailURL': self.fail_url,
+            "NotificationURL": f"{HOST_URL}/payment/callback/"
         }
         payload['Token'] = self._generate_token(payload)
         response = requests.post(f'{self.base_url}Init', json=payload)
