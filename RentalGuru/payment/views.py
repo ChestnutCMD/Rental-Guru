@@ -56,9 +56,9 @@ class PaymentViewSet(viewsets.ViewSet):
                 return Response({'detail': 'Некорректная заявка на аренду.'}, status=status.HTTP_400_BAD_REQUEST)
 
             #TODO: генератор PaymentID, после добавления ключей удалить
-            payment.payment_id = random.randint(100, 100000)
-            payment.status = 'pending'
-            payment.save()
+            # payment.payment_id = random.randint(100, 100000)
+            # payment.status = 'pending'
+            # payment.save()
 
             tinkoff = TinkoffAPI()
             response = tinkoff.create_payment(
