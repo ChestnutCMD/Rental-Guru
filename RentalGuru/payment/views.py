@@ -19,7 +19,7 @@ from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
 from payment.serializers import PaymentSerializer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('payment')
 
 
 @extend_schema(summary="Платежи")

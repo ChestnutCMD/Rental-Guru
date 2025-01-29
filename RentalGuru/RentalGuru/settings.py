@@ -214,7 +214,7 @@ LOGGING = {
             'propagate': True,
         },
         'payment': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },
