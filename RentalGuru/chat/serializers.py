@@ -138,6 +138,8 @@ class RequestRentSerializer(serializers.ModelSerializer):
             representation['renter_first_name'] = trip.organizer.first_name
             representation['renter_last_name'] = trip.organizer.last_name
 
+        if instance.status == 'accept':
+            representation['payment_id'] = instance.payments.id
         return representation
 
     def validate(self, data):
