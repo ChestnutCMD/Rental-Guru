@@ -226,7 +226,7 @@ class RequestsByFranchiseView(APIView):
             "bike": 0,
             "ship": 0,
             "helicopter": 0,
-            "special_technic": 0
+            "specialtechnic": 0
         }
 
         for request_rent in all_requests:
