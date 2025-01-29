@@ -193,29 +193,33 @@ CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    # 'handlers': {
-    #     'console': {
-    #         'class': 'logging.StreamHandler',
-    #     },
-    # },
-    # 'root': {
-    #     'handlers': ['console'],
-    #     'level': 'DEBUG',
-    # },
-    # 'loggers': {
-    #     'django': {
-    #         'handlers': ['console'],
-    #         'level': 'DEBUG',
-    #         'propagate': True,
-    #     },
-    #     'chat': {
-    #         'handlers': ['console'],
-    #         'level': 'DEBUG',
-    #         'propagate': True,
-    #     },
-    #},
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'chat': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'payment': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
