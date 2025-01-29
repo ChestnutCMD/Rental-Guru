@@ -39,8 +39,20 @@ class AvailableModelsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        content_types = ContentType.objects.all()
+        predefined_ids = [15, 19, 20, 41, 43, 46, 47, 52, 67, 68, 70, 84]
 
+        is_director = Franchise.objects.filter(director=request.user).exists()
+
+        is_manager_with_franchise = (
+                hasattr(request.user, 'manager') and request.user.manager.franchise
+        )
+
+        if is_director or is_manager_with_franchise:
+            content_types = ContentType.objects.filter(id__in=predefined_ids)
+        elif request.user.role in ['admin', 'manager']:
+            content_types = ContentType.objects.all().order_by('id')[14:]
+        else:
+            content_types = ContentType.objects.none()
         models = [
             {
                 "id": content_type.id,
@@ -50,7 +62,6 @@ class AvailableModelsView(APIView):
             }
             for content_type in content_types
         ]
-
         return Response(models)
 
 
