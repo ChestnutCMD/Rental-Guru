@@ -13,7 +13,7 @@ from RentalGuru import settings
 from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability
-from .filters import MessageFilter
+from .filters import MessageFilter, TripFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 from .permissions import IsAdminOrOwner
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
@@ -27,6 +27,8 @@ from .utils import is_period_contained, subtract_periods
 class TripViewSet(viewsets.ModelViewSet):
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TripFilter
 
     def get_queryset(self):
         user = self.request.user

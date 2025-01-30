@@ -1,5 +1,5 @@
 import django_filters
-from chat.models import Message
+from chat.models import Message, Trip
 
 
 class MessageFilter(django_filters.FilterSet):
@@ -9,3 +9,11 @@ class MessageFilter(django_filters.FilterSet):
     class Meta:
         model = Message
         fields = ['chat_id']
+
+
+class TripFilter(django_filters.FilterSet):
+    status = django_filters.CharFilter(field_name='status', label='Статус поездки')
+
+    class Meta:
+        model = Trip
+        fields = ['status']

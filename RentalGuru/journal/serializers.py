@@ -13,20 +13,22 @@ class TripSerializer(serializers.ModelSerializer):
     organizer_telephone = serializers.CharField(source='organizer.telephone')
     organizer_avatar = serializers.ImageField(source='organizer.avatar', allow_null=True)
     organizer_rating = serializers.SerializerMethodField()
-    chat_id = serializers.IntegerField(source='chat.id')
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
-
     owner_user_id = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     owner_telephone = serializers.SerializerMethodField()
     owner_avatar = serializers.SerializerMethodField()
+    chat_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
         fields = ['id', 'type', 'status', 'object', 'start_date', 'end_date', 'total_cost',
                   'owner_user_id', 'owner', 'owner_telephone', 'owner_avatar', 'chat_id',
                   'organizer', 'organizer_user_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
+
+    def get_chat_id(self, obj):
+        return obj.chat.id if obj.chat.id else None
 
     def get_organizer_rating(self, obj):
         renter = getattr(obj.organizer, 'renter', None)
