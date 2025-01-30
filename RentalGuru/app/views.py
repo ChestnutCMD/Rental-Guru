@@ -31,7 +31,7 @@ from notification.models import Notification, FCMToken
 from vehicle.models import Vehicle
 from .filters import RenterDocumentsFilter
 from .models import User, RenterDocuments, Renter, Rating, FavoriteList, Lessor, Currency, Language
-from .permissions import IsAdminOrSelf, IsAdminOrOwner, HasRenter
+from .permissions import IsAdminOrSelf, IsAdminOrOwner, HasRenter, IsAdminOrSelfOrDirector
 from .serializers import RegisterSerializer, ChangePasswordSerializer, UserListSerializer, UserDetailSerializer, \
     RenterDocumentsSerializer, VehicleListSerializer, UpdateRatingSerializer, CustomTokenObtainPairSerializer, \
     PasswordResetRequestSerializer, FavoriteListSerializer, VerifyCodeSerializer, SetPasswordSerializer, \
@@ -237,7 +237,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [AllowAny]
-        elif self.action in ['update', 'partial_update', 'destroy']:
+        elif self.action in ['update', 'partial_update']:
+            permission_classes = [IsAuthenticated, IsAdminOrSelfOrDirector]
+        elif self.action == 'destroy':
             permission_classes = [IsAuthenticated, IsAdminOrSelf]
         elif self.action == 'retrieve':
             permission_classes = [IsAuthenticated]

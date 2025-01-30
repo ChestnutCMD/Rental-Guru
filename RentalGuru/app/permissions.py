@@ -16,6 +16,20 @@ class IsAdminOrSelf(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
         if super().has_object_permission(request, view, obj):
             return True
+        if hasattr(request.user, 'renter') and obj.renter == request.user.renter:
+            return True
+        if hasattr(request.user, 'lessor') and obj.lessor == request.user.lessor:
+            return True
+        return False
+
+
+class IsAdminOrSelfOrDirector(ManagerObjectPermission):
+    """
+    Пермишн для проверки прав администратора или принадлежности объекта пользователю.
+    """
+    def has_object_permission(self, request, view, obj):
+        if super().has_object_permission(request, view, obj):
+            return True
 
         if hasattr(request.user, 'renter') and obj.renter == request.user.renter:
             return True
