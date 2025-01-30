@@ -163,7 +163,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
     def get_count_days(self, obj):
         if obj.start_date and obj.end_date:
-            return (obj.end_date - obj.start_date).days
+            return (obj.end_date - obj.start_date).days + 1
         return 0
 
     def get_chat_id(self, obj):
