@@ -28,7 +28,10 @@ class TripSerializer(serializers.ModelSerializer):
                   'organizer', 'organizer_user_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
 
     def get_chat_id(self, obj):
-        return obj.chat.id if obj.chat.id else None
+        if obj.chat:
+            return obj.chat.id
+        else:
+            return None
 
     def get_organizer_rating(self, obj):
         renter = getattr(obj.organizer, 'renter', None)
