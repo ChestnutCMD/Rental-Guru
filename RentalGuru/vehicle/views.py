@@ -511,6 +511,7 @@ class AllVehiclesListView(APIView):
             OpenApiParameter('offset', type=int, location=OpenApiParameter.QUERY,
                              description='The initial index from which to return the results.'),
             OpenApiParameter("lessor_id", type=OpenApiTypes.INT, description="ID арендодателя"),
+            OpenApiParameter("vehicle_type", type=OpenApiTypes.STR, enum=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'], description="Тип транспорта"),
         ]
     )
     def get(self, request):
@@ -581,6 +582,19 @@ class AllVehiclesListView(APIView):
         lessor_id = request.GET.get("lessor_id")
         if lessor_id:
             queryset = queryset.filter(owner__lessor__id=lessor_id)
+        vehicle_type = request.GET.get("vehicle_type")
+
+        if vehicle_type:
+            vehicle_type_map = {
+                "auto": Auto,
+                "bike": Bike,
+                "ship": Ship,
+                "helicopter": Helicopter,
+                "specialtechnic": SpecialTechnic,
+            }
+            vehicle_model = vehicle_type_map.get(vehicle_type.lower())
+            if vehicle_model:
+                queryset = queryset.filter(id__in=vehicle_model.objects.values_list("id", flat=True))
 
         return queryset
 
