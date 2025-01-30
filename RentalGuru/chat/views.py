@@ -23,7 +23,17 @@ from rest_framework.exceptions import ValidationError as DRFValidationError, Per
 from .utils import is_period_contained, subtract_periods
 
 
-@extend_schema(summary="Поездка", description='Поездка')
+@extend_schema(summary="Поездка",
+               description='Поездка',
+               parameters=[
+                            OpenApiParameter(
+                                name="status",
+                                description="Статус поездки ('current', 'started', 'finished', 'canceled')",
+                                type=str,
+                                enum=['current', 'started', 'finished', 'canceled'],
+                                required=False,
+                            )]
+)
 class TripViewSet(viewsets.ModelViewSet):
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
