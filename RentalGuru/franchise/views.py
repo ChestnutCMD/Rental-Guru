@@ -302,7 +302,7 @@ class LessorsByFranchiseView(APIView):
         self.check_object_permissions(request, franchise)
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(lessors, request)
-        serializer = LessorSerializer(paginated_queryset, many=True)
+        serializer = LessorListSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
 
 
