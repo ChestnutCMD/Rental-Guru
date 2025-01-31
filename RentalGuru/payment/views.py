@@ -105,14 +105,23 @@ class TinkoffCallbackView(APIView):
     """
 
     def verify_signature(self, data):
+        logger.debug(data)
         token = data.get('Token')
         if not token:
             return False
 
         secret_key = settings.TINYPAY_PASSWORD
-        sorted_keys = sorted(data.keys())
-        concatenated_params = ''.join(str(data[key]) for key in sorted_keys)
-        calculated_token = hashlib.sha256(f"{secret_key}{concatenated_params}".encode('utf-8')).hexdigest()
+        token_string = (
+                str(data.get("Amount", "")) +
+                str(data.get("Description", "")) +
+                str(data.get("OrderId", "")) +
+                str(data.get("Status", "")) +
+                str(data.get("Success", "")) +
+                str(secret_key) +
+                str(data.get('TerminalKey', ""))
+        )
+
+        calculated_token = hashlib.sha256(token_string.encode("utf-8")).hexdigest()
         return calculated_token == token
 
     def post(self, request, *args, **kwargs):
