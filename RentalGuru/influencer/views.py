@@ -62,8 +62,7 @@ class InfluencerViewSet(ModelViewSet):
                 'organization__bank_details'
             ).prefetch_related(
                 'referral_links',
-                'user__trip_organized_trips',
-                'organization__contact_set'
+                'user__trip_organized_trips'
             )
 
         return Influencer.objects.none()
