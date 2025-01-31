@@ -28,8 +28,6 @@ class TinkoffAPI:
                 str(params.get('TerminalKey', ""))
         )
 
-        logger.debug(f"Token string (first/last 10 chars): {token_string[:10]}...{token_string[-10:]}")
-
         return hashlib.sha256(token_string.encode("utf-8")).hexdigest()
 
     def create_payment(self, order_id, amount, description, receipt):

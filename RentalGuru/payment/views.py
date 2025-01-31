@@ -3,7 +3,9 @@ import logging
 import random
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -98,6 +100,7 @@ class PaymentViewSet(viewsets.ViewSet):
             return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 @extend_schema(summary="Коллбэк для Т")
 class TinkoffCallbackView(APIView):
     """
@@ -106,22 +109,22 @@ class TinkoffCallbackView(APIView):
 
     def verify_signature(self, data):
         logger.debug(data)
-        token = data.get('Token')
+        token = data.pop('Token')
         if not token:
             return False
 
         secret_key = settings.TINYPAY_PASSWORD
-        token_string = (
-                str(data.get("Amount", "")) +
-                str(data.get("Description", "")) +
-                str(data.get("OrderId", "")) +
-                str(data.get("Status", "")) +
-                str(data.get("Success", "")) +
-                str(secret_key) +
-                str(data.get('TerminalKey', ""))
-        )
 
-        calculated_token = hashlib.sha256(token_string.encode("utf-8")).hexdigest()
+        for key, value in data.items():
+            if isinstance(value, bool):
+                data[key] = "true" if value else "false"
+            else:
+                data[key] = str(value)
+
+        data["Password"] = secret_key
+        sorted_params = ''.join(data[key] for key in sorted(data.keys()))
+
+        calculated_token = hashlib.sha256(sorted_params.encode("utf-8")).hexdigest()
         return calculated_token == token
 
     def post(self, request, *args, **kwargs):
