@@ -21,6 +21,7 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     influencer = models.ForeignKey(Influencer, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Партнер')
+    url = models.CharField(null=True, blank=True, max_length=255, verbose_name='Ссылка')
 
     class Meta:
         verbose_name = 'Платеж'

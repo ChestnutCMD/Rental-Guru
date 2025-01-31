@@ -86,6 +86,7 @@ class PaymentViewSet(viewsets.ViewSet):
 
             payment.payment_id = response['PaymentId']
             payment.status = 'pending'
+            payment.url = response.get('PaymentURL')
             payment.save()
 
             return Response({'detail': 'Платеж успешно инициализирован.', 'payment_url': response['PaymentURL']})
