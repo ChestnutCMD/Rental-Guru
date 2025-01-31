@@ -102,20 +102,15 @@ class TinkoffCallbackView(APIView):
     """
     Обрабатывает callback'и от Тинькофф.
     """
+
     def verify_signature(self, data):
-        """
-        Проверяет подпись (Token) в запросе от Тинькофф.
-        """
         token = data.get('Token')
         if not token:
             return False
 
         secret_key = settings.TINYPAY_PASSWORD
-
-        concatenated_params = ''.join(
-            str(data[key]) for key in sorted(data.keys()) if key != 'Token'
-        )
-
+        sorted_keys = sorted(data.keys())
+        concatenated_params = ''.join(str(data[key]) for key in sorted_keys)
         calculated_token = hashlib.sha256(f"{secret_key}{concatenated_params}".encode('utf-8')).hexdigest()
         return calculated_token == token
 
