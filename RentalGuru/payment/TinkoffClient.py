@@ -18,7 +18,7 @@ class TinkoffAPI:
     def _generate_token(self, params):
         """Генерация токена для подписи по спецификации Тинькофф"""
         params["Password"] = self.secret_key
-        sorted_params = ''.join(params[key] for key in sorted(params.keys()))
+        sorted_params = ''.join(str(params[key]) for key in sorted(params.keys()))
         return hashlib.sha256(sorted_params.encode("utf-8")).hexdigest()
 
     def create_payment(self, order_id, amount, description, receipt):
