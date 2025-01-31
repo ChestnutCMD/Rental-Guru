@@ -17,30 +17,19 @@ class TinkoffAPI:
 
     def _generate_token(self, params):
         """Генерация токена для подписи по спецификации Тинькофф"""
-        token_string = (
-                str(params.get("Amount", "")) +
-                str(params.get("Description", "")) +
-                str(params.get("FailURL", "")) +  #
-                str(params.get("NotificationURL", "")) +  #
-                str(params.get("OrderId", "")) +
-                self.secret_key +
-                str(params.get("SuccessURL", "")) +  #
-                str(params.get('TerminalKey', ""))
-        )
-
-        return hashlib.sha256(token_string.encode("utf-8")).hexdigest()
+        params["Password"] = self.secret_key
+        sorted_params = ''.join(params[key] for key in sorted(params.keys()))
+        return hashlib.sha256(sorted_params.encode("utf-8")).hexdigest()
 
     def create_payment(self, order_id, amount, description, receipt):
         """Создание платежа"""
-        payload = {
-            'TerminalKey': self.terminal_key,
-            'Amount': amount,
-            'OrderId': order_id,
-            'Description': description,
-            'SuccessURL': self.success_url,
-            'FailURL': self.fail_url,
-            'NotificationURL': f'{HOST_URL}/payment/callback/'
-        }
+        payload = {'TerminalKey': self.terminal_key,
+                   'Amount': amount,
+                   'OrderId': order_id,
+                   'Description': description,
+                   'SuccessURL': self.success_url,
+                   'FailURL': self.fail_url,
+                   'NotificationURL': f'{HOST_URL}/payment/callback/'}
         payload['Token'] = self._generate_token(payload)
         payload['Receipt'] = receipt
         response = requests.post(f'{self.base_url}Init', json=payload)
