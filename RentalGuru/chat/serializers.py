@@ -107,7 +107,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
             if renter.bonus_account < bonus:
                 raise serializers.ValidationError({"message": "На бонусном счете недостаточно средств"})
             else:
-                validated_data['bonus'] = bonus  # Сохраняем бонус в поле модели
+                validated_data['bonus'] = bonus
 
         return super().create(validated_data)
 

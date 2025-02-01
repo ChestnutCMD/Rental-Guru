@@ -254,6 +254,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         availabilities = vehicle_instance.availabilities.all()
 
+        # Проверка - сдается ли транспорт только верифицированным пользователям
+        if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
+            raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
+
         if availabilities.filter(on_request=True).exists():
             request_start_date = None
             request_end_date = None

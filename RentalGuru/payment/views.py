@@ -161,7 +161,7 @@ class TinkoffCallbackView(APIView):
 
             trip = Trip.objects.filter(chat=payment.request_rent.chat).first()
             if trip:
-                trip.status = 'started'
+                trip.status = 'started'  # TODO: Поменять статус
                 trip.save()
                 try:
                     Notification.objects.create(
