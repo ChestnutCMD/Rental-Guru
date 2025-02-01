@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from manager.models import ManagerPermission
 
 
-class ManagerObjectPermission(BasePermission):
+class CheckManagerPermission(BasePermission):
     """
     Проверяет права менеджера на доступ к объекту.
     """
@@ -45,6 +45,72 @@ class ManagerObjectPermission(BasePermission):
             object_id=obj.id,
             permission_type=permission_type
         ).exists()
+
+
+class UniversalPermission(BasePermission):
+    """
+    Универсальный пермишн для проверки прав доступа менеджеров на основе франшизы и модели ManagerPermission.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated or request.user.role != 'manager':
+            return False
+
+        manager = getattr(request.user, 'manager', None)
+        if not manager or not manager.franchise:
+            return False
+
+        franchise = manager.franchise
+        content_type = ContentType.objects.get_for_model(obj)
+
+        if not self._has_permission(manager, content_type, obj):
+            return False
+
+        if content_type.model == 'vehicle':
+            return franchise == obj.owner.lessor.franchise
+        elif content_type.model == 'lessor':
+            return franchise == obj.franchise
+        elif content_type.model == 'user':
+            return franchise == obj.lessor.franchise
+        elif content_type.model == 'chat':
+            return franchise == obj.request_rent.vehicle.owner.lessor.franchise
+        elif content_type.model == 'feedback':
+            return franchise == obj.vehicle.owner.lessor.franchise
+        elif content_type.model == 'requestrent':
+            return franchise == obj.vehicle.owner.lessor.franchise
+        elif content_type.model == 'trip':
+            return franchise == obj.vehicle.owner.lessor.franchise
+        elif content_type.model == 'franchise':
+            return franchise == obj
+        elif content_type.model == 'complaint':
+            return franchise == obj.vehicle.owner.lessor.franchise
+        elif content_type.model == 'complaintforfeedback':
+            return franchise == obj.feedback.vehicle.owner.lessor.franchise
+        else:
+            return False
+
+    def _has_permission(self, manager, content_type, obj):
+        """
+        Проверяет, есть ли у менеджера права на указанный content_type.
+        """
+        return ManagerPermission.objects.filter(
+            manager=manager,
+            content_type=content_type,
+        ).exists()
+
+
+class ManagerObjectPermission(BasePermission):
+    """
+    Комбинированный пермишн, использующий UniversalPermission при наличии франшизы
+    и ManagerObjectPermission при её отсутствии.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        manager = getattr(request.user, 'manager', None)
+        if manager and manager.franchise:
+            return UniversalPermission().has_object_permission(request, view, obj)
+        else:
+            return CheckManagerPermission().has_object_permission(request, view, obj)
 
 
 class WebSocketPermissionChecker:
@@ -112,6 +178,15 @@ class IsAdminOrSelf(BasePermission):
         if request.user.role == 'manager' and obj.user == request.user:
             if 'permissions' in request.data:
                 return False
+            return True
+        return False
+
+
+class IsAdminOrDirector(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.role == 'admin':
+            return True
+        elif request.user.franchise:
             return True
         return False
 

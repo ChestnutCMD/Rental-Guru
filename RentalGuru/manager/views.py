@@ -11,7 +11,7 @@ from rest_framework.viewsets import ModelViewSet
 from franchise.models import Franchise
 from manager.filters import ManagerPermissionFilter
 from manager.models import ManagerPermission, Manager
-from manager.permissions import IsAdminOrSelf, IsAdmin
+from manager.permissions import IsAdminOrSelf, IsAdminOrDirector, IsAdmin
 from manager.serializers import ManagerPermissionSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
     ManagerListSerializer, ManagerCreateSerializer
 
@@ -22,7 +22,7 @@ from manager.serializers import ManagerPermissionSerializer, ManagerUpdateSerial
     )
 class ManagerPermissionViewSet(ModelViewSet):
     queryset = ManagerPermission.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdminOrDirector]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ManagerPermissionFilter
     serializer_class = ManagerPermissionSerializer
