@@ -150,7 +150,7 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
         )
 
         validated_data["email"] = email
-        franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, **validated_data)
+        franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, email_1=email, name=validated_data["name"])
 
         Notification.objects.create(
             user=user,

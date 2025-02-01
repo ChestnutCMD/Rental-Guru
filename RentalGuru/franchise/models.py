@@ -246,10 +246,14 @@ class Franchise(models.Model):
             raise ValidationError(f'Для города {self.city} уже зарегистрирована франшиза.')
 
     def save(self, *args, **kwargs):
-        if not kwargs.get('update_fields'):
-            self.save_total_vehicles()
+        is_new = self.pk is None
+        if not is_new:
+            if not kwargs.get('update_fields'):
+                self.save_total_vehicles()
             self.full_clean()
         super().save(*args, **kwargs)
+        if is_new:
+            self.save_total_vehicles()
 
     class Meta:
         verbose_name = 'Франшиза'
