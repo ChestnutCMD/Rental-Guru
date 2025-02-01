@@ -33,20 +33,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class FranchiseListSerializer(serializers.ModelSerializer):
-    director = UserSerializer()
+    director = serializers.StringRelatedField()
     categories = CategorySerializer(many=True)
+    avatar = serializers.ImageField(source='director.avatar', read_only=True)
     total_vehicles = serializers.SerializerMethodField()
+    telephone = serializers.CharField(source='director.telephone', read_only=True)
+    email = serializers.CharField(source='director.email', read_only=True)
 
     class Meta:
         model = Franchise
         fields = [
             'id',
+            'avatar',
             'director',
             'name',
             'unn',
             'date_register',
-            'telephone_1',
-            'email_1',
+            'telephone',
+            'email',
             'country',
             'city',
             'commission',
@@ -56,10 +60,34 @@ class FranchiseListSerializer(serializers.ModelSerializer):
 
     def get_total_vehicles(self, obj):
         return obj.get_total_vehicles()
+#
+# class FranchiseListSerializer(serializers.ModelSerializer):
+#     director = UserSerializer()
+#     categories = CategorySerializer(many=True)
+#     total_vehicles = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = Franchise
+#         fields = [
+#             'id',
+#             'director',
+#             'name',
+#             'unn',
+#             'date_register',
+#             'telephone_1',
+#             'email_1',
+#             'country',
+#             'city',
+#             'commission',
+#             'total_vehicles',
+#             'categories'
+#         ]
+#
+#     def get_total_vehicles(self, obj):
+#         return obj.get_total_vehicles()
 
 
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
-    vehicles = serializers.SerializerMethodField()
     director = UserSerializer()
 
     class Meta:
@@ -81,21 +109,8 @@ class FranchiseRetrieveSerializer(serializers.ModelSerializer):
             'email_2',
             'telephone_1',
             'telephone_2',
-            'vehicles',
             'total_vehicles',
         ]
-
-    def get_vehicle_parks(self, obj):
-        vehicle_parks = VehiclePark.objects.filter(
-            models.Q(owner__franchise=obj) | models.Q(owner=obj.director)
-        )
-        return VehicleParkRetrieveSerializer(vehicle_parks, many=True).data
-
-    def get_vehicles(self, obj):
-        vehicles = Vehicle.objects.filter(
-            models.Q(owner__lessor__franchise=obj) | models.Q(owner=obj.director)
-        )
-        return VehicleSerializer(vehicles, many=True).data
 
 
 class FranchiseCreateSerializer(serializers.ModelSerializer):
