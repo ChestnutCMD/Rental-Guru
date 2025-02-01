@@ -37,21 +37,29 @@ class Category(models.Model):
 
 class Franchise(models.Model):
     name = models.CharField(max_length=50, verbose_name='Имя компании')
-    unn = models.CharField(max_length=12, unique=True, verbose_name='УНН')
-    date_register = models.DateField(auto_now_add=True, verbose_name='Дата регистрации')
-    telephone = models.CharField(max_length=20, verbose_name='Телефон')
-    email = models.EmailField(max_length=50, verbose_name='Эл. почта')
+    date_register = models.DateField(null=True, blank=True, verbose_name='Дата регистрации')
     country = models.CharField(max_length=50, verbose_name='Страна')
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name='Город')
+    address = models.CharField(max_length=255, null=True, blank=True, verbose_name="Адрес")
+
+    unn = models.CharField(max_length=12, unique=True, verbose_name='УНН')
+    ogrn = models.CharField(max_length=15, null=True, blank=True, verbose_name="ОГРН")
+    account_number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Расчетный счет")
+    account_owner = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО владельца счета")
 
     director = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Директор', related_name='franchise')
     commission = models.PositiveIntegerField(default=3, verbose_name='Комиссия')
     total_vehicles = models.PositiveIntegerField(default=0, verbose_name='Общее количество транспортных средств')
     categories = models.ManyToManyField(Category, related_name='franchises', verbose_name='Категории')
 
+    email_1 = models.EmailField(max_length=50, null=True, blank=True, verbose_name='Почта №1')
+    email_2 = models.EmailField(max_length=100, null=True, blank=True, verbose_name='Почта №2')
+    telephone_1 = models.CharField(max_length=13, null=True, blank=True, verbose_name='Телефон №1')
+    telephone_2 = models.CharField(max_length=20, null=True, blank=True, verbose_name='Телефон №2')
+
     def save_total_vehicles(self):
         self.total_vehicles = self.get_total_vehicles()
-        self.save(update_fields=['total_vehicles'])
+        super().save(update_fields=['total_vehicles'])
 
     def get_vehicles(self):
         from vehicle.models import Vehicle
@@ -238,8 +246,9 @@ class Franchise(models.Model):
             raise ValidationError(f'Для города {self.city} уже зарегистрирована франшиза.')
 
     def save(self, *args, **kwargs):
-        self.save_total_vehicles()
-        self.full_clean()
+        if not kwargs.get('update_fields'):
+            self.save_total_vehicles()
+            self.full_clean()
         super().save(*args, **kwargs)
 
     class Meta:

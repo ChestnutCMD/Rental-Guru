@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 
-from app.models import Lessor
+from app.models import Lessor, User
 from chat.models import RequestRent
 from franchise.add_lessor import RequestAddLessor
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
@@ -17,23 +17,36 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id']
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'avatar',
+            'telephone',
+            'email',
+            'first_name',
+            'last_name',
+            'date_of_birth'
+        ]
+        read_only_fields = ['id', 'email',]
+
+
 class FranchiseListSerializer(serializers.ModelSerializer):
-    director = serializers.StringRelatedField()
+    director = UserSerializer()
     categories = CategorySerializer(many=True)
-    avatar = serializers.ImageField(source='director.avatar', read_only=True)
     total_vehicles = serializers.SerializerMethodField()
 
     class Meta:
         model = Franchise
         fields = [
             'id',
-            'avatar',
             'director',
             'name',
             'unn',
             'date_register',
-            'telephone',
-            'email',
+            'telephone_1',
+            'email_1',
             'country',
             'city',
             'commission',
@@ -46,21 +59,30 @@ class FranchiseListSerializer(serializers.ModelSerializer):
 
 
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
-    vehicle_parks = serializers.SerializerMethodField()
     vehicles = serializers.SerializerMethodField()
-    avatar = serializers.ImageField(source='director.avatar', read_only=True)
+    director = UserSerializer()
 
     class Meta:
         model = Franchise
         fields = [
             'id',
-            'avatar',
-            'telephone',
+            'director',
+            'name',
+            'date_register',
             'country',
             'city',
-            'vehicle_parks',
+            'address',
+            'unn',
+            'ogrn',
+            'account_number',
+            'account_owner',
+            'commission',
+            'email_1',
+            'email_2',
+            'telephone_1',
+            'telephone_2',
             'vehicles',
-            'total_vehicles'
+            'total_vehicles',
         ]
 
     def get_vehicle_parks(self, obj):
@@ -128,7 +150,7 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
         )
 
         validated_data["email"] = email
-        franchise = Franchise.objects.create(director=user, telephone=user.telephone, **validated_data)
+        franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, **validated_data)
 
         Notification.objects.create(
             user=user,
@@ -151,46 +173,39 @@ class VehicleUpdateSerializer(serializers.ModelSerializer):
 
 
 class FranchiseUpdateSerializer(serializers.ModelSerializer):
-    vehicle_parks = VehicleParkRetrieveSerializer(many=True, read_only=True)
-    vehicles = VehicleSerializer(many=True, read_only=True)
+    director = UserSerializer(required=False)  # Добавляем required=False
 
     class Meta:
         model = Franchise
         fields = [
-            'id',
-            'name',
             'director',
-            'unn',
-            'telephone',
+            'name',
+            'date_register',
             'country',
             'city',
-            'vehicle_parks',
-            'vehicles'
+            'address',
+            'unn',
+            'ogrn',
+            'account_number',
+            'account_owner',
+            'email_1',
+            'email_2',
+            'telephone_1',
+            'telephone_2'
         ]
 
-    def get_vehicle_parks(self, obj):
-        vehicle_parks = VehiclePark.objects.filter(
-            models.Q(lessor__franchise=obj) | models.Q(owner=obj.director)
-        )
-        return VehicleParkRetrieveSerializer(vehicle_parks, many=True).data
-
-    def get_vehicles(self, obj):
-        vehicles = Vehicle.objects.filter(
-            models.Q(owner__lessor__franchise=obj) | models.Q(owner=obj.director)
-        )
-        return VehicleSerializer(vehicles, many=True).data
-
     def update(self, instance, validated_data):
-        # Обновляем простые поля
-        instance.name = validated_data.get('name', instance.name)
-        instance.director = validated_data.get('director', instance.director)
-        instance.unn = validated_data.get('unn', instance.unn)
-        instance.telephone = validated_data.get('telephone', instance.telephone)
-        instance.country = validated_data.get('country', instance.country)
-        instance.city = validated_data.get('city', instance.city)
+        director_data = validated_data.pop('director', None)
+        if director_data:
+            director_serializer = UserSerializer(
+                instance.director,
+                data=director_data,
+                partial=True
+            )
+            if director_serializer.is_valid(raise_exception=True):
+                director_serializer.save()
 
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
 
 class FranchiseDeleteSerializer(serializers.Serializer):
