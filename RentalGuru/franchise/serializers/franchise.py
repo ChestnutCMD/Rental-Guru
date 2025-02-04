@@ -157,6 +157,11 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
 
         return franchise
 
+    def validate_city(self, value):
+        if Franchise.objects.filter(city=value).exclude(id=self.instance.id if self.instance else None).exists():
+            raise serializers.ValidationError(f'Для города {value} уже зарегистрирована франшиза.')
+        return value
+
 
 class FranchiseUpdateSerializer(serializers.ModelSerializer):
     director = UserSerializer(required=False)
@@ -193,6 +198,7 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
         if document_data:
             self.update_document(instance, document_data)
 
+        instance = super().update(instance, validated_data)
         instance.save()
         return instance
 
@@ -210,6 +216,11 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
             for attr, value in document_data.items():
                 setattr(document, attr, value)
             document.save()
+
+    def validate_city(self, value):
+        if Franchise.objects.filter(city=value).exclude(id=self.instance.id if self.instance else None).exists():
+            raise serializers.ValidationError(f'Для города {value} уже зарегистрирована франшиза.')
+        return value
 
 
 class FranchiseDeleteSerializer(serializers.Serializer):

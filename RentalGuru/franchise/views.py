@@ -168,11 +168,11 @@ class FranchiseViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        partial = kwargs.get('partial', False)  # Проверяем, является ли это PATCH-запросом
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)  # Передаем partial=True
+        partial = kwargs.get('partial', False)
 
-        serializer.is_valid(raise_exception=True)  # Проверка данных без требования обязательных полей
-        self.perform_update(serializer)  # Обновление объекта
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(serializer.data)
 

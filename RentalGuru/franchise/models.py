@@ -241,17 +241,13 @@ class Franchise(models.Model):
     def __str__(self):
         return f"{self.name} ({self.country}, {self.city})"
 
-    def clean(self):
-        if self.city and Franchise.objects.filter(city=self.city).exclude(id=self.id).exists():
-            raise ValidationError(f'Для города {self.city} уже зарегистрирована франшиза.')
-
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         if not is_new and not kwargs.get('update_fields'):
             self.save_total_vehicles()
-        if is_new:
-            self.full_clean()
+
         super().save(*args, **kwargs)
+
         if is_new:
             self.save_total_vehicles()
 
