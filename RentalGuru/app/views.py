@@ -242,7 +242,7 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action == 'destroy':
             permission_classes = [IsAuthenticated, IsAdminOrSelf]
         elif self.action == 'retrieve':
-            permission_classes = [IsAuthenticated]
+            permission_classes = [AllowAny]
         elif self.action == 'list':
             permission_classes = [IsAuthenticated, ManagerObjectPermission]
         else:
