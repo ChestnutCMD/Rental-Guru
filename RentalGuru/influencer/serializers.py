@@ -525,19 +525,25 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    date = serializers.SerializerMethodField()
-    time = serializers.SerializerMethodField()
+    updated_at_date = serializers.SerializerMethodField()
+    updated_at_time = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
     request_rent = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
         fields = ["date", "time", "amount", "request_rent"]
 
-    def get_date(self, obj):
+    def get_updated_at_date(self, obj):
         return obj.updated_at.date()
 
-    def get_time(self, obj):
-        return obj.updated_at.time()
+    def get_updated_at_time(self, obj):
+        return obj.updated_at.strftime("%H:%M")
+
+    def get_amount(self, obj):
+        if obj.influencer and obj.influencer.commission:
+            return (obj.amount / 100) * obj.influencer.commission
+        return obj.amount
 
     def get_request_rent(self, obj):
         return str(obj.request_rent)

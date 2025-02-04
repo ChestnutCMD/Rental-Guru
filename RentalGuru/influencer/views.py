@@ -339,4 +339,4 @@ class InfluencerPaymentsView(ListAPIView):
     def get_queryset(self):
         influencer_id = self.kwargs.get('influencer_id')
         get_object_or_404(Influencer, id=influencer_id)
-        return Payment.objects.filter(influencer_id=influencer_id).select_related('request_rent')
+        return Payment.objects.filter(influencer_id=influencer_id).select_related('request_rent', 'influencer').order_by('-updated_at')
