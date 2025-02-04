@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view
@@ -538,33 +541,99 @@ class LessorStatisticsView(APIView):
                 type=int,
                 required=False,
             ),
+            OpenApiParameter(
+                name="period",
+                description="Период для фильтрации (day, week, month, quarter, year)",
+                type=str,
+                enum=["day", "week", "month", "quarter", "year"],
+                required=False,
+            ),
         ],
         responses={200: "Successfully filtered statistics"}
     )
     def get(self, request, lessor_id):
         lessor = get_object_or_404(Lessor, id=lessor_id)
         self.check_object_permissions(request, lessor)
+
         vehicle_cts = ContentType.objects.filter(
             model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         )
 
-        trips = Trip.objects.filter(
-            Q(content_type__in=vehicle_cts) &
-            Q(object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True))
-        )
+        period = request.GET.get('period', 'all')
+        today = timezone.now().date()
+
+        if period == 'day':
+            start_date = today
+            previous_start = today - timedelta(days=1)
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+            previous_start = start_date - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+            previous_start = start_date - timedelta(days=30)
+        elif period == 'quarter':
+            start_date = today - timedelta(days=90)
+            previous_start = start_date - timedelta(days=90)
+        elif period == 'year':
+            start_date = today - timedelta(days=365)
+            previous_start = start_date - timedelta(days=365)
+        elif period == 'all':
+            start_date = None
+            previous_start = None
+        else:
+            return Response({"error": "Invalid period"}, status=400)
+
+        if start_date:
+            trips = Trip.objects.filter(
+                Q(content_type__in=vehicle_cts) &
+                Q(object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True)) &
+                Q(end_date__gte=start_date)
+            )
+
+            previous_trips = Trip.objects.filter(
+                Q(content_type__in=vehicle_cts) &
+                Q(object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True)) &
+                Q(end_date__gte=previous_start, end_date__lt=start_date)
+            )
+        else:
+            trips = Trip.objects.filter(
+                Q(content_type__in=vehicle_cts) &
+                Q(object_id__in=Vehicle.objects.filter(owner=lessor.user).values_list('id', flat=True))
+            )
+
+            previous_trips = trips
 
         filterset = LessorStatisticsFilter(request.GET, queryset=trips)
         if not filterset.is_valid():
             return Response(filterset.errors, status=400)
         trips = filterset.qs
 
-        total_revenue = trips.aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
+        previous_filterset = LessorStatisticsFilter(request.GET, queryset=previous_trips)
+        if not previous_filterset.is_valid():
+            return Response(previous_filterset.errors, status=400)
+        previous_trips = previous_filterset.qs
+
+        total_revenue = trips.filter(status="finished").aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
+        previous_total_revenue = previous_trips.filter(status="finished").aggregate(total_revenue=Sum("total_cost"))["total_revenue"] or 0
+
         finished_orders_count = trips.filter(status="finished").count()
+        previous_finished_orders_count = previous_trips.filter(status="finished").count()
+
         canceled_orders_count = trips.filter(status="canceled").count()
+        previous_canceled_orders_count = previous_trips.filter(status="canceled").count()
+
+        def calculate_change(current, previous):
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return round(((current - previous) / previous) * 100, 2)
+
+        change_total_revenue = calculate_change(total_revenue, previous_total_revenue)
+        change_finished_orders_count = calculate_change(finished_orders_count, previous_finished_orders_count)
+        change_canceled_orders_count = calculate_change(canceled_orders_count, previous_canceled_orders_count)
 
         payments = Payment.objects.filter(
             request_rent__content_type__in=vehicle_cts,
-            request_rent__object_id__in=trips.values_list('object_id', flat=True)
+            request_rent__object_id__in=trips.filter(status="finished").values_list('object_id', flat=True)
         ).select_related("request_rent")
 
         if request.GET.get('vehicle_type') or request.GET.get('brand') or request.GET.get('model'):
@@ -585,8 +654,11 @@ class LessorStatisticsView(APIView):
             "lessor_id": lessor.id,
             "lessor_name": lessor.user.get_full_name(),
             "total_revenue": total_revenue,
+            "change_total_revenue": change_total_revenue,
             "finished_orders_count": finished_orders_count,
+            "change_finished_orders_count": change_finished_orders_count,
             "canceled_orders_count": canceled_orders_count,
+            "change_canceled_orders_count": change_canceled_orders_count,
             "transactions": serialized_payments.data,
         }
         return Response(result)
