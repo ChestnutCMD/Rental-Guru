@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,8 +17,9 @@ from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCod
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
-    InfluencerListSerializer, RequestWithdrawSerializer
+    InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer
 from manager.permissions import ManagerObjectPermission
+from payment.models import Payment
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -325,3 +326,17 @@ class RequestWithdrawViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+@extend_schema(summary="Вывод транзакций", description="Вывод транзакций")
+class InfluencerPaymentsView(ListAPIView):
+    """
+    Вью для вывода платежей по конкретному инфлюенсеру.
+    """
+    permission_classes = [IsAdminOrManager]
+    serializer_class = PaymentSerializer
+
+    def get_queryset(self):
+        influencer_id = self.kwargs.get('influencer_id')
+        get_object_or_404(Influencer, id=influencer_id)
+        return Payment.objects.filter(influencer_id=influencer_id).select_related('request_rent')

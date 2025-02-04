@@ -522,3 +522,22 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
             raise ValidationError('Текущий пользователь не является инфлюенсером.')
 
         return super().create(validated_data)
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+    request_rent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = ["date", "time", "amount", "request_rent"]
+
+    def get_date(self, obj):
+        return obj.updated_at.date()
+
+    def get_time(self, obj):
+        return obj.updated_at.time()
+
+    def get_request_rent(self, obj):
+        return str(obj.request_rent)
