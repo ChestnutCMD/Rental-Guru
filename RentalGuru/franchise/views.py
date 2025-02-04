@@ -150,9 +150,7 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         return Franchise.objects.none()
 
     def get_serializer_class(self):
-        if self.action == 'list':
-            return FranchiseListSerializer
-        elif self.action == 'retrieve':
+        if self.action == 'retrieve':
             return FranchiseRetrieveSerializer
         elif self.action == 'create':
             return FranchiseCreateSerializer
@@ -169,11 +167,13 @@ class FranchiseViewSet(viewsets.ModelViewSet):
         return Response(FranchiseRetrieveSerializer(franchise).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        partial = kwargs.get('partial', False)  # Проверяем, является ли это PATCH-запросом
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)  # Передаем partial=True
+
+        serializer.is_valid(raise_exception=True)  # Проверка данных без требования обязательных полей
+        self.perform_update(serializer)  # Обновление объекта
+
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):

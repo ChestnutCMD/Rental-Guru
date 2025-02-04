@@ -34,11 +34,11 @@ class VehicleParkInline(admin.TabularInline):
 
 class FranchiseAdmin(admin.ModelAdmin):
     list_display = (
-        'name', 'unn', 'date_register', 'telephone_1', 'email_1', 'country', 'city',
+        'name', 'inn', 'date_register', 'telephone_1', 'email_1', 'country', 'city',
         'director', 'commission', 'total_vehicles', 'get_vehicles'
     )
     list_filter = ('country', 'city', 'director')
-    search_fields = ('name', 'unn', 'email_1', 'telephone_1', 'country', 'city', 'director__email')
+    search_fields = ('name', 'inn', 'email_1', 'telephone_1', 'country', 'city', 'director__email')
     readonly_fields = ('total_vehicles', 'date_register')
 
     inlines = [VehicleParkInline]
@@ -63,7 +63,7 @@ class FranchiseAdmin(admin.ModelAdmin):
         return [
             ('Основная информация', {
                 'fields': (
-                    'name', 'unn', 'telephone_1', 'email_1', 'country', 'city',
+                    'name', 'inn', 'telephone_1', 'email_1', 'country', 'city',
                     'director', 'commission', 'total_vehicles'
                 )
             }),
@@ -83,7 +83,6 @@ class RequestFranchiseAdmin(admin.ModelAdmin):
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Franchise, FranchiseAdmin)
-#admin.site.register(Vehicle, VehicleAdmin)
 admin.site.register(VehiclePark, VehicleParkAdmin)
 admin.site.register(RequestFranchise, RequestFranchiseAdmin)
 admin.site.register(City, CityAdmin)

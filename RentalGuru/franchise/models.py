@@ -42,7 +42,7 @@ class Franchise(models.Model):
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name='Город')
     address = models.CharField(max_length=255, null=True, blank=True, verbose_name="Адрес")
 
-    unn = models.CharField(max_length=12, unique=True, verbose_name='УНН')
+    inn = models.CharField(max_length=12, unique=True, verbose_name='ИНН')
     ogrn = models.CharField(max_length=15, null=True, blank=True, verbose_name="ОГРН")
     account_number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Расчетный счет")
     account_owner = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО владельца счета")
@@ -247,9 +247,9 @@ class Franchise(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        if not is_new:
-            if not kwargs.get('update_fields'):
-                self.save_total_vehicles()
+        if not is_new and not kwargs.get('update_fields'):
+            self.save_total_vehicles()
+        if is_new:
             self.full_clean()
         super().save(*args, **kwargs)
         if is_new:
@@ -258,6 +258,30 @@ class Franchise(models.Model):
     class Meta:
         verbose_name = 'Франшиза'
         verbose_name_plural = 'Франшизы'
+
+
+def upload_franchise_document(instance, filename):
+    return f'media/images/users/{instance.franchise.director.id}/documents/{filename}'
+
+
+class FranchiseDocuments(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'На проверке'),
+        ('approved', 'Подтверждено'),
+        ('rejected', 'Отклонено'),
+    )
+
+    franchise = models.OneToOneField(Franchise, on_delete=models.CASCADE, verbose_name='Партнер', related_name='document')
+    number = models.CharField(verbose_name='Серия и номер')
+    photo = models.ImageField(upload_to=upload_franchise_document, verbose_name='Фото')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус проверки')
+
+    def __str__(self):
+        return f'Паспорт: {self.number}'
+
+    class Meta:
+        verbose_name = 'Паспортные данные'
+        verbose_name_plural = 'Паспортные данные'
 
 
 class VehiclePark(models.Model):

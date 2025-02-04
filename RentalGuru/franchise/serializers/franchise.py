@@ -1,10 +1,10 @@
-from django.db import models
+from django.db import models, transaction
 from rest_framework import serializers
 
 from app.models import Lessor, User
 from chat.models import RequestRent
 from franchise.add_lessor import RequestAddLessor
-from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City
+from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City, FranchiseDocuments
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
 from notification.models import Notification
 from payment.models import Payment
@@ -32,6 +32,12 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email',]
 
 
+class FranchiseDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FranchiseDocuments
+        fields = ['number', 'photo', 'status']
+
+
 class FranchiseListSerializer(serializers.ModelSerializer):
     director = serializers.StringRelatedField()
     categories = CategorySerializer(many=True)
@@ -47,7 +53,7 @@ class FranchiseListSerializer(serializers.ModelSerializer):
             'avatar',
             'director',
             'name',
-            'unn',
+            'inn',
             'date_register',
             'telephone',
             'email',
@@ -60,47 +66,24 @@ class FranchiseListSerializer(serializers.ModelSerializer):
 
     def get_total_vehicles(self, obj):
         return obj.get_total_vehicles()
-#
-# class FranchiseListSerializer(serializers.ModelSerializer):
-#     director = UserSerializer()
-#     categories = CategorySerializer(many=True)
-#     total_vehicles = serializers.SerializerMethodField()
-#
-#     class Meta:
-#         model = Franchise
-#         fields = [
-#             'id',
-#             'director',
-#             'name',
-#             'unn',
-#             'date_register',
-#             'telephone_1',
-#             'email_1',
-#             'country',
-#             'city',
-#             'commission',
-#             'total_vehicles',
-#             'categories'
-#         ]
-#
-#     def get_total_vehicles(self, obj):
-#         return obj.get_total_vehicles()
 
 
 class FranchiseRetrieveSerializer(serializers.ModelSerializer):
     director = UserSerializer()
+    document = FranchiseDocumentsSerializer()
 
     class Meta:
         model = Franchise
         fields = [
             'id',
             'director',
+            'document',
             'name',
             'date_register',
             'country',
             'city',
             'address',
-            'unn',
+            'inn',
             'ogrn',
             'account_number',
             'account_owner',
@@ -121,7 +104,7 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Franchise
-        fields = ['id', 'name', 'unn', 'telephone', 'country', 'city', 'email', 'first_name', 'last_name']
+        fields = ['id', 'name', 'inn', 'telephone', 'country', 'city', 'email', 'first_name', 'last_name']
         read_only_fields = ['id']
 
     def create(self, validated_data):
@@ -154,52 +137,42 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
             })
 
         password = User.objects.make_random_password()
+        with transaction.atomic():
+            user = User.objects.create_user(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                password=password,
+                telephone=telephone,
+                role='member',
+            )
 
-        user = User.objects.create_user(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            password=password,
-            telephone=telephone,
-            role='member',
-        )
+            validated_data["email"] = email
+            franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, email_1=email, name=validated_data["name"], inn=validated_data["inn"])
 
-        validated_data["email"] = email
-        franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, email_1=email, name=validated_data["name"])
-
-        Notification.objects.create(
-            user=user,
-            content=f"Добро пожаловать, {first_name}! Вы успешно зарегистрированы как директор франшизы '{franchise.name}'. Ваш пароль: {password}",
-        )
+            Notification.objects.create(
+                user=user,
+                content=f"Добро пожаловать, {first_name}! Вы успешно зарегистрированы как директор франшизы '{franchise.name}'. Ваш пароль: {password}",
+            )
 
         return franchise
 
 
-class VehicleParkUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VehiclePark
-        fields = ['id']
-
-
-class VehicleUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vehicle
-        fields = ['id']
-
-
 class FranchiseUpdateSerializer(serializers.ModelSerializer):
-    director = UserSerializer(required=False)  # Добавляем required=False
+    director = UserSerializer(required=False)
+    document = FranchiseDocumentsSerializer(required=False)
 
     class Meta:
         model = Franchise
         fields = [
             'director',
+            'document',
             'name',
             'date_register',
             'country',
             'city',
             'address',
-            'unn',
+            'inn',
             'ogrn',
             'account_number',
             'account_owner',
@@ -212,15 +185,31 @@ class FranchiseUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         director_data = validated_data.pop('director', None)
         if director_data:
-            director_serializer = UserSerializer(
-                instance.director,
-                data=director_data,
-                partial=True
-            )
+            director_serializer = UserSerializer(instance.director, data=director_data, partial=True)
             if director_serializer.is_valid(raise_exception=True):
                 director_serializer.save()
 
-        return super().update(instance, validated_data)
+        document_data = validated_data.pop('document', None)
+        if document_data:
+            self.update_document(instance, document_data)
+
+        instance.save()
+        return instance
+
+    def update_document(self, instance, document_data):
+        """Обновление документа"""
+        request = self.context.get('request')
+        user_role = getattr(request.user, 'role', None) if request else None
+
+        if document_data.get('status') != 'pending' and user_role not in ['admin', 'manager']:
+            document_data['status'] = 'pending'
+
+        document, created = FranchiseDocuments.objects.get_or_create(franchise=instance, defaults=document_data)
+
+        if not created:
+            for attr, value in document_data.items():
+                setattr(document, attr, value)
+            document.save()
 
 
 class FranchiseDeleteSerializer(serializers.Serializer):

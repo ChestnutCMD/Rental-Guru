@@ -115,7 +115,6 @@ class LinkSerializer(serializers.ModelSerializer):
         fields = ['channel', 'link', 'count']
 
 
-
 class BankDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankDetails
