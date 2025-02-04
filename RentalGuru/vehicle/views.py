@@ -69,7 +69,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             self.permission_classes = [AllowAny]
         elif self.action == 'retrieve':
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [AllowAny]
         elif self.action == 'create':
             self.permission_classes = [IsAuthenticated, IsAdminOrLessor]
         elif self.action in ['update', 'partial_update', 'destroy']:
