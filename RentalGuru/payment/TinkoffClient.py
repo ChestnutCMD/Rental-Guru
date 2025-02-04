@@ -10,6 +10,7 @@ logger = logging.getLogger('payment')
 class TinkoffAPI:
     def __init__(self):
         self.base_url = 'https://securepay.tinkoff.ru/v2/'
+        self.cancel_url = 'https://securepay.tinkoff.ru/v2/Cancel'
         self.terminal_key = TINYPAY_TERMINAL_KEY
         self.secret_key = TINYPAY_PASSWORD
         self.success_url = TINYPAY_SUCCESS_URL
@@ -34,4 +35,14 @@ class TinkoffAPI:
         payload['Receipt'] = receipt
         response = requests.post(f'{self.base_url}Init', json=payload)
         response.raise_for_status()
+        return response.json()
+
+    def cancel_payment(self, payment_id, amount):
+        params = {
+            "TerminalKey": self.terminal_key,
+            "PaymentId": payment_id,
+            "Amount": int(amount * 100) if amount else None
+        }
+        params["Token"] = self._generate_token(params)
+        response = requests.post(self.cancel_url, json=params, headers={"Content-Type": "application/json"})
         return response.json()

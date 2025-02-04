@@ -6,6 +6,7 @@ from RentalGuru.settings import HOST_URL
 from feedback.models import Feedback
 from influencer.utils import check_promocode
 from notification.models import Notification
+from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
 from vehicle.models import RatingUpdateLog
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
@@ -45,11 +46,46 @@ class TripSerializer(serializers.ModelSerializer):
         return representation
 
     def update(self, instance, validated_data):
+        request = self.context.get('request')
         previous_status = instance.status
         new_status = validated_data.get('status', previous_status)
 
+        # Отмена поездки
+        if previous_status != 'canceled' and new_status == 'canceled':
+
+            # Проверка доступа
+            if request.user != instance.organizer or request.user.role not in ['admin', 'manager']:
+                raise serializers.ValidationError({"detail": "Вы не можете отменить поездку."})
+
+            # Возврат средств
+            payment = Payment.objects.filter(request_rent__chat__trip=instance).first()
+            if not payment:
+                raise serializers.ValidationError({"payment": "Платеж не найден"})
+
+            if payment.status == 'paid' and instance.get_time_until_start().total_seconds() / 3600 > 48:
+                refund = TinkoffAPI()
+                response = refund.cancel_payment(payment.payment_id, payment.amount)
+                if response.get("Success"):
+                    payment.status = 'canceled'
+                    payment.save()
+
+                    Notification.objects.create(
+                        user=instance.organizer,
+                        content=f"Поездка c транспортом {instance.vehicle} была отменена. Будет произведен возврат средств в количестве {payment.amount} р."
+                    )
+
+            else:
+                Notification.objects.create(
+                    user=instance.organizer,
+                    content=f"Поездка c транспортом {instance.vehicle} была отменена."
+                )
+            Notification.objects.create(
+                user=instance.vehicle.owner,
+                content=f"Поездка c транспортом {instance.vehicle} была отменена."
+            )
         instance = super().update(instance, validated_data)
 
+        # Завершение поездки
         if previous_status != 'finished' and new_status == 'finished':
             Notification.objects.create(
                 user=instance.organizer,
@@ -62,6 +98,7 @@ class TripSerializer(serializers.ModelSerializer):
                 content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
                 url=f"{HOST_URL}/?trip={instance.id}&trip_start_time={instance.start_time}&trip_start_date={instance.start_date}&trip_end_date={instance.end_date}&trip_end_time={instance.end_time}&vehicle={instance.vehicle}&vehicle_id={instance.object_id}&vehicle_type={instance.content_type.model}&user_id={instance.organizer.id}&user_avater={instance.organizer.avatar}&rating={rating}&feedback={feedback}"
             )
+
         return instance
 
 

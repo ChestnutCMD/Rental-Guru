@@ -7,8 +7,9 @@ class Payment(models.Model):
     """Модель платежей"""
     STATUS_CHOICES = (
         ('pending', 'В ожидании'),
-        ('paid', 'Оплачено'),
+        ('paid', 'Оплачен'),
         ('failed', 'Ошибка'),
+        ('canceled', 'Отменен')
     )
     request_rent = models.ForeignKey(RequestRent, on_delete=models.CASCADE, related_name='payments', verbose_name='Заявка на аренду')
     payment_id = models.CharField(max_length=255, verbose_name='ID платежа в системе Тиньков')

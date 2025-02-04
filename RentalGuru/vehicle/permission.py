@@ -25,7 +25,7 @@ class IsAdminOrLessor(permissions.BasePermission):
     Пользовательское разрешение, позволяющее создавать объекты только администраторам и арендодателям.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.role in ['admin', 'manager'] or hasattr(request.user, 'lessor'))
+        return request.user.is_authenticated and (request.user.role in ['admin', 'manager'] or hasattr(request.user, 'lessor')) or hasattr(request.user, 'franchise')
 
 
 class IsAdminOrOwner(ManagerObjectPermission):

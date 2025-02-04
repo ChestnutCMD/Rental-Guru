@@ -1,4 +1,6 @@
 import json
+from datetime import datetime, timedelta, time
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
@@ -247,6 +249,20 @@ class Trip(models.Model):
             self.vehicle.save(update_fields=['count_trip'])
             self.owner.lessor.count_trip += 1
             self.owner.lessor.save(update_fields=['count_trip'])
+
+    def get_time_until_start(self, start_date, start_time):
+        """
+        Вычисляет, сколько осталось времени до начала аренды.
+        """
+        if not start_date:
+            return None
+        if not start_time:
+            start_time = time(0, 0)
+        start_datetime = datetime.combine(start_date, start_time)
+        now = datetime.now()
+        time_until = start_datetime - now
+
+        return time_until if time_until.total_seconds() > 0 else timedelta(0)
 
     def __str__(self):
         return f'Поездка id-{self.pk}'

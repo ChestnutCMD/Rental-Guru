@@ -53,9 +53,8 @@ class UniversalPermission(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated or request.user.role != 'manager':
+        if not request.user.is_authenticated or request.user.role != 'manager' or not hasattr(request.user, 'franchise'):
             return False
-
         manager = getattr(request.user, 'manager', None)
         if not manager or not manager.franchise:
             return False
