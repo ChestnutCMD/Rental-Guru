@@ -525,8 +525,8 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    updated_at_date = serializers.SerializerMethodField()
-    updated_at_time = serializers.SerializerMethodField()
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
     amount = serializers.SerializerMethodField()
     request_rent = serializers.SerializerMethodField()
 
@@ -534,10 +534,10 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ["date", "time", "amount", "request_rent"]
 
-    def get_updated_at_date(self, obj):
+    def get_date(self, obj):
         return obj.updated_at.date()
 
-    def get_updated_at_time(self, obj):
+    def get_time(self, obj):
         return obj.updated_at.strftime("%H:%M")
 
     def get_amount(self, obj):
