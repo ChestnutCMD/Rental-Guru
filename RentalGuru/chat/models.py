@@ -261,6 +261,7 @@ class Trip(models.Model):
         start_time = self.start_time if isinstance(self.start_time, time) else time(0, 0)
         start_datetime = datetime.combine(self.start_date, start_time)
         timezone = pytz.UTC
+        start_datetime = timezone.localize(start_datetime)
         now = datetime.now(timezone)
         time_until = start_datetime - now
         return max(time_until, timedelta(0))
