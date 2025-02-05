@@ -151,20 +151,25 @@ class TinkoffCallbackView(APIView):
             logger.error(f"Платеж с ID {payment_id} не найден.")
             raise
 
+        if payment.status == 'success' and status_from_tinkoff == 'CONFIRMED':
+            logger.info(f"Платеж {payment_id} уже обработан, повторное подтверждение игнорируется.")
+            return Response({"message": "Платеж уже подтвержден"}, status=status.HTTP_200_OK)
+
         if status_from_tinkoff == 'CONFIRMED':
             payment.status = 'success'
             payment.paid_at = now()
             payment.save()
 
             if payment.promo_code:
-                UsedPromoCode.objects.filter(user=payment.request_rent.organizer, promo_code=payment.promo_code).update(used=True)
+                UsedPromoCode.objects.filter(user=payment.request_rent.organizer, promo_code=payment.promo_code).update(
+                    used=True)
 
             trip = Trip.objects.filter(chat=payment.request_rent.chat).first()
             if trip:
                 trip.status = 'started'  # TODO: Поменять статус
                 trip.save()
                 try:
-                    Notification.objects.create(
+                    Notification.objects.get_or_create(
                         user=trip.organizer,
                         content=f"Оплачена заявка на аренду {trip.vehicle}. Начало аренды: {trip.start_date}/{trip.start_time}"
                     )
@@ -178,16 +183,16 @@ class TinkoffCallbackView(APIView):
             payment.status = 'failed'
             payment.save()
             try:
-                Notification.objects.create(
+                Notification.objects.get_or_create(
                     user=payment.request_rent.organizer,
                     content=f"Не удалось обработать платеж #{payment_id} по заявке #{payment.request_rent.id}"
                 )
-
             except Exception as e:
                 logger.error(f"Ошибка создания уведомления: {e}")
             return Response(
                 {"message": f"Не удалось выполнить платеж со статусом {status_from_tinkoff}"},
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
+
         logger.warning(f"Необработанный статус платежа: {status_from_tinkoff}")
         return Response({"message": "Необработанный статус"}, status=status.HTTP_400_BAD_REQUEST)
