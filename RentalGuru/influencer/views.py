@@ -420,10 +420,20 @@ class InfluencerStatsView(APIView):
         })
 
 
-@extend_schema(summary="Вывод статистики", description="Вывод статистики")
 class InfluencerWithdrawRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Запрос на вывод средств",
+        description="Отправляет запрос на вывод средств администратору.",
+        parameters=[
+            OpenApiParameter(
+                name="amount",
+                description="Сумма для вывода средств",
+                type=float,
+                required=True, )
+        ]
+    )
     def post(self, request):
         user = request.user
         if not hasattr(user, 'influencer'):
