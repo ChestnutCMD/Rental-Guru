@@ -185,7 +185,8 @@ class RenterDetailSerializer(serializers.ModelSerializer):
 class LessorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lessor
-        fields = ['super_host', 'count_trip', 'average_response_time', 'commission']
+        fields = ['id', 'super_host', 'count_trip', 'average_response_time', 'commission']
+        read_only_fields = ['id', 'super_host', 'count_trip', 'average_response_time', 'commission']
 
 
 class CurrencySerializer(serializers.ModelSerializer):
