@@ -23,6 +23,7 @@ from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer,
     InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer
 from manager.permissions import ManagerObjectPermission
 from payment.models import Payment
+from .tasks import withdraw_request
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -417,3 +418,21 @@ class InfluencerStatsView(APIView):
             "change_revenue": calculate_change(revenue, prev_revenue),
             "change_count_register": calculate_change(count_register, prev_count_register)
         })
+
+
+@extend_schema(summary="Вывод статистики", description="Вывод статистики")
+class InfluencerWithdrawRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if not hasattr(user, 'influencer'):
+            return Response({"detail": "Вы не являетесь инфлюенсером."}, status=403)
+
+        amount = request.data.get("amount")
+        if not amount or float(amount) <= 0:
+            return Response({"detail": "Некорректная сумма."}, status=400)
+
+        influencer = user.influencer
+        withdraw_request.delay(amount, influencer.user.get_full_name())
+        return Response({"detail": "Запрос на вывод средств отправлен."}, status=200)

@@ -1,9 +1,7 @@
-import requests
 from celery import shared_task
 from django.core.mail import send_mail
 from smsaero import SmsAero
 from RentalGuru import settings
-from RentalGuru.settings import SMS_AERO_API_KEY, SMS_AERO_API_URL
 
 
 @shared_task
