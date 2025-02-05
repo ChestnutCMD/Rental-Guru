@@ -66,7 +66,7 @@ class TripSerializer(serializers.ModelSerializer):
             if not payment:
                 raise serializers.ValidationError({"detail": "Платеж не найден."})
 
-            if payment.status == 'paid' and instance.get_time_until_start().total_seconds() / 3600 > 48:
+            if payment.status == 'success' and instance.get_time_until_start().total_seconds() / 3600 > 48:
                 refund = TinkoffAPI()
                 response = refund.cancel_payment(payment.payment_id, payment.amount)
                 if response.get("Success"):

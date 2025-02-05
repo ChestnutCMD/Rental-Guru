@@ -7,7 +7,7 @@ class Payment(models.Model):
     """Модель платежей"""
     STATUS_CHOICES = (
         ('pending', 'В ожидании'),
-        ('paid', 'Оплачен'),
+        ('success', 'Оплачен'),
         ('failed', 'Ошибка'),
         ('canceled', 'Отменен')
     )
