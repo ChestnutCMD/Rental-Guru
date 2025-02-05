@@ -58,9 +58,13 @@ class TripSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail": "Вы не можете отменить поездку."})
 
             # Возврат средств
-            payment = Payment.objects.filter(request_rent__chat__trip=instance).first()
+            request_rent = RequestRent.objects.filter(chat=instance.chat).first()
+            if not request_rent:
+                raise serializers.ValidationError({"detail": "Заявка на аренду не найдена."})
+
+            payment = Payment.objects.filter(request_rent=request_rent).first()
             if not payment:
-                raise serializers.ValidationError({"payment": "Платеж не найден"})
+                raise serializers.ValidationError({"detail": "Платеж не найден."})
 
             if payment.status == 'paid' and instance.get_time_until_start().total_seconds() / 3600 > 48:
                 refund = TinkoffAPI()
