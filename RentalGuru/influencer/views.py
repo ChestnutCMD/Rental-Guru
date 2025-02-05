@@ -426,21 +426,30 @@ class InfluencerWithdrawRequestView(APIView):
     @extend_schema(
         summary="Запрос на вывод средств",
         description="Отправляет запрос на вывод средств администратору.",
-        parameters=[
-            OpenApiParameter(
-                name="amount",
-                description="Сумма для вывода средств",
-                type=float,
-                required=True, )
-        ]
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "description": "Сумма для вывода средств"
+                    }
+                },
+                "required": ["amount"]
+            }
+        }
     )
     def post(self, request):
         user = request.user
         if not hasattr(user, 'influencer'):
             return Response({"detail": "Вы не являетесь инфлюенсером."}, status=403)
-
         amount = request.data.get("amount")
-        if not amount or float(amount) <= 0:
+
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
             return Response({"detail": "Некорректная сумма."}, status=400)
 
         influencer = user.influencer
