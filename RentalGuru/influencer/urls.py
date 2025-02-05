@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ReferralLinkViewSet, InfluencerRequestCreateView, InfluencerRequestListView, \
     InfluencerRequestDeleteView, InfluencerViewSet, QRCodeViewSet, PromoCodeViewSet, ApplyPromoCodeView, \
-    InfluencerPaymentsView
+    InfluencerPaymentsView, InfluencerStatsView
 
 router = DefaultRouter()
 router.register(r'referral-links', ReferralLinkViewSet)
@@ -17,5 +17,6 @@ urlpatterns = [
     path('influencer_requests/delete/<int:pk>/', InfluencerRequestDeleteView.as_view(), name='influencer-request-delete'),
     path('promocodes/apply/', ApplyPromoCodeView.as_view(), name='apply_promocode'),
     path('transactions/<int:influencer_id>/', InfluencerPaymentsView.as_view(), name='transactions'),
+    path('statistic/', InfluencerStatsView.as_view(), name='statistic'),
     path('', include(router.urls)),
 ]

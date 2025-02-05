@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
@@ -13,7 +16,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
-    RequestWithdraw
+    RequestWithdraw, RegistrationSource
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
@@ -340,3 +343,77 @@ class InfluencerPaymentsView(ListAPIView):
         influencer_id = self.kwargs.get('influencer_id')
         get_object_or_404(Influencer, id=influencer_id)
         return Payment.objects.filter(influencer_id=influencer_id).select_related('request_rent', 'influencer').order_by('-updated_at')  # TODO добавить фильтр для оплаченый платежей
+
+
+PERIODS = {
+    'day': timedelta(days=1),
+    'week': timedelta(weeks=1),
+    'month': timedelta(days=30),
+    'quarter': timedelta(days=90),
+    'year': timedelta(days=365),
+    'all': None
+}
+
+
+@extend_schema(
+    summary="Вывод статистики",
+    description="Вывод статистики",
+    parameters=[
+        OpenApiParameter(
+                name="period",
+                description="Период для фильтрации (day, week, month, quarter, year)",
+                type=str,
+                enum=["day", "week", "month", "quarter", "year"],
+                required=False,)
+                ]
+)
+class InfluencerStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not hasattr(user, 'influencer'):
+            return Response({"detail": "Вы не являетесь инфлюенсером."}, status=403)
+
+        influencer = user.influencer
+        period = request.query_params.get('period', 'all')
+        if period not in PERIODS:
+            return Response({"detail": "Неверно указан период."}, status=400)
+
+        current_period = PERIODS[period]
+        prev_period = PERIODS[period] if period != 'all' else None
+
+        def get_period_filter(period_delta):
+            if period_delta:
+                return now() - period_delta
+            return None
+
+        current_start = get_period_filter(current_period)
+        prev_start = get_period_filter(prev_period)
+
+        current_filter = {"created_at__gte": current_start} if current_start else {}
+        prev_filter = {"created_at__gte": prev_start, "created_at__lt": current_start} if prev_start else {}
+
+        count_clients = Payment.objects.filter(influencer=influencer, **current_filter).count()
+        total = Payment.objects.filter(influencer=influencer, **current_filter).aggregate(total=Sum('amount'))['total'] or 0
+        revenue = total * influencer.commission / 100
+        count_register = RegistrationSource.objects.filter(influencer=influencer, **current_filter).count()
+
+        prev_count_clients = Payment.objects.filter(influencer=influencer, **prev_filter).count()
+        prev_total = Payment.objects.filter(influencer=influencer, **prev_filter).aggregate(total=Sum('amount'))['total'] or 0
+        prev_revenue = prev_total * influencer.commission / 100
+        prev_count_register = RegistrationSource.objects.filter(influencer=influencer, **prev_filter).count()
+
+        def calculate_change(current, previous):
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return round(((current - previous) / previous) * 100, 2)
+
+        return Response({
+            "count_clients": count_clients,
+            "revenue": revenue,
+            "count_register": count_register,
+            "change_count_clients": calculate_change(count_clients, prev_count_clients),
+            "change_revenue": calculate_change(revenue, prev_revenue),
+            "change_count_register": calculate_change(count_register, prev_count_register)
+        })
