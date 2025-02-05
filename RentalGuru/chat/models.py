@@ -147,8 +147,10 @@ class RequestRent(models.Model):
     def create_payment(self):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
-
-        amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission)
+        if self.vehicle.owner.lessor.franchise:
+            amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission + self.vehicle.owner.lessor.franchise.commission)
+        else:
+            amount = self.total_cost / 100 * float(self.vehicle.owner.lessor.commission)
         discount_amount = 0
 
         # Обработка промокода
