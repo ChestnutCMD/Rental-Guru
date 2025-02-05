@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from chat.models import RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
     RequestWithdraw, RegistrationSource
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
@@ -23,6 +25,7 @@ from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer,
     InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer
 from manager.permissions import ManagerObjectPermission
 from payment.models import Payment
+from vehicle.models import Vehicle
 from .tasks import withdraw_request
 
 
@@ -356,6 +359,35 @@ PERIODS = {
 }
 
 
+def count_unique_clients(influencer, current_filter=None):
+    """
+    Optimized function to count unique clients with minimal database queries
+    """
+    from django.contrib.contenttypes.models import ContentType
+    vehicle_content_type = ContentType.objects.get_for_model(Vehicle)
+    payments_query = Payment.objects.filter(influencer=influencer, status='success').select_related('request_rent')
+
+    if current_filter:
+        payments_query = payments_query.filter(**current_filter)
+
+    organizer_ids = set()
+    vehicle_ids = set()
+
+    for payment in payments_query:
+        rent_request = payment.request_rent
+        if rent_request:
+            organizer_ids.add(rent_request.organizer_id)
+            if rent_request.content_type_id == vehicle_content_type.id:
+                vehicle_ids.add(rent_request.object_id)
+
+    owner_ids = set(
+        Vehicle.objects.filter(id__in=vehicle_ids).values_list("owner_id", flat=True)
+    )
+
+    unique_clients = organizer_ids | owner_ids
+    return len(unique_clients)
+
+
 @extend_schema(
     summary="Вывод статистики",
     description="Вывод статистики",
@@ -392,18 +424,18 @@ class InfluencerStatsView(APIView):
         current_start = get_period_filter(current_period)
         prev_start = get_period_filter(prev_period)
 
-        current_filter = {"created_at__gte": current_start} if current_start else {}
-        prev_filter = {"created_at__gte": prev_start, "created_at__lt": current_start} if prev_start else {}
+        current_filter = {"request_rent__start_date__gte": current_start} if current_start else {}
+        prev_filter = {"request_rent__start_date__gte": prev_start, "request_rent__start_date__lt": current_start} if prev_start else {}
 
-        count_clients = Payment.objects.filter(influencer=influencer, **current_filter).count()
-        total = Payment.objects.filter(influencer=influencer, **current_filter).aggregate(total=Sum('amount'))['total'] or 0
+        count_clients = count_unique_clients(influencer, current_filter)
+        total = Payment.objects.filter(influencer=influencer, status='success', **current_filter).aggregate(total=Sum('amount'))['total'] or 0
         revenue = total * influencer.commission / 100
-        count_register = RegistrationSource.objects.filter(influencer=influencer, **current_filter).count()
+        count_register = RegistrationSource.objects.filter(influencer=influencer, created_at__gte=current_start).count()
 
-        prev_count_clients = Payment.objects.filter(influencer=influencer, **prev_filter).count()
+        prev_count_clients = count_unique_clients(influencer, prev_filter)
         prev_total = Payment.objects.filter(influencer=influencer, **prev_filter).aggregate(total=Sum('amount'))['total'] or 0
         prev_revenue = prev_total * influencer.commission / 100
-        prev_count_register = RegistrationSource.objects.filter(influencer=influencer, **prev_filter).count()
+        prev_count_register = RegistrationSource.objects.filter(influencer=influencer, created_at__gte=prev_start, created_at__lt=current_start).count()
 
         def calculate_change(current, previous):
             if previous == 0:
