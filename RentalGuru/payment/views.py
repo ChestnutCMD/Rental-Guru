@@ -169,9 +169,14 @@ class TinkoffCallbackView(APIView):
                 trip.status = 'started'  # TODO: Поменять статус
                 trip.save()
                 try:
+                    content = f"Оплачена заявка на аренду {trip.vehicle}. Начало аренды: {trip.start_date}/{trip.start_time}"
                     Notification.objects.get_or_create(
                         user=trip.organizer,
-                        content=f"Оплачена заявка на аренду {trip.vehicle}. Начало аренды: {trip.start_date}/{trip.start_time}"
+                        content=content
+                    )
+                    Notification.objects.get_or_create(
+                        user=trip.vehicle.owner,
+                        content=content
                     )
                 except Exception as e:
                     logger.error(f"Ошибка создания уведомления: {e}")
