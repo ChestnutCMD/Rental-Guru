@@ -101,7 +101,7 @@ class PaymentViewSet(viewsets.ViewSet):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@extend_schema(summary="Коллбэк для Т")
+@extend_schema(summary="Коллбэк для Т", deprecated=True)
 class TinkoffCallbackView(APIView):
     """
     Обрабатывает callback'и от Тинькофф.
