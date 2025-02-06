@@ -175,6 +175,13 @@ class RequestRentSerializer(serializers.ModelSerializer):
         vehicle = instance.content_type.get_object_for_this_type(id=instance.object_id)
         trip = vehicle.trips.filter(status='current').select_related('organizer').first()
 
+        # Вывод суммы к оплате
+        if instance.vehicle.owner.lessor.franchise:
+            amount = instance.total_cost/100 * (instance.vehicle.owner.lessor.commission + instance.vehicle.owner.lessor.franchise.commission)
+        else:
+            amount = instance.total_cost / 100 * instance.vehicle.owner.lessor.commission
+        representation['amount'] = amount
+
         if trip:
             representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
             representation['renter_first_name'] = trip.organizer.first_name
