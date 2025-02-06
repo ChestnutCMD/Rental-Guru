@@ -307,7 +307,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
-            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude'
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city'
         ]
         read_only_fields = ['average_ratings']
 
