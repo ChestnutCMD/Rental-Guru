@@ -49,6 +49,7 @@ class TripSerializer(serializers.ModelSerializer):
         request_rent = RequestRent.objects.filter(chat=instance.chat).first()
         payment = Payment.objects.filter(request_rent=request_rent).first()
         representation['payment_id'] = payment.id if payment else None
+        representation['amount'] = payment.amount if payment else None
         return representation
 
     def update(self, instance, validated_data):
