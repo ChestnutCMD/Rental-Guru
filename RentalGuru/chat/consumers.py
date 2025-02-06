@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+from decimal import Decimal
 
 from asgiref.sync import sync_to_async
 from django.contrib.contenttypes.models import ContentType
@@ -494,9 +495,9 @@ class ChatConsumer(BaseChatConsumer):
 
             await database_sync_to_async(request_rent.save)()
             if request_rent.vehicle.owner.lessor.franchise:
-                amount = request_rent.total_cost/100 * (request_rent.vehicle.owner.lessor.commission+request_rent.vehicle.owner.lessor.franchise.commission)
+                amount = request_rent.total_cost/Decimal(100) * (request_rent.vehicle.owner.lessor.commission + Decimal(request_rent.vehicle.owner.lessor.franchise.commission))
             else:
-                amount = request_rent.total_cost / 100 * request_rent.vehicle.owner.lessor.commission
+                amount = request_rent.total_cost/Decimal(100) * request_rent.vehicle.owner.lessor.commission
             message_content = {
                 "start_time": request_rent.start_time,
                 "end_time": request_rent.end_time,
@@ -506,7 +507,7 @@ class ChatConsumer(BaseChatConsumer):
                 "status": request_rent.status,
                 "vehicle_type": request_rent.content_type,
                 "vehicle_id": request_rent.object_id,
-                "amount": amount
+                "amount": round(amount, 2)
             }
             await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
 

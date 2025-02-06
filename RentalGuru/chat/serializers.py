@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.contenttypes.models import ContentType
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -181,10 +183,12 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
         # Вывод суммы к оплате
         if instance.vehicle.owner.lessor.franchise:
-            amount = instance.total_cost/100 * (instance.vehicle.owner.lessor.commission + instance.vehicle.owner.lessor.franchise.commission)
+            amount = instance.total_cost / Decimal(100) * (
+                    instance.vehicle.owner.lessor.commission + Decimal(instance.vehicle.owner.lessor.franchise.commission)
+            )
         else:
-            amount = instance.total_cost / 100 * instance.vehicle.owner.lessor.commission
-        representation['amount'] = amount
+            amount = instance.total_cost / Decimal(100) * instance.vehicle.owner.lessor.commission
+        representation['amount'] = round(amount, 2)
 
         if trip:
             representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
