@@ -303,6 +303,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     free_delivery = serializers.SerializerMethodField()
     free_deposit = serializers.SerializerMethodField()
     is_super_host = serializers.SerializerMethodField()
+    city = serializers.StringRelatedField()
 
     class Meta:
         fields = [
