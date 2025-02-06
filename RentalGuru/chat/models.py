@@ -61,9 +61,10 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
-            from payment.models import Payment
-            payment = Payment.objects.filter(request_rent=self).first()
-
+            if self.vehicle.owner.lessor.franchise:
+                amount = self.total_cost/Decimal(100) * (self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission))
+            else:
+                amount = self.total_cost/Decimal(100) * self.vehicle.owner.lessor.commission
             message_content = json.dumps({
                 "status": self.status,
                 "organizer_id": self.organizer.id,
@@ -77,7 +78,7 @@ class RequestRent(models.Model):
                 "deposit_cost": float(self.deposit_cost),
                 "delivery_cost": float(self.delivery_cost),
                 "delivery": self.delivery,
-                "amount": payment.amount if payment else None
+                "amount": round(float(amount), 2)
             }, ensure_ascii=False)
 
             Message.objects.create(
