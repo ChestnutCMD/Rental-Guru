@@ -9,7 +9,7 @@ from django.db import models, transaction
 
 from RentalGuru import settings
 from influencer.models import PromoCode
-from payment.models import Payment
+
 
 
 class RequestRent(models.Model):
@@ -61,7 +61,7 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
-
+            from payment.models import Payment
             payment = Payment.objects.filter(request_rent=self).first()
 
             message_content = json.dumps({
