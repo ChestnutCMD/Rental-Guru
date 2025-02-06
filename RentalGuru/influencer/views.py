@@ -413,29 +413,36 @@ class InfluencerStatsView(APIView):
         if period not in PERIODS:
             return Response({"detail": "Неверно указан период."}, status=400)
 
-        current_period = PERIODS[period]
-        prev_period = PERIODS[period] if period != 'all' else None
+        current_period = PERIODS.get(period)
+        prev_period = PERIODS.get(period) if period != 'all' else None
 
         def get_period_filter(period_delta):
-            if period_delta:
-                return now() - period_delta
-            return None
+            return now() - period_delta if period_delta else None
 
         current_start = get_period_filter(current_period)
         prev_start = get_period_filter(prev_period)
 
         current_filter = {"request_rent__start_date__gte": current_start} if current_start else {}
-        prev_filter = {"request_rent__start_date__gte": prev_start, "request_rent__start_date__lt": current_start} if prev_start else {}
+        prev_filter = {}
+        if prev_start and current_start:
+            prev_filter = {
+                "request_rent__start_date__gte": prev_start,
+                "request_rent__start_date__lt": current_start
+            }
 
         count_clients = count_unique_clients(influencer, current_filter)
         total = Payment.objects.filter(influencer=influencer, status='success', **current_filter).aggregate(total=Sum('amount'))['total'] or 0
         revenue = total * influencer.commission / 100
         count_register = RegistrationSource.objects.filter(influencer=influencer, created_at__gte=current_start).count()
 
-        prev_count_clients = count_unique_clients(influencer, prev_filter)
-        prev_total = Payment.objects.filter(influencer=influencer, **prev_filter).aggregate(total=Sum('amount'))['total'] or 0
-        prev_revenue = prev_total * influencer.commission / 100
-        prev_count_register = RegistrationSource.objects.filter(influencer=influencer, created_at__gte=prev_start, created_at__lt=current_start).count()
+        prev_count_clients = count_unique_clients(influencer, prev_filter) if prev_filter else 0
+        prev_total = Payment.objects.filter(influencer=influencer, **prev_filter).aggregate(total=Sum('amount'))['total'] if prev_filter else 0
+        prev_revenue = (prev_total or 0) * influencer.commission / 100
+        prev_count_register = RegistrationSource.objects.filter(
+            influencer=influencer,
+            created_at__gte=prev_start,
+            created_at__lt=current_start
+        ).count() if prev_filter else 0
 
         def calculate_change(current, previous):
             if previous == 0:
