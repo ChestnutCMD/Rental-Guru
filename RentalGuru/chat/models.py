@@ -197,8 +197,7 @@ class RequestRent(models.Model):
 
 
 class Chat(models.Model):
-    request_rent = models.OneToOneField(RequestRent, null=True, on_delete=models.SET_NULL,
-                                        verbose_name='Заявка на аренду')
+    request_rent = models.OneToOneField(RequestRent, null=True, on_delete=models.SET_NULL, verbose_name='Заявка на аренду', related_name='chat')
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='Участники')
 
     class Meta:

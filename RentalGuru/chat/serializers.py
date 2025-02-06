@@ -15,35 +15,27 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 class TripSerializer(serializers.ModelSerializer):
     set_rating = serializers.SerializerMethodField()
     set_feedback = serializers.SerializerMethodField()
+    payment_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
-        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status', 'set_rating', 'set_feedback']
-        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'set_rating', 'set_feedback']
+        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time',
+                  'start_date', 'end_date', 'total_cost', 'status', 'set_rating', 'set_feedback', 'payment_id']
+        read_only_fields = fields
 
     def get_set_rating(self, instance):
-        return RatingUpdateLog.objects.filter(
-            user=instance.organizer,
-            content_type=instance.content_type,
-            object_id=instance.object_id
-        ).exists()
+        return getattr(instance, '_set_rating', False)
 
     def get_set_feedback(self, instance):
-        return Feedback.objects.filter(
-            user=instance.organizer,
-            content_type=instance.content_type,
-            object_id=instance.object_id
-        ).exists()
+        return getattr(instance, '_set_feedback', False)
+
+    def get_payment_id(self, instance):
+        return getattr(instance, '_payment_id', None)
 
     def create(self, validated_data):
         request = self.context.get('request')
         validated_data['organizer'] = request.user
         return super().create(validated_data)
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['content_type'] = instance.content_type.model
-        return representation
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -52,17 +44,14 @@ class TripSerializer(serializers.ModelSerializer):
 
         # Отмена поездки
         if previous_status != 'canceled' and new_status == 'canceled':
-
-            # Проверка доступа
             if request.user != instance.organizer and request.user.role not in ['admin', 'manager']:
                 raise serializers.ValidationError({"detail": "Вы не можете отменить поездку."})
 
-            # Возврат средств
-            request_rent = RequestRent.objects.filter(chat=instance.chat).first()
+            request_rent = getattr(instance.chat, 'request_rent', None)
             if not request_rent:
                 raise serializers.ValidationError({"detail": "Заявка на аренду не найдена."})
 
-            payment = Payment.objects.filter(request_rent=request_rent).first()
+            payment = getattr(instance, '_payment', None)
             if not payment:
                 raise serializers.ValidationError({"detail": "Платеж не найден."})
 
@@ -87,6 +76,7 @@ class TripSerializer(serializers.ModelSerializer):
                 user=instance.vehicle.owner,
                 content=f"Поездка c транспортом {instance.vehicle} была отменена."
             )
+
         instance = super().update(instance, validated_data)
 
         # Завершение поездки
@@ -95,15 +85,14 @@ class TripSerializer(serializers.ModelSerializer):
                 user=instance.organizer,
                 content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку"
             )
-            rating = RatingUpdateLog.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
-            feedback = Feedback.objects.filter(user=instance.organizer, content_type=instance.content_type, object_id=instance.object_id).exists()
             Notification.objects.create(
                 user=instance.vehicle.owner,
                 content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
-                url=f"{HOST_URL}/?trip={instance.id}&trip_start_time={instance.start_time}&trip_start_date={instance.start_date}&trip_end_date={instance.end_date}&trip_end_time={instance.end_time}&vehicle={instance.vehicle}&vehicle_id={instance.object_id}&vehicle_type={instance.content_type.model}&user_id={instance.organizer.id}&user_avater={instance.organizer.avatar}&rating={rating}&feedback={feedback}"
+                url=f"{HOST_URL}/?trip={instance.id}&trip_start_time={instance.start_time}&trip_start_date={instance.start_date}"
             )
 
         return instance
+
 
 
 class RequestRentSerializer(serializers.ModelSerializer):
