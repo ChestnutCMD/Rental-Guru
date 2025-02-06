@@ -493,7 +493,10 @@ class ChatConsumer(BaseChatConsumer):
                 request_rent.object_id = update_data['object_id']
 
             await database_sync_to_async(request_rent.save)()
-
+            if request_rent.vehicle.owner.lessor.franchise:
+                amount = request_rent.total_cost/100 * (request_rent.vehicle.owner.lessor.commission+request_rent.vehicle.owner.lessor.franchise.commission)
+            else:
+                amount = request_rent.total_cost / 100 * request_rent.vehicle.owner.lessor.commission
             message_content = {
                 "start_time": request_rent.start_time,
                 "end_time": request_rent.end_time,
@@ -502,7 +505,8 @@ class ChatConsumer(BaseChatConsumer):
                 "total_cost": request_rent.total_cost,
                 "status": request_rent.status,
                 "vehicle_type": request_rent.content_type,
-                "vehicle_id": request_rent.object_id
+                "vehicle_id": request_rent.object_id,
+                "amount": amount
             }
             await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
 
