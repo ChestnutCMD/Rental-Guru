@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
-from manager.permissions import ManagerObjectPermission
+from manager.permissions import ManagerObjectPermission, IsFranchiseDirector
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
     VehicleModelFilter
@@ -109,7 +109,7 @@ class AutoViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(verified=True)
+                    queryset = queryset.filter()
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:

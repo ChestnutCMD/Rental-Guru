@@ -39,7 +39,7 @@ class AvailableModelsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        predefined_ids = [15, 19, 20, 41, 43, 46, 47, 52, 67, 68, 70, 84]
+        predefined_ids = [15, 19, 20, 30, 35, 36, 37, 41, 43, 46, 47, 52, 67, 68, 70, 84]
 
         is_director = Franchise.objects.filter(director=request.user).exists()
 
