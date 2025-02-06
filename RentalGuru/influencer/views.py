@@ -433,7 +433,11 @@ class InfluencerStatsView(APIView):
         count_clients = count_unique_clients(influencer, current_filter)
         total = Payment.objects.filter(influencer=influencer, status='success', **current_filter).aggregate(total=Sum('amount'))['total'] or 0
         revenue = total * influencer.commission / 100
-        count_register = RegistrationSource.objects.filter(influencer=influencer, created_at__gte=current_start).count()
+        count_register = (
+            RegistrationSource.objects.filter(influencer=influencer, created_at__gte=current_start).count()
+            if current_start else
+            RegistrationSource.objects.filter(influencer=influencer).count()
+        )
 
         prev_count_clients = count_unique_clients(influencer, prev_filter) if prev_filter else 0
         prev_total = Payment.objects.filter(influencer=influencer, **prev_filter).aggregate(total=Sum('amount'))['total'] if prev_filter else 0
