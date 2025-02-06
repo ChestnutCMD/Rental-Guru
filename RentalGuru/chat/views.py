@@ -13,6 +13,7 @@ from RentalGuru import settings
 from feedback.models import Feedback
 from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
+from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, RatingUpdateLog
 from .filters import MessageFilter, TripFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
@@ -43,52 +44,23 @@ class TripViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        auto_content_type = ContentType.objects.get_for_model(Auto)
+        bike_content_type = ContentType.objects.get_for_model(Bike)
+        ship_content_type = ContentType.objects.get_for_model(Ship)
+        helicopter_content_type = ContentType.objects.get_for_model(Helicopter)
+        special_technic_content_type = ContentType.objects.get_for_model(SpecialTechnic)
 
-        content_types = {
-            'auto': ContentType.objects.get_for_model(Auto),
-            'bike': ContentType.objects.get_for_model(Bike),
-            'ship': ContentType.objects.get_for_model(Ship),
-            'helicopter': ContentType.objects.get_for_model(Helicopter),
-            'specialtechnic': ContentType.objects.get_for_model(SpecialTechnic),
-        }
-
-        vehicle_ids = {
-            'auto': Auto.objects.filter(owner=user).values_list('id', flat=True),
-            'bike': Bike.objects.filter(owner=user).values_list('id', flat=True),
-            'ship': Ship.objects.filter(owner=user).values_list('id', flat=True),
-            'helicopter': Helicopter.objects.filter(owner=user).values_list('id', flat=True),
-            'specialtechnic': SpecialTechnic.objects.filter(owner=user).values_list('id', flat=True),
-        }
-
-        queryset = Trip.objects.filter(
-            Q(organizer=user) |
-            Q(content_type=content_types['auto'], object_id__in=vehicle_ids['auto']) |
-            Q(content_type=content_types['bike'], object_id__in=vehicle_ids['bike']) |
-            Q(content_type=content_types['ship'], object_id__in=vehicle_ids['ship']) |
-            Q(content_type=content_types['helicopter'], object_id__in=vehicle_ids['helicopter']) |
-            Q(content_type=content_types['specialtechnic'], object_id__in=vehicle_ids['specialtechnic'])
-        ).annotate(
-            _set_rating=Exists(
-                RatingUpdateLog.objects.filter(
-                    user=OuterRef('organizer'),
-                    content_type=OuterRef('content_type'),
-                    object_id=OuterRef('object_id')
-                )
-            ),
-            _set_feedback=Exists(
-                Feedback.objects.filter(
-                    user=OuterRef('organizer'),
-                    content_type=OuterRef('content_type'),
-                    object_id=OuterRef('object_id')
-                )
-            )
-        ).select_related(
-            'organizer', 'content_type', 'chat', 'chat__request_rent'
-        ).prefetch_related(
-            Prefetch('chat__request_rent__payments')
-        )
-
-        return queryset
+        return Trip.objects.filter(Q(organizer=user) |
+                                   Q(content_type=auto_content_type,
+                                     object_id__in=Auto.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=bike_content_type,
+                                     object_id__in=Bike.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=ship_content_type,
+                                     object_id__in=Ship.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=helicopter_content_type,
+                                     object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
+                                   Q(content_type=special_technic_content_type,
+                                     object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
 
 
 @extend_schema(summary="Чат между арендатором и арендодателем",
