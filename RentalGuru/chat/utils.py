@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, date
 
+from chat.models import RequestRent
 from influencer.models import PromoCode
 
 

@@ -9,6 +9,7 @@ from django.db import models, transaction
 
 from RentalGuru import settings
 from influencer.models import PromoCode
+from payment.models import Payment
 
 
 class RequestRent(models.Model):
@@ -60,10 +61,9 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
-            if self.vehicle.owner.lessor.franchise:
-                amount = self.total_cost/Decimal(100) * (self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission))
-            else:
-                amount = self.total_cost/Decimal(100) * self.vehicle.owner.lessor.commission
+
+            payment = Payment.objects.filter(request_rent=self).first()
+
             message_content = json.dumps({
                 "status": self.status,
                 "organizer_id": self.organizer.id,
@@ -77,7 +77,7 @@ class RequestRent(models.Model):
                 "deposit_cost": float(self.deposit_cost),
                 "delivery_cost": float(self.delivery_cost),
                 "delivery": self.delivery,
-                "amount": round(amount, 2)
+                "amount": payment.amount if payment else None
             }, ensure_ascii=False)
 
             Message.objects.create(
