@@ -48,7 +48,7 @@ class TripSerializer(serializers.ModelSerializer):
 
         request_rent = RequestRent.objects.filter(chat=instance.chat).first()
         payment = Payment.objects.filter(request_rent=request_rent).first()
-        representation['payment_id'] = payment.id
+        representation['payment_id'] = payment.id if payment else None
         return representation
 
     def update(self, instance, validated_data):
@@ -182,13 +182,8 @@ class RequestRentSerializer(serializers.ModelSerializer):
         trip = vehicle.trips.filter(status='current').select_related('organizer').first()
 
         # Вывод суммы к оплате
-        if instance.vehicle.owner.lessor.franchise:
-            amount = instance.total_cost / Decimal(100) * (
-                    instance.vehicle.owner.lessor.commission + Decimal(instance.vehicle.owner.lessor.franchise.commission)
-            )
-        else:
-            amount = instance.total_cost / Decimal(100) * instance.vehicle.owner.lessor.commission
-        representation['amount'] = round(amount, 2)
+        payment = Payment.objects.filter(request_rent=instance).first()
+        representation['amount'] = payment.amount if payment else None
 
         if trip:
             representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
