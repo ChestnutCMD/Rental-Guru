@@ -312,6 +312,9 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['average_ratings']
 
+    def get_city(self, obj):
+        return obj.city.title if obj.city else None
+
     @extend_schema_field(serializers.FloatField())
     def get_average_ratings(self, obj):
         return obj.get_average_rating()
