@@ -494,10 +494,19 @@ class ChatConsumer(BaseChatConsumer):
                 request_rent.object_id = update_data['object_id']
 
             await database_sync_to_async(request_rent.save)()
-            if request_rent.vehicle.owner.lessor.franchise:
-                amount = request_rent.total_cost/Decimal(100) * (request_rent.vehicle.owner.lessor.commission + Decimal(request_rent.vehicle.owner.lessor.franchise.commission))
+
+            # Загружаем данные синхронно в отдельном потоке
+            lessor = await database_sync_to_async(lambda: request_rent.vehicle.owner.lessor)()
+            franchise = await database_sync_to_async(
+                lambda: lessor.franchise if hasattr(lessor, 'franchise') else None)()
+            commission = await database_sync_to_async(lambda: lessor.commission)()
+
+            if franchise:
+                franchise_commission = await database_sync_to_async(lambda: franchise.commission)()
+                amount = Decimal(request_rent.total_cost) / Decimal(100) * (commission + Decimal(franchise_commission))
             else:
-                amount = request_rent.total_cost/Decimal(100) * request_rent.vehicle.owner.lessor.commission
+                amount = Decimal(request_rent.total_cost) / Decimal(100) * commission
+
             message_content = {
                 "start_time": request_rent.start_time,
                 "end_time": request_rent.end_time,
@@ -505,7 +514,7 @@ class ChatConsumer(BaseChatConsumer):
                 "end_date": request_rent.end_date,
                 "total_cost": request_rent.total_cost,
                 "status": request_rent.status,
-                "vehicle_type": request_rent.content_type,
+                "vehicle_type": request_rent.content_type.model,
                 "vehicle_id": request_rent.object_id,
                 "amount": round(float(amount), 2)
             }

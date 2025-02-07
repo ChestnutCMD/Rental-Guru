@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timedelta, time, date
 from decimal import Decimal
-
 import pytz
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -9,7 +8,6 @@ from django.db import models, transaction
 
 from RentalGuru import settings
 from influencer.models import PromoCode
-
 
 
 class RequestRent(models.Model):
@@ -62,9 +60,9 @@ class RequestRent(models.Model):
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
             if self.vehicle.owner.lessor.franchise:
-                amount = self.total_cost/Decimal(100) * (self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission))
+                amount = Decimal(self.total_cost)/Decimal(100) * (self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission))
             else:
-                amount = self.total_cost/Decimal(100) * self.vehicle.owner.lessor.commission
+                amount = Decimal(self.total_cost)/Decimal(100) * self.vehicle.owner.lessor.commission
             message_content = json.dumps({
                 "status": self.status,
                 "organizer_id": self.organizer.id,
@@ -90,6 +88,8 @@ class RequestRent(models.Model):
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
         from vehicle.models import RentPrice
+        if self.on_request:
+            return 0.00
         rental_days = self.rental_days
         if rental_days <= 0:
             raise ValueError("Количество дней аренды должно быть положительным.")
