@@ -124,8 +124,6 @@ class RequestRent(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        print(f"DEBUG: save() вызван, total_cost = {self.total_cost}, on_request = {self.on_request}")  # Отладка
-
         if not self.pk:  # Только при создании заявки
             if self.vehicle and not self.deposit_cost:
                 self.deposit_cost = self.vehicle.price_deposit

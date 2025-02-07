@@ -12,6 +12,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from franchise.models import Franchise
 from influencer.models import Influencer, ReferralLink, QRCode, PromoCode
+from manager.models import Manager
 from notification.models import FCMToken, Notification
 from vehicle.models import Vehicle, Auto, Bike, Ship
 from vehicle.serializers.auto import AutoListSerializer
@@ -207,7 +208,14 @@ class InfluencerSerializers(serializers.ModelSerializer):
         fields = ['id']
 
 
+class ManagerSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Manager
+        fields = ['id']
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
+    manager = ManagerSerializers(read_only=True)
     renter = RenterDetailSerializer(read_only=True)
     lessor = LessorDetailSerializer(read_only=True)
     influencer = InfluencerSerializers(read_only=True)
@@ -233,6 +241,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'renter',
             'lessor',
             'influencer',
+            'manager',
             'currency',
             'language',
             'date_joined'
@@ -324,6 +333,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["user_id"] = user.id
 
         if hasattr(user, 'manager'):
+            data['manager_id'] = user.manager.id
             if not user.last_login:
                 data['message'] = "Добро пожаловать! Это ваш первый вход. Рекомендуем сменить пароль."
             else:

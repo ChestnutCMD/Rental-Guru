@@ -244,7 +244,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, data):
         try:
             message_id = data.get('message_id')
-            print(message_id)
             user = self.scope['user']
 
             if await self.delete_message(message_id, user):
@@ -495,7 +494,6 @@ class ChatConsumer(BaseChatConsumer):
 
             if 'total_cost' in update_data:
                 request_rent.total_cost = Decimal(update_data['total_cost'])
-                print(f"DEBUG: Обновляем total_cost до {update_data['total_cost']}")  # Отладочный вывод
 
             await database_sync_to_async(request_rent.save)()
 
