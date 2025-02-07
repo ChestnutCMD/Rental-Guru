@@ -493,6 +493,10 @@ class ChatConsumer(BaseChatConsumer):
             if 'object_id' in update_data:
                 request_rent.object_id = update_data['object_id']
 
+            if 'total_cost' in update_data:
+                request_rent.total_cost = Decimal(update_data['total_cost'])
+                print(f"DEBUG: Обновляем total_cost до {update_data['total_cost']}")  # Отладочный вывод
+
             await database_sync_to_async(request_rent.save)()
 
             # Загружаем данные синхронно в отдельном потоке
@@ -512,7 +516,7 @@ class ChatConsumer(BaseChatConsumer):
                 "end_time": request_rent.end_time,
                 "start_date": request_rent.start_date,
                 "end_date": request_rent.end_date,
-                "total_cost": request_rent.total_cost,
+                "total_cost": float(request_rent.total_cost),
                 "status": request_rent.status,
                 "vehicle_type": request_rent.content_type.model,
                 "vehicle_id": request_rent.object_id,
