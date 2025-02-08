@@ -244,6 +244,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, data):
         try:
             message_id = data.get('message_id')
+            print(message_id)
             user = self.scope['user']
 
             if await self.delete_message(message_id, user):
@@ -492,29 +493,17 @@ class ChatConsumer(BaseChatConsumer):
             if 'object_id' in update_data:
                 request_rent.object_id = update_data['object_id']
 
-            if 'total_cost' in update_data:
-                request_rent.total_cost = Decimal(update_data['total_cost'])
-
             await database_sync_to_async(request_rent.save)()
-
-            # Загружаем данные синхронно в отдельном потоке
-            lessor = await database_sync_to_async(lambda: request_rent.vehicle.owner.lessor)()
-            franchise = await database_sync_to_async(
-                lambda: lessor.franchise if hasattr(lessor, 'franchise') else None)()
-            commission = await database_sync_to_async(lambda: lessor.commission)()
-
-            if franchise:
-                franchise_commission = await database_sync_to_async(lambda: franchise.commission)()
-                amount = Decimal(request_rent.total_cost) / Decimal(100) * (commission + Decimal(franchise_commission))
+            if request_rent.vehicle.owner.lessor.franchise:
+                amount = Decimal(request_rent.total_cost)/Decimal(100) * Decimal(request_rent.vehicle.owner.lessor.commission + Decimal(request_rent.vehicle.owner.lessor.franchise.commission))
             else:
-                amount = Decimal(request_rent.total_cost) / Decimal(100) * commission
-
+                amount = Decimal(request_rent.total_cost)/Decimal(100) * Decimal(request_rent.vehicle.owner.lessor.commission)
             message_content = {
                 "start_time": request_rent.start_time,
                 "end_time": request_rent.end_time,
                 "start_date": request_rent.start_date,
                 "end_date": request_rent.end_date,
-                "total_cost": float(request_rent.total_cost),
+                "total_cost": request_rent.total_cost,
                 "status": request_rent.status,
                 "vehicle_type": request_rent.content_type.model,
                 "vehicle_id": request_rent.object_id,

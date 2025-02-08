@@ -88,8 +88,6 @@ class RequestRent(models.Model):
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с fallback на меньший период."""
         from vehicle.models import RentPrice
-        if self.on_request:
-            return 0.00
         rental_days = self.rental_days
         if rental_days <= 0:
             raise ValueError("Количество дней аренды должно быть положительным.")
@@ -124,32 +122,28 @@ class RequestRent(models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Только при создании заявки
+        if not self.pk:
             if self.vehicle and not self.deposit_cost:
                 self.deposit_cost = self.vehicle.price_deposit
             self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
-
+            # Рассчитываем итоговую стоимость при создании
+            self.total_cost = self.calculate_rent_price()
+            # Проверка является ли заявки по запросу
             from vehicle.models import Availability
             availabilities = Availability.objects.filter(vehicle=self.vehicle)
+            for availability in availabilities:
+                if availability.on_request:
+                    self.on_request = True
+                    break
+                else:
+                    self.on_request = False
 
-            self.on_request = any(availability.on_request for availability in availabilities)
-
-            if not self.on_request:
-                # Только если аренда НЕ по запросу, пересчитываем total_cost
-                if self.total_cost is None or self.total_cost == 0:
-                    self.total_cost = self.calculate_rent_price()
-            else:
-                # Если on_request=True, не обнуляем total_cost, если оно уже задано
-                if self.total_cost is None:
-                    self.total_cost = Decimal(0)
-
-        else:  # Если заявка обновляется
+        else:
             original = RequestRent.objects.get(pk=self.pk)
             with transaction.atomic():
                 super(RequestRent, self).save(*args, **kwargs)
                 if original.status != 'accept' and self.status == 'accept':
-                    if self.total_cost is None or self.total_cost == 0:
-                        self.total_cost = self.calculate_rent_price()
+                    self.total_cost = self.calculate_rent_price()
                     self.create_payment()
 
         super(RequestRent, self).save(*args, **kwargs)
@@ -160,25 +154,23 @@ class RequestRent(models.Model):
         if self.vehicle.owner.lessor.franchise:
             amount = Decimal(self.total_cost) / 100 * Decimal(self.vehicle.owner.lessor.commission + self.vehicle.owner.lessor.franchise.commission)
         else:
-            amount = Decimal(self.total_cost) / 100 * self.vehicle.owner.lessor.commission
+            amount = Decimal(self.total_cost) / 100 * Decimal(self.vehicle.owner.lessor.commission)
         discount_amount = 0
 
         # Обработка промокода
         if self.promocode:
-            discount_amount = amount / 100 * float(
-                self.promocode.total)
+            discount_amount = amount / 100 * Decimal(self.promocode.total)
             amount -= discount_amount
 
         # Обработка бонусов
         if self.bonus:
-            bonus = float(self.bonus)
             renter = self.organizer.renter
-            if amount <= bonus:
+            if amount <= self.bonus:
                 renter.bonus_account -= amount
                 amount = 0  # Все покрыто бонусами
             else:
-                renter.bonus_account -= bonus
-                amount -= bonus
+                renter.bonus_account -= self.bonus
+                amount -= self.bonus
             renter.save()
 
         influencer = getattr(self.organizer.renter, 'influencer', None)
