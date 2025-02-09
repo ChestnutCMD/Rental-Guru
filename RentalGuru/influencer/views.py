@@ -19,7 +19,7 @@ from rest_framework.viewsets import ModelViewSet
 from chat.models import RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
     RequestWithdraw, RegistrationSource
-from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
+from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest, IsAdminOrOwner
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
     InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer, RequestWithdrawListSerializer, \
@@ -339,13 +339,13 @@ class InfluencerPaymentsView(ListAPIView):
     """
     Вью для вывода платежей по конкретному инфлюенсеру.
     """
-    permission_classes = [IsAdminOrManager]
+    permission_classes = [IsAdminOrOwner]
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
         influencer_id = self.kwargs.get('influencer_id')
         get_object_or_404(Influencer, id=influencer_id)
-        return Payment.objects.filter(influencer_id=influencer_id).select_related('request_rent', 'influencer').order_by('-updated_at')  # TODO добавить фильтр для оплаченый платежей
+        return Payment.objects.filter(influencer_id=influencer_id, status='success').select_related('request_rent', 'influencer').order_by('-updated_at')
 
 
 PERIODS = {
@@ -460,40 +460,3 @@ class InfluencerStatsView(APIView):
             "change_revenue": calculate_change(revenue, prev_revenue),
             "change_count_register": calculate_change(count_register, prev_count_register)
         })
-
-
-class InfluencerWithdrawRequestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="Запрос на вывод средств",
-        description="Отправляет запрос на вывод средств администратору.",
-        request={
-            "application/json": {
-                "type": "object",
-                "properties": {
-                    "amount": {
-                        "type": "number",
-                        "description": "Сумма для вывода средств"
-                    }
-                },
-                "required": ["amount"]
-            }
-        }
-    )
-    def post(self, request):
-        user = request.user
-        if not hasattr(user, 'influencer'):
-            return Response({"detail": "Вы не являетесь инфлюенсером."}, status=403)
-        amount = request.data.get("amount")
-
-        try:
-            amount = float(amount)
-            if amount <= 0:
-                raise ValueError
-        except (TypeError, ValueError):
-            return Response({"detail": "Некорректная сумма."}, status=400)
-
-        influencer = user.influencer
-        withdraw_request.delay(amount, influencer.user.get_full_name())
-        return Response({"detail": "Запрос на вывод средств отправлен."}, status=200)
