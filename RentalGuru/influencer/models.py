@@ -86,13 +86,7 @@ class Organization(models.Model):
     country = models.CharField(max_length=100, verbose_name="Страна")
     city = models.CharField(max_length=100, verbose_name="Город")
     address = models.CharField(max_length=255, verbose_name="Адрес")
-    bank_details = models.OneToOneField(
-        'BankDetails',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Банковские реквизиты"
-    )
+    bank_details = models.OneToOneField('BankDetails', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Банковские реквизиты")
 
     def __str__(self):
         return self.name
@@ -272,21 +266,18 @@ class UsedPromoCode(models.Model):
 
 
 class RequestWithdraw(models.Model):
-    STATUS_CHOISE = [('completed', 'Выполнено'), ('in_progress', 'В процессе'), ('rejected', 'Отказано')]
+    STATUS_CHOISE = [('completed', 'Выполнено'),
+                     ('in_progress', 'В процессе'),
+                     ('denied', 'Отказано')]
     influencer = models.ForeignKey(Influencer, on_delete=models.CASCADE, verbose_name='Инфлюенсер', related_name='withdraw')
-    amount = models.DateTimeField(verbose_name='Сумма')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Сумма')
     status = models.CharField(choices=STATUS_CHOISE, default='In_progress', verbose_name='Статус')
     created_at = models.DateTimeField(auto_now=True, verbose_name='Дата создания')
-    payment_date = models.DateTimeField(null=True, blank=True, verbose_name='Дата выплаты')
+    denied_reason = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Заявка на вывод средств'
         verbose_name_plural = 'Заявки на вывод средств'
-
-    def save(self, *args, **kwargs):
-        if self.status == 'completed' and not self.payment_date:
-            self.payment_date = timezone.now()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Заявка {self.id} от {self.influencer}"

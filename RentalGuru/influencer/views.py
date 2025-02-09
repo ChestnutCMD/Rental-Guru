@@ -22,7 +22,8 @@ from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCod
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
-    InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer
+    InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer, RequestWithdrawListSerializer, \
+    RequestWithdrawCreateSerializer
 from manager.permissions import ManagerObjectPermission
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -298,9 +299,18 @@ class ApplyPromoCodeView(APIView):
         return Response({'message': 'Промокод успешно применен.'})
 
 
+@extend_schema(summary='Заявки на вывод стредств', description='Вывод средств')
 class RequestWithdrawViewSet(viewsets.ModelViewSet):
     serializer_class = RequestWithdrawSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RequestWithdrawListSerializer
+        elif self.action == 'create':
+            return RequestWithdrawCreateSerializer
+        else:
+            return RequestWithdrawSerializer
 
     def get_permissions(self):
         """
@@ -319,17 +329,6 @@ class RequestWithdrawViewSet(viewsets.ModelViewSet):
         elif user.role in ['admin', 'manager']:
             return RequestWithdraw.objects.all()
         return RequestWithdraw.objects.none()
-
-    def perform_update(self, serializer):
-        if serializer.validated_data.get('status') == 'completed' and not serializer.validated_data.get('payment_date'):
-            serializer.validated_data['payment_date'] = timezone.now()
-        serializer.save()
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.status == 'completed' and instance.payment_date is None:
-            return Response({"detail": "Дата выплаты должна быть установлена при статусе 'Выполнено'."}, status=400)
-        return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)

@@ -503,25 +503,69 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         return (turnover * commission) / 100
 
 
+class WithdrawInfluencerSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    avatar = CustomAvatarField(source='user.avatar', required=False)
+    account_number = serializers.CharField(source='organization.bank_details.account_number')
+
+    class Meta:
+        model = Influencer
+        fields = ['id', 'first_name', 'last_name', 'avatar', 'account_number', ]
+
+
+class RequestWithdrawListSerializer(serializers.ModelSerializer):
+    influencer = WithdrawInfluencerSerializer()
+
+    class Meta:
+        model = RequestWithdraw
+        fields = ['id', 'influencer', 'created_at', 'amount', 'status']
+
+
+class RequestWithdrawCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestWithdraw
+        fields = ['amount']
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        if not user.influencer:
+            raise serializers.ValidationError({"influencer": "Пользователь не является партнером"})
+        validated_data['influencer'] = user.influencer
+        return super().create(validated_data)
+
+
 class RequestWithdrawSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestWithdraw
         fields = '__all__'
+        read_only_fields = ['id', 'influencer', 'amount', 'created_at']
 
-    def validate(self, data):
-        if data.get('status') == 'completed' and not data.get('payment_date'):
-            raise serializers.ValidationError('Дата выплаты должна быть установлена при статусе "Выполнено".')
-        return data
+    def validate(self, attrs):
+        request = self.context['request']
+        user = request.user
+        status = attrs.get('status', self.instance.status if self.instance else None)
+        denied_reason = attrs.get('denied_reason')
 
-    def create(self, validated_data):
-        user = self.context['request'].user
+        if self.instance and 'status' in attrs:
+            if user.role not in ['admin', 'manager']:
+                raise serializers.ValidationError({"status": "Вы не можете изменять статус."})
 
-        if hasattr(user, 'influencer'):
-            validated_data['influencer'] = user.influencer
-        else:
-            raise ValidationError('Текущий пользователь не является инфлюенсером.')
+            if status == 'denied' and not denied_reason:
+                raise serializers.ValidationError({"denied_reason": "Необходимо указать причину отказа."})
 
-        return super().create(validated_data)
+            if status != 'denied' and denied_reason:
+                attrs['denied_reason'] = None
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        status = validated_data.get('status', instance.status)
+        if status == 'denied' and not validated_data.get('denied_reason'):
+            raise serializers.ValidationError({"denied_reason": "Необходимо указать причину отказа."})
+
+        return super().update(instance, validated_data)
 
 
 class PaymentSerializer(serializers.ModelSerializer):
