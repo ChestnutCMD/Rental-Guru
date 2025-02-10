@@ -15,7 +15,7 @@ from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, RatingUpdateLog
-from .filters import MessageFilter, TripFilter
+from .filters import MessageFilter, TripFilter, TripFilterBackend, RequestRentFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 from .permissions import IsAdminOrOwner
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
@@ -34,33 +34,44 @@ from .utils import is_period_contained, subtract_periods
                                 type=str,
                                 enum=['current', 'started', 'finished', 'canceled'],
                                 required=False,
-                            )]
-)
+                            ),
+                            OpenApiParameter(
+                                name='lessor_id', type=int,
+                                description='ID арендодателя (доступно только для admin/manager)'
+                            )
+                           ]
+               )
 class TripViewSet(viewsets.ModelViewSet):
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [TripFilterBackend]
     filterset_class = TripFilter
 
     def get_queryset(self):
         user = self.request.user
-        auto_content_type = ContentType.objects.get_for_model(Auto)
-        bike_content_type = ContentType.objects.get_for_model(Bike)
-        ship_content_type = ContentType.objects.get_for_model(Ship)
-        helicopter_content_type = ContentType.objects.get_for_model(Helicopter)
-        special_technic_content_type = ContentType.objects.get_for_model(SpecialTechnic)
 
-        return Trip.objects.filter(Q(organizer=user) |
-                                   Q(content_type=auto_content_type,
-                                     object_id__in=Auto.objects.filter(owner=user).values('id')) |
-                                   Q(content_type=bike_content_type,
-                                     object_id__in=Bike.objects.filter(owner=user).values('id')) |
-                                   Q(content_type=ship_content_type,
-                                     object_id__in=Ship.objects.filter(owner=user).values('id')) |
-                                   Q(content_type=helicopter_content_type,
-                                     object_id__in=Helicopter.objects.filter(owner=user).values('id')) |
-                                   Q(content_type=special_technic_content_type,
-                                     object_id__in=SpecialTechnic.objects.filter(owner=user).values('id')))
+        if user.role in ['admin', 'manager']:
+            return Trip.objects.all()
+
+        if hasattr(user, 'renter'):
+            return Trip.objects.filter(organizer=user)
+
+        if hasattr(user, 'lessor'):
+            auto_ids = Auto.objects.filter(owner=user).values_list('id', flat=True)
+            bike_ids = Bike.objects.filter(owner=user).values_list('id', flat=True)
+            ship_ids = Ship.objects.filter(owner=user).values_list('id', flat=True)
+            helicopter_ids = Helicopter.objects.filter(owner=user).values_list('id', flat=True)
+            special_technic_ids = SpecialTechnic.objects.filter(owner=user).values_list('id', flat=True)
+
+            return Trip.objects.filter(
+                Q(content_type=ContentType.objects.get_for_model(Auto), object_id__in=auto_ids) |
+                Q(content_type=ContentType.objects.get_for_model(Bike), object_id__in=bike_ids) |
+                Q(content_type=ContentType.objects.get_for_model(Ship), object_id__in=ship_ids) |
+                Q(content_type=ContentType.objects.get_for_model(Helicopter), object_id__in=helicopter_ids) |
+                Q(content_type=ContentType.objects.get_for_model(SpecialTechnic), object_id__in=special_technic_ids)
+            )
+
+        return Trip.objects.none()
 
 
 @extend_schema(summary="Чат между арендатором и арендодателем",
@@ -170,7 +181,7 @@ class ChatViewSet(viewsets.ModelViewSet):
         else:
             queryset = Chat.objects.filter(participants=user)
 
-        return queryset
+        return queryset.distinct()
 
     def get_permissions(self):
         if hasattr(self.request.user, 'manager') and self.request.user.manager:
@@ -195,27 +206,57 @@ class MessageViewSet(viewsets.ModelViewSet):
 @extend_schema(summary="Заявка на аренду", description="Заявка на аренду. Создать может только пользователь renter.\
                                                 После создания пользователь, который является владельцем транспорта,\
                                                 может обновить статус заявки - принять или отклонить (accept|denied).\
-                                                При изменении статуса на accept автоматически создается поездка Trip)")
+                                                При изменении статуса на accept автоматически создается поездка Trip)",
+               parameters=[
+                   OpenApiParameter(
+                       name="status",
+                       description="Статус заявки ('accept', 'denied', 'unknown')",
+                       type=str,
+                       enum=['accept', 'denied', 'unknown'],
+                       required=False,
+                   ),
+                   OpenApiParameter(
+                       name='lessor_id', type=int,
+                       description='ID арендодателя (доступно только для admin/manager)'
+                   )
+               ]
+               )
 class RequestRentViewSet(viewsets.ModelViewSet):
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [TripFilterBackend]  # Используем тот же кастомный бэкенд
+    filterset_class = RequestRentFilter
 
     def get_queryset(self):
         user = self.request.user
-        content_types = {
-            'Auto': ContentType.objects.get_for_model(Auto),
-            'Bike': ContentType.objects.get_for_model(Bike),
-            'Ship': ContentType.objects.get_for_model(Ship),
-            'Helicopter': ContentType.objects.get_for_model(Helicopter),
-            'SpecialTechnic': ContentType.objects.get_for_model(SpecialTechnic)
-        }
 
-        filters = Q(organizer=user)
-        for model_name, content_type in content_types.items():
-            model = content_type.model_class()
-            filters |= Q(content_type=content_type, object_id__in=model.objects.filter(owner=user).values('id'))
+        # Если admin или manager - возвращаем все заявки
+        if user.role in ['admin', 'manager']:
+            return RequestRent.objects.filter(is_deleted=False)
 
-        return RequestRent.objects.filter(filters, is_deleted=False)
+        # Если пользователь - арендатор (renter), показываем только его заявки
+        if hasattr(user, 'renter'):
+            return RequestRent.objects.filter(organizer=user, is_deleted=False)
+
+        # Если пользователь - арендодатель (lessor), показываем заявки на его транспорт
+        if hasattr(user, 'lessor'):
+            content_types = [
+                ContentType.objects.get_for_model(model)
+                for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]
+            ]
+
+            vehicle_ids = {
+                content_type: content_type.model_class().objects.filter(owner=user).values_list('id', flat=True)
+                for content_type in content_types
+            }
+
+            q_objects = Q()
+            for content_type, ids in vehicle_ids.items():
+                q_objects |= Q(content_type=content_type, object_id__in=ids)
+
+            return RequestRent.objects.filter(is_deleted=False).filter(q_objects)
+
+        return RequestRent.objects.none()
 
     def check_permissions(self, request):
         user = self.request.user
