@@ -309,14 +309,11 @@ class UpdateRatingView(APIView):
                 trip = Trip.objects.filter(
                     organizer=request.user,
                     content_type=content_type,
-                    object_id=vehicle_id
+                    object_id=vehicle_id,
+                    status='finished'
                 ).first()
             except Trip.DoesNotExist:
                 return Response({"error": "Не найдено соответствующей поездки"}, status=status.HTTP_404_NOT_FOUND)
-
-            # Проверка завершения поездки
-            if trip.status != 'finished':
-                return Response({"error": "Поездка еще не завершилась"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Обновляем рейтинги
             ratings_fields = ['Cleanliness', 'Maintenance', 'Communication', 'Convenience', 'Accuracy']
