@@ -57,6 +57,9 @@ class PaymentViewSet(viewsets.ViewSet):
             if not payment.request_rent.id:
                 return Response({'detail': 'Некорректная заявка на аренду.'}, status=status.HTTP_400_BAD_REQUEST)
 
+            if payment.url:
+                return Response({'detail': 'Платеж уже инициализирован.', 'payment_url': payment.url})
+
             receipt = {
                 "Email": request.user.email,
                 "Phone": request.user.telephone if hasattr(request.user, 'telephone') else None,
