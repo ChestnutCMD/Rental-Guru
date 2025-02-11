@@ -16,6 +16,7 @@ class TripSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
     owner_user_id = serializers.SerializerMethodField()
+    owner_lessor_id = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     owner_telephone = serializers.SerializerMethodField()
     owner_avatar = serializers.SerializerMethodField()
@@ -23,8 +24,8 @@ class TripSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trip
-        fields = ['id', 'type', 'status', 'object', 'start_date', 'end_date', 'total_cost',
-                  'owner_user_id', 'owner', 'owner_telephone', 'owner_avatar', 'chat_id',
+        fields = ['id', 'type', 'status', 'object', 'object_id', 'start_date', 'end_date', 'total_cost',
+                  'owner_user_id', 'owner_lessor_id', 'owner', 'owner_telephone', 'owner_avatar', 'chat_id',
                   'organizer', 'organizer_user_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
 
     def get_chat_id(self, obj):
@@ -55,6 +56,10 @@ class TripSerializer(serializers.ModelSerializer):
     def get_owner_user_id(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return vehicle.owner.id if vehicle and vehicle.owner else None
+
+    def get_owner_lessor_id(self, obj):
+        vehicle = Vehicle.objects.filter(id=obj.object_id).first()
+        return vehicle.owner.lessor.id if vehicle and vehicle.owner else None
     
     def get_owner_telephone(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
