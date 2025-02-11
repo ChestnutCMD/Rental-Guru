@@ -17,11 +17,12 @@ from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport,
 class TripSerializer(serializers.ModelSerializer):
     set_rating = serializers.SerializerMethodField()
     set_feedback = serializers.SerializerMethodField()
+    owner_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
-        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status', 'set_rating', 'set_feedback']
-        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'set_rating', 'set_feedback']
+        fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'status', 'set_rating', 'set_feedback', 'owner_name']
+        read_only_fields = ['id', 'chat', 'organizer', 'content_type', 'object_id', 'start_time', 'end_time', 'start_date',  'end_date', 'total_cost', 'set_rating', 'set_feedback', 'owner_name']
 
     def get_set_rating(self, instance):
         return RatingUpdateLog.objects.filter(
@@ -29,6 +30,12 @@ class TripSerializer(serializers.ModelSerializer):
             content_type=instance.content_type,
             object_id=instance.object_id
         ).exists()
+
+    def get_owner_name(self, instance):
+        vehicle = instance.vehicle
+        if vehicle and hasattr(vehicle, 'owner'):
+            return vehicle.owner.first_name
+        return None
 
     def get_set_feedback(self, instance):
         return Feedback.objects.filter(

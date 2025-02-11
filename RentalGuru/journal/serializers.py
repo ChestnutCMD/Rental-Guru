@@ -55,7 +55,7 @@ class TripSerializer(serializers.ModelSerializer):
     def get_owner_user_id(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return vehicle.owner.id if vehicle and vehicle.owner else None
-
+    
     def get_owner_telephone(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
         return vehicle.owner.telephone if vehicle and vehicle.owner else None
