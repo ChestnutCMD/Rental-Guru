@@ -27,7 +27,7 @@ class BaseFilter(django_filters.FilterSet):
     def filter_by_lessor(self, queryset, name, value):
         request = self.request
 
-        if request.user.role not in ['admin', 'manager']:
+        if request.user.role not in ['admin', 'manager'] and not hasattr(request.user, 'franchise'):
             return queryset
 
         lessor = Lessor.objects.filter(id=value).first()

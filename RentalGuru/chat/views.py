@@ -10,11 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from RentalGuru import settings
-from feedback.models import Feedback
+from app.models import Lessor
 from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
-from payment.models import Payment
-from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, RatingUpdateLog
+from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
 from .filters import MessageFilter, TripFilter, TripFilterBackend, RequestRentFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 from .permissions import IsAdminOrOwner
@@ -44,32 +43,31 @@ from .utils import is_period_contained, subtract_periods
 class TripViewSet(viewsets.ModelViewSet):
     serializer_class = TripSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [TripFilterBackend]
+    filter_backends = [TripFilterBackend, DjangoFilterBackend]
     filterset_class = TripFilter
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Trip.objects.all()
 
-        if user.role in ['admin', 'manager']:
-            return Trip.objects.all()
+        # Если админ или менеджер без франшизы, отдаем все поездки
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
+            return queryset
 
+        # Если директор франшизы или менеджер франшизы, показываем поездки, связанные с франшизой
+        if hasattr(user, 'franchise') and user.franchise:
+            lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
+            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+            return queryset.filter(object_id__in=vehicle_ids)
+
+        # Если арендатор, показываем только его поездки
         if hasattr(user, 'renter'):
-            return Trip.objects.filter(organizer=user)
+            return queryset.filter(organizer=user)
 
+        # Если арендодатель, показываем поездки по его транспорту
         if hasattr(user, 'lessor'):
-            auto_ids = Auto.objects.filter(owner=user).values_list('id', flat=True)
-            bike_ids = Bike.objects.filter(owner=user).values_list('id', flat=True)
-            ship_ids = Ship.objects.filter(owner=user).values_list('id', flat=True)
-            helicopter_ids = Helicopter.objects.filter(owner=user).values_list('id', flat=True)
-            special_technic_ids = SpecialTechnic.objects.filter(owner=user).values_list('id', flat=True)
-
-            return Trip.objects.filter(
-                Q(content_type=ContentType.objects.get_for_model(Auto), object_id__in=auto_ids) |
-                Q(content_type=ContentType.objects.get_for_model(Bike), object_id__in=bike_ids) |
-                Q(content_type=ContentType.objects.get_for_model(Ship), object_id__in=ship_ids) |
-                Q(content_type=ContentType.objects.get_for_model(Helicopter), object_id__in=helicopter_ids) |
-                Q(content_type=ContentType.objects.get_for_model(SpecialTechnic), object_id__in=special_technic_ids)
-            )
+            vehicle_ids = Vehicle.objects.filter(owner=user).values_list('id', flat=True)
+            return queryset.filter(object_id__in=vehicle_ids)
 
         return Trip.objects.none()
 
@@ -224,15 +222,21 @@ class MessageViewSet(viewsets.ModelViewSet):
 class RequestRentViewSet(viewsets.ModelViewSet):
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [TripFilterBackend]  # Используем тот же кастомный бэкенд
+    filter_backends = [TripFilterBackend]
     filterset_class = RequestRentFilter
 
     def get_queryset(self):
         user = self.request.user
 
         # Если admin или manager - возвращаем все заявки
-        if user.role in ['admin', 'manager']:
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
             return RequestRent.objects.filter(is_deleted=False)
+
+        # Если директор франшизы или менеджер франшизы, показываем поездки, связанные с франшизой
+        if hasattr(user, 'franchise') and user.franchise:
+            lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
+            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+            return RequestRent.objects.filter(is_deleted=False, object_id__in=vehicle_ids)
 
         # Если пользователь - арендатор (renter), показываем только его заявки
         if hasattr(user, 'renter'):
