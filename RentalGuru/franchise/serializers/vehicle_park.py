@@ -41,11 +41,7 @@ class VehicleSerializer(BaseVehicleListSerializer):
 
     class Meta:
         model = Vehicle
-        fields = [
-            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
-            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'current_trip'
-        ]
-        read_only_fields = ['average_ratings']
+        fields = BaseVehicleListSerializer.Meta.fields + ['current_trip']
 
 
 class VehicleParkRetrieveSerializer(serializers.ModelSerializer):
