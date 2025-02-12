@@ -166,14 +166,9 @@ class FranchiseReportView(ListAPIView):
         total_franchise_commission = sum(item['franchise_commission_amount'] for item in serializer.data)
         total_canceled_count = sum(item['canceled_orders_count'] for item in serializer.data)
 
-        avg_commission = queryset.aggregate(
-            avg=Avg('commission')
-        )['avg'] or 0
-
         response_data = {
             'total_completed_amount': total_completed_amount,
             'total_lessors_commission': total_lessors_commission,
-            'avg_lessors_commission': float(avg_commission),
             'total_canceled_count': total_canceled_count,
             'total_canceled_amount': total_canceled_amount,
             'total_franchise_commission': total_franchise_commission

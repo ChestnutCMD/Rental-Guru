@@ -138,6 +138,7 @@ class OrganizerSerializer(serializers.ModelSerializer):
 
 class RequestRentSerializer(serializers.ModelSerializer):
     organizer = OrganizerSerializer()
+    lessor_id = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
     count_days = serializers.SerializerMethodField()
@@ -146,9 +147,13 @@ class RequestRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestRent
         fields = [
-            'id', 'organizer', 'type', 'status', 'object', 'start_date',
+            'id', 'organizer', 'type', 'status', 'object', 'object_id', 'lessor_id', 'start_date',
             'end_date', 'count_days', 'total_cost', 'chat_id'
         ]
+
+    def get_lessor_id(self, obj):
+        vehicle = Vehicle.objects.filter(id=obj.object_id).first()
+        return vehicle.owner.lessor.id
 
     def get_type(self, obj):
         return obj.content_type.model
