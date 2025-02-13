@@ -148,6 +148,13 @@ class FranchiseReportView(ListAPIView):
     def get_queryset(self):
         return Franchise.objects.all()
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Передаем период в контекст сериализатора
+        period = self.request.query_params.get('period')
+        context['period'] = period
+        return context
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 

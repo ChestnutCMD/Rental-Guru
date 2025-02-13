@@ -229,7 +229,7 @@ class FranchiseReportSerializer(serializers.ModelSerializer):
                   'franchise_commission_amount']
 
     def get_trips_for_franchise(self, obj, status=None):
-        """Получает все поездки для транспортных средств в городе франшизы"""
+        """Получает все поездки для транспортных средств в городе франшизы с учетом периода"""
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         trips_query = Q()
 
@@ -247,6 +247,16 @@ class FranchiseReportSerializer(serializers.ModelSerializer):
                 )
 
         filters = {'status': status} if status else {}
+
+        period = self.context.get('period')
+        if period:
+            start_date, end_date = obj.get_date_range(period)
+            if start_date and end_date:
+                filters.update({
+                    'end_date__gte': start_date,
+                    'end_date__lte': end_date
+                })
+
         return Trip.objects.filter(trips_query, **filters)
 
     def get_completed_orders_amount(self, obj):
