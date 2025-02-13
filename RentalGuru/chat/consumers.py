@@ -388,7 +388,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             message_data_list.append(message_data)
 
             if self.language != 'original':
-                translate_message.delay(message.id, message.content, self.language, self.channel_name)
+                if not TRANSACTION_MESSAGE_PATTERN.search(message.content):
+                    translate_message.delay(message.id, message.content, self.language, self.channel_name)
 
         return message_data_list
 
