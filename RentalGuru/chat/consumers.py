@@ -21,6 +21,14 @@ from chat.models import MessageSupport, ChatSupport, Message, Chat
 from manager.permissions import WebSocketPermissionChecker
 from notification.models import Notification
 from .tasks import translate_message
+import re
+
+TRANSACTION_MESSAGE_PATTERN = re.compile(
+    r'"status"\s*:\s*".+?"\s*,\s*"organizer_id"\s*:\s*\d+\s*,\s*"vehicle_id"\s*:\s*\d+\s*,\s*'
+    r'"vehicle_type"\s*:\s*".+?"\s*,\s*"start_date"\s*:\s*".+?"\s*,\s*"end_date"\s*:\s*".+?"\s*,\s*'
+    r'"start_time"\s*:\s*".+?"\s*,\s*"end_time"\s*:\s*".+?"\s*,\s*"total_cost"\s*:\s*\d+(\.\d+)?\s*,\s*'
+    r'"deposit_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery"\s*:\s*(true|false)'
+)
 
 translator = Translator()
 logger = logging.getLogger(__name__)
@@ -31,7 +39,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     language_preferences = {}
 
     async def connect(self):
-        """ Обработка соединения с чатом """
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.chat_group_name = f'chat_{self.chat_id}'
 
@@ -71,7 +78,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         return JWTAuthentication().get_user(validated_token)
 
     async def disconnect(self, close_code):
-        """ Отключение от чата """
         if self.chat_group_name in BaseChatConsumer.language_preferences:
             BaseChatConsumer.language_preferences[self.chat_group_name].pop(self.channel_name, None)
             if not BaseChatConsumer.language_preferences[self.chat_group_name]:
@@ -195,34 +201,26 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 }))
                 return False
 
-        logger.info(f"Original message: {message_content}")
-
         try:
+            # Сохранение сообщения
             message = await self.save_message(user, message_content, file)
             message_data = self.format_message(message, user)
 
-            group_languages = set()
-            if self.chat_group_name in BaseChatConsumer.language_preferences:
-                group_languages = set(BaseChatConsumer.language_preferences[self.chat_group_name].values())
-
-            translations = {}
-            for lang in group_languages:
-                if lang != 'original':
-                    try:
-                        translations[lang] = translator.translate(message_content, dest=lang).text
-                    except Exception as e:
-                        logger.error(f"Error translating to {lang}: {e}")
-                        translations[lang] = message_content
-
+            # Отправление сообщения всем участникам чата
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
                     'type': 'chat_message',
                     'message': message_data,
-                    'translations': translations,
                     'action': 'new'
                 }
             )
+            # Запуск асинхронных переводов для всех языков в группе
+            if not TRANSACTION_MESSAGE_PATTERN.search(json.dumps(message_data)):
+                if self.chat_group_name in BaseChatConsumer.language_preferences:
+                    for channel, lang in BaseChatConsumer.language_preferences[self.chat_group_name].items():
+                        if lang != 'original' and channel != self.channel_name:
+                            translate_message.delay(message.id, message_content, lang, channel)
 
             return True
         except Exception as e:
@@ -333,17 +331,18 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 'type': 'delete',
                 'message_id': event['message_id']
             }))
-            return
+        else:
+            await self.send(text_data=json.dumps({
+                'type': action,
+                'message': event['message']
+            }, ensure_ascii=False))
 
-        message_data = event['message'].copy()
-        translations = event.get('translations', {})
-
-        if self.language in translations:
-            message_data['content'] = translations[self.language]
-
+    async def chat_message_translated(self, event):
+        """Обработчик для переведенных сообщений"""
         await self.send(text_data=json.dumps({
-            'type': action,
-            'message': message_data
+            'type': 'message_translated',
+            'message_id': event['message_id'],
+            'translated_content': event['translated_content']
         }, ensure_ascii=False))
 
     @database_sync_to_async
@@ -386,15 +385,10 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         for message in reversed(messages):
             message_data = self.format_message(message, message.sender)
+            message_data_list.append(message_data)
 
             if self.language != 'original':
-                try:
-                    translated_content = translator.translate(message.content, dest=self.language).text
-                    message_data['content'] = translated_content
-                except Exception as e:
-                    logger.error(f"Error translating previous message: {e}")
-
-            message_data_list.append(message_data)
+                translate_message.delay(message.id, message.content, self.language, self.channel_name)
 
         return message_data_list
 
