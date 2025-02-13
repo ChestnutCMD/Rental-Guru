@@ -282,13 +282,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def save_message(self, user, message_content, file=None):
         chat = self.get_chat_instance()
-        logger.info(f"Chat instance: {chat}")
-        logger.info(f"Chat type: {type(chat)}")
-        logger.info(f"User: {user}")
-        logger.info(f"Message content: {message_content}")
-        logger.info(f"File: {file}")
         message = self.create_message_instance(chat, user, message_content, file)
-        logger.info(f"Created message: {message}")
         return message
 
     @database_sync_to_async
@@ -297,12 +291,14 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             try:
                 message = self.get_messages_objects().objects.select_for_update().get(
                     id=message_id,
-                    sender=user,
                     deleted=False
                 )
-                message.content = new_content
-                message.save()
-                return message
+                chat = message.chat
+                if message.sender == user or WebSocketPermissionChecker.check_chat_permission(user, chat):
+                    message.content = new_content
+                    message.save()
+                    return message
+                return None
             except self.get_messages_objects().DoesNotExist:
                 return None
 
@@ -313,12 +309,14 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             try:
                 message = self.get_messages_objects().objects.select_for_update().get(
                     id=message_id,
-                    sender=user,
                     deleted=False
                 )
-                message.deleted = True
-                message.save()
-                return True
+                chat = message.chat
+                if message.sender == user or WebSocketPermissionChecker.check_chat_permission(user, chat):
+                    message.deleted = True
+                    message.save()
+                    return True
+                return False
             except self.get_messages_objects().DoesNotExist:
                 return False
 
@@ -634,7 +632,7 @@ class ChatConsumer(BaseChatConsumer):
         )
 
     def check_user_access(self, user, chat):
-        if user.role in ['admin', 'manager']:
+        if WebSocketPermissionChecker.check_chat_permission(user, chat):
             return True
 
         is_franchise_director = (
