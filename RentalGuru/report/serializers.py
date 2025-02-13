@@ -307,7 +307,7 @@ class FranchiseReportSerializer(serializers.ModelSerializer):
 
     def get_franchise_commission_amount(self, obj):
         """Комиссия франшизы от всех заказов"""
-        all_trips = self.get_trips_for_franchise(obj)
+        all_trips = self.get_trips_for_franchise(obj, status='finished')
         total_cost = all_trips.aggregate(
             total=Sum('total_cost')
         )['total'] or Decimal('0.00')
