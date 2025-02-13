@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 class BaseChatConsumer(AsyncWebsocketConsumer):
     """ Базовый чат от кторого наследуются чат на аренду и чат с техподдержкой"""
+    language_preferences = {}
+
     async def connect(self):
         """ Обработка соединения с чатом """
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
@@ -49,6 +51,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
+        if self.chat_group_name not in BaseChatConsumer.language_preferences:
+            BaseChatConsumer.language_preferences[self.chat_group_name] = {}
+
+        BaseChatConsumer.language_preferences[self.chat_group_name][self.channel_name] = self.language
+
         await self.channel_layer.group_add(
             self.chat_group_name,
             self.channel_name
@@ -65,6 +72,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         """ Отключение от чата """
+        if self.chat_group_name in BaseChatConsumer.language_preferences:
+            BaseChatConsumer.language_preferences[self.chat_group_name].pop(self.channel_name, None)
+            if not BaseChatConsumer.language_preferences[self.chat_group_name]:
+                BaseChatConsumer.language_preferences.pop(self.chat_group_name, None)
+
         await self.channel_layer.group_discard(
             self.chat_group_name,
             self.channel_name
@@ -89,7 +101,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
 
-            # Проверяем наличие типа сообщения
             if 'type' not in data:
                 await self.send(text_data=json.dumps({
                     'type': 'error',
@@ -163,10 +174,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         base64_file = data.get('file')
         file = None
         if base64_file:
-            logger.info(f"Received data: {data}")
             try:
-                file_data = base64.b64decode(
-                    base64_file.split(',')[-1])
+                file_data = base64.b64decode(base64_file.split(',')[-1])
                 file_name = data.get('name', 'unnamed_file')
                 content_type = data.get('type', 'application/octet-stream')
 
@@ -178,7 +187,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     size=len(file_data),
                     charset=None
                 )
-                logger.info(f"File name: {file_name}, size: {len(file_data)}, type: {content_type}")
             except Exception as e:
                 logger.error(f"Error decoding base64 file: {e}")
                 await self.send(text_data=json.dumps({
@@ -190,25 +198,32 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"Original message: {message_content}")
 
         try:
-            translated_message_content = translator.translate(message_content, dest=self.language).text
-        except Exception as e:
-            logger.error(f"Error during translation: {e}")
-            translated_message_content = message_content
-
-        logger.info(f"Translated message: {translated_message_content}")
-
-        try:
-            message = await self.save_message(user, translated_message_content, file)
+            message = await self.save_message(user, message_content, file)
             message_data = self.format_message(message, user)
+
+            group_languages = set()
+            if self.chat_group_name in BaseChatConsumer.language_preferences:
+                group_languages = set(BaseChatConsumer.language_preferences[self.chat_group_name].values())
+
+            translations = {}
+            for lang in group_languages:
+                if lang != 'original':
+                    try:
+                        translations[lang] = translator.translate(message_content, dest=lang).text
+                    except Exception as e:
+                        logger.error(f"Error translating to {lang}: {e}")
+                        translations[lang] = message_content
 
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
                     'type': 'chat_message',
                     'message': message_data,
+                    'translations': translations,
                     'action': 'new'
                 }
             )
+
             return True
         except Exception as e:
             logger.error(f"Error saving message: {str(e)}")
@@ -244,7 +259,6 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     async def handle_delete_message(self, data):
         try:
             message_id = data.get('message_id')
-            print(message_id)
             user = self.scope['user']
 
             if await self.delete_message(message_id, user):
@@ -311,6 +325,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 return False
 
     async def chat_message(self, event):
+        """Обработчик входящих сообщений"""
         action = event.get('action', 'new')
 
         if action == 'delete':
@@ -318,11 +333,18 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 'type': 'delete',
                 'message_id': event['message_id']
             }))
-        else:
-            await self.send(text_data=json.dumps({
-                'type': action,
-                'message': event['message']
-            }, ensure_ascii=False))
+            return
+
+        message_data = event['message'].copy()
+        translations = event.get('translations', {})
+
+        if self.language in translations:
+            message_data['content'] = translations[self.language]
+
+        await self.send(text_data=json.dumps({
+            'type': action,
+            'message': message_data
+        }, ensure_ascii=False))
 
     @database_sync_to_async
     def user_has_access(self):
@@ -364,9 +386,15 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         for message in reversed(messages):
             message_data = self.format_message(message, message.sender)
-            message_data_list.append(message_data)
 
-            translate_message.delay(message.id, message.content, self.language, self.channel_name)
+            if self.language != 'original':
+                try:
+                    translated_content = translator.translate(message.content, dest=self.language).text
+                    message_data['content'] = translated_content
+                except Exception as e:
+                    logger.error(f"Error translating previous message: {e}")
+
+            message_data_list.append(message_data)
 
         return message_data_list
 
