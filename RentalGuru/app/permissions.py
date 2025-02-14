@@ -30,12 +30,9 @@ class IsAdminOrSelfOrDirector(ManagerObjectPermission):
     def has_object_permission(self, request, view, obj):
         if super().has_object_permission(request, view, obj):
             return True
-
-        if hasattr(request.user, 'renter') and obj.renter == request.user.renter:
+        if obj == request.user:
             return True
-        if hasattr(request.user, 'lessor') and obj.lessor == request.user.lessor:
-            return True
-        if hasattr(request.user, 'franchise') and obj.lessor.franchise.director == request.user:
+        if hasattr(request.user, 'franchise') and hasattr(obj, 'lessor') and obj.lessor.franchise.director == request.user:
             return True
         return False
 
