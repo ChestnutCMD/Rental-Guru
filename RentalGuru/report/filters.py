@@ -2,9 +2,10 @@ from datetime import timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.timezone import now
 from django_filters import rest_framework as filters
 
-from app.models import Lessor, Renter
+from app.models import Lessor, Renter, User
 from chat.models import Trip
 from franchise.models import City, Franchise
 from influencer.models import Influencer
@@ -101,7 +102,6 @@ class InfluencerReportFilter(filters.FilterSet):
         if not value:
             return queryset
 
-        # Получаем ID рентеров, у которых есть поездки в указанном городе
         vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
         city_vehicles_query = Q()
 
@@ -118,15 +118,12 @@ class InfluencerReportFilter(filters.FilterSet):
                     object_id__in=vehicles
                 )
 
-        # Находим поездки в указанном городе
         trips_in_city = Trip.objects.filter(city_vehicles_query)
 
-        # Получаем ID рентеров из этих поездок
         renters_in_city = Renter.objects.filter(
             user__in=trips_in_city.values_list('organizer_id', flat=True)
         )
 
-        # Фильтруем инфлюенсеров, у которых есть рентеры с поездками в указанном городе
         return queryset.filter(renters__in=renters_in_city).distinct()
 
 
@@ -150,3 +147,30 @@ class FranchiseReportFilter(filters.FilterSet):
 
     def filter_period(self, queryset, name, value):
         return queryset
+
+
+class UserRegistrationReportFilter(filters.FilterSet):
+    period = filters.ChoiceFilter(
+        choices=[
+            ('day', 'День'),
+            ('week', 'Неделя'),
+            ('month', 'Месяц'),
+            ('quarter', 'Квартал'),
+            ('year', 'Год'),
+        ],
+        method='filter_by_period'
+    )
+
+    class Meta:
+        model = User
+        fields = ['period']
+
+    def filter_by_period(self, queryset, name, value):
+        date_lookup = {
+            'day': now().date(),
+            'week': now() - timedelta(days=7),
+            'month': now() - timedelta(days=30),
+            'quarter': now() - timedelta(days=90),
+            'year': now() - timedelta(days=365),
+        }
+        return queryset.filter(date_joined__gte=date_lookup.get(value, now().date()))

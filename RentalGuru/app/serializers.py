@@ -34,18 +34,19 @@ class RegisterSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(required=True)
     date_of_birth = serializers.DateField(required=True)
     member_type = serializers.ChoiceField(choices=[('renter', 'Renter'), ('lessor', 'Lessor')], write_only=True, required=True)
+    platform = serializers.ChoiceField(choices=['ios', 'android', 'web'], write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type']
+        fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'member_type', 'platform']
 
     def create(self, validated_data):
         request = self.context.get('request')
-        current_user = request.user if request and request.user.is_authenticated else None
         member_type = validated_data.pop('member_type')
         ref = request.query_params.get('ref', None)
         ref_code = request.query_params.get('code', None)
         promocode = request.query_params.get('promocode', None)
+        platform = request.validated_data.get('platform', 'unknown')
 
         # Проверка свободного Email
         user = User.objects.filter(email=validated_data['email'])
@@ -64,9 +65,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             'status': 'not confirmed',
             'attempts': 0,
             'last_attempt': datetime.now().isoformat(),
-            'code': code
+            'code': code,
+            'platform': platform
         }
-
         # Обработка инфлюенсера по реферальному коду
         if ref:
             try:
@@ -82,7 +83,6 @@ class RegisterSerializer(serializers.ModelSerializer):
                     cache_data['source_details'] = qr_code.referral_link
                 except QRCode.DoesNotExist:
                     raise serializers.ValidationError({"referral_code": "Неправильный реферальный код или ссылка."})
-
         elif promocode:
             try:
                 promo = PromoCode.objects.get(title=promocode)
@@ -418,6 +418,7 @@ class OauthProviderSerializer(serializers.Serializer):
     ref = serializers.CharField(required=False, allow_blank=True)
     referral_code = serializers.CharField(required=False, allow_blank=True)
     promocode = serializers.CharField(required=False, allow_blank=True)
+    platform = serializers.ChoiceField(choices=['ios', 'android', 'web'], required=False)
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

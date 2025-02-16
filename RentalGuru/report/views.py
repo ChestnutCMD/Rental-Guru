@@ -1,17 +1,20 @@
+from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Avg
+from django.db.models import Avg, Count
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
-from app.models import Lessor
+from app.models import Lessor, User
 from franchise.models import Franchise
 from influencer.models import Influencer
-from report.filters import LessorReportFilter, InfluencerReportFilter, FranchiseReportFilter
+from report.filters import LessorReportFilter, InfluencerReportFilter, FranchiseReportFilter, UserRegistrationReportFilter
 from report.permissions import IsAdminRole
-from report.serializers import LessorReportSerializer, InfluencerReportSerializer, FranchiseReportSerializer
+from report.serializers import LessorReportSerializer, InfluencerReportSerializer, FranchiseReportSerializer, \
+    UserReportSerializer
 
 
 @extend_schema(summary="Отчеты. Арендодатели", description="Отчеты. Арендодатели.")
@@ -150,7 +153,6 @@ class FranchiseReportView(ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Передаем период в контекст сериализатора
         period = self.request.query_params.get('period')
         context['period'] = period
         return context
@@ -188,4 +190,24 @@ class FranchiseReportView(ListAPIView):
         return Response({
             **response_data,
             'results': data
+        })
+
+
+@extend_schema(summary="Отчеты. Регистрация пользователей", description="Отчеты. Регистрация пользователей.")
+class UserRegistrationReportView(ListAPIView):
+    serializer_class = UserReportSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserRegistrationReportFilter
+
+    def get_queryset(self):
+        queryset = User.objects.all()
+        return self.filter_queryset(queryset).values('platform').annotate(count=Count('id'))
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        total_users = sum(item['count'] for item in queryset)
+
+        return Response({
+            "total_users": total_users,
+            "platforms": self.get_serializer(queryset, many=True).data
         })

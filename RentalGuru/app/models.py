@@ -43,7 +43,12 @@ class User(AbstractUser):
         ('manager', 'Менеджер'),
         ('admin', 'Администратор'),
     )
-
+    PLATFORMS = (
+        ('web', 'Веб'),
+        ('android', 'Андроид'),
+        ('ios', 'ios'),
+        ('unknown', 'Неизвестно')
+    )
     role = models.CharField(max_length=10, choices=ROLES, default='member', verbose_name='Роль')
     date_of_birth = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
     telephone = models.CharField(max_length=15, null=True, blank=True, verbose_name='Телефон')
@@ -55,6 +60,7 @@ class User(AbstractUser):
     email_notification = models.BooleanField(default=True, verbose_name='Email уведомления')
     push_notification = models.BooleanField(default=False, verbose_name='Push уведомления')
     telegram_id = models.CharField(max_length=100, unique=True, null=True, blank=True, verbose_name='Telegram ID')
+    platform = models.CharField(choices=PLATFORMS, null=True, blank=True, verbose_name='Платформа')
 
     first_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Имя')
     last_name = models.CharField(null=True, max_length=150, blank=True, verbose_name='Фамилия')

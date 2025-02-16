@@ -165,7 +165,8 @@ class SetPasswordView(APIView):
                 first_name=cache_data['first_name'],
                 last_name=cache_data['last_name'],
                 date_of_birth=date_of_birth,
-                role='member'
+                role='member',
+                platform=cache_data['platform']
             )
 
             # Привязка к франшизе или инфлюенсеру
@@ -722,17 +723,18 @@ class OauthCallback(APIView):
         fcm_token = request.data.get('fcm_token', '')
         provider = serializer.validated_data['provider']
         code = serializer.validated_data['code']
+        platform = serializer.validated_data.get('platform', 'unknown')
 
         if not code or not provider:
             return Response({"error": "Код или провайдер не переданы"}, status=400)
 
         handler = getattr(self, f"handle_{provider}", None)
         if handler:
-            return handler(code, fcm_token, ref, referral_code, promocode)
+            return handler(code, fcm_token, ref, referral_code, promocode, platform)
         else:
             return Response({"error": "Неправильный провайдер"}, status=400)
 
-    def handle_mailru(self, code, fcm_token, ref, referral_code, promocode):
+    def handle_mailru(self, code, fcm_token, ref, referral_code, promocode, platform):
         token_url = 'https://oauth.mail.ru/token'
 
         auth = (settings.SOCIAL_AUTH_MAILRU_OAUTH2_KEY, settings.SOCIAL_AUTH_MAILRU_OAUTH2_SECRET)
@@ -773,6 +775,7 @@ class OauthCallback(APIView):
                 'last_name': user_data.get('last_name', ''),
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
+                'platform': platform,
                 'email_verified': True,
                 'last_login': timezone.now()
             })
@@ -813,7 +816,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_vk(self, code, fcm_token, ref, referral_code, promocode):
+    def handle_vk(self, code, fcm_token, ref, referral_code, promocode, platform):
         token_url = 'https://oauth.vk.com/access_token'
 
         data = {
@@ -873,7 +876,8 @@ class OauthCallback(APIView):
                 'date_of_birth': formatted_birthday,
                 'role': 'member',
                 'email_verified': True,
-                'last_login': timezone.now()
+                'last_login': timezone.now(),
+                'platform': platform
             })
 
             if created:
@@ -913,7 +917,7 @@ class OauthCallback(APIView):
         except requests.exceptions.RequestException as e:
             return Response({"error": f"Request failed: {str(e)}"}, status=400)
 
-    def handle_yandex(self, code, fcm_token, ref, referral_code, promocode):
+    def handle_yandex(self, code, fcm_token, ref, referral_code, promocode, platform):
         token_url = 'https://oauth.yandex.com/token'
         redirect_uri = settings.YANDEX_REDIRECT_URI
 
@@ -958,7 +962,8 @@ class OauthCallback(APIView):
                 'email_verified': True,
                 'last_login': timezone.now(),
                 'date_of_birth': birthday,
-                'telephone': phone
+                'telephone': phone,
+                'platform': platform
             })
 
             if created:

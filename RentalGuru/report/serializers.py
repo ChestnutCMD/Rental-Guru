@@ -6,7 +6,7 @@ from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum, Max, Q, Avg
 
-from app.models import Lessor
+from app.models import Lessor, User
 from chat.models import Trip
 from franchise.models import Franchise
 from influencer.models import Influencer
@@ -313,3 +313,12 @@ class FranchiseReportSerializer(serializers.ModelSerializer):
         )['total'] or Decimal('0.00')
 
         return float((Decimal(str(total_cost)) * obj.commission) / 100)
+
+
+class UserReportSerializer(serializers.ModelSerializer):
+    platform = serializers.ChoiceField(choices=User.PLATFORMS)
+    count = serializers.IntegerField()
+
+    class Meta:
+        model = User
+        fields = ['platform', 'count']
