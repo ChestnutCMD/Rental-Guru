@@ -14,7 +14,7 @@ from influencer.models import Influencer
 from report.filters import LessorReportFilter, InfluencerReportFilter, FranchiseReportFilter, UserRegistrationReportFilter
 from report.permissions import IsAdminRole
 from report.serializers import LessorReportSerializer, InfluencerReportSerializer, FranchiseReportSerializer, \
-    UserReportSerializer
+    UserReportSerializer, FranchiseReportSerializerV2
 
 
 @extend_schema(summary="Отчеты. Арендодатели", description="Отчеты. Арендодатели.")
@@ -174,6 +174,70 @@ class FranchiseReportView(ListAPIView):
         total_canceled_amount = sum(item['canceled_orders_amount'] for item in serializer.data)
         total_franchise_commission = sum(item['franchise_commission_amount'] for item in serializer.data)
         total_canceled_count = sum(item['canceled_orders_count'] for item in serializer.data)
+
+        response_data = {
+            'total_completed_amount': total_completed_amount,
+            'total_lessors_commission': total_lessors_commission,
+            'total_canceled_count': total_canceled_count,
+            'total_canceled_amount': total_canceled_amount,
+            'total_franchise_commission': total_franchise_commission
+        }
+
+        if isinstance(data, dict):
+            data.update(response_data)
+            return Response(data)
+
+        return Response({
+            **response_data,
+            'results': data
+        })
+
+
+@extend_schema(summary="Отчеты. Франшизы", description="Отчеты. Франшизы.")
+class FranchiseReportViewV2(ListAPIView):
+    serializer_class = FranchiseReportSerializerV2
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = FranchiseReportFilter
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        return Franchise.objects.all()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        period = self.request.query_params.get('period')
+        context['period'] = period
+        return context
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            result = self.get_paginated_response(serializer.data)
+            data = result.data
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
+
+        # Подсчет общих сумм по всем типам транспорта
+        total_completed_amount = 0
+        total_lessors_commission = 0
+        total_canceled_count = 0
+        total_canceled_amount = 0
+        total_franchise_commission = 0
+
+        vehicle_types = ['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+
+        for item in serializer.data:
+            for vehicle_type in vehicle_types:
+                vehicle_data = item[vehicle_type]
+                total_completed_amount += vehicle_data['completed_orders_amount']
+                total_lessors_commission += vehicle_data['lessors_commission']
+                total_canceled_count += vehicle_data['canceled_orders_count']
+                total_canceled_amount += vehicle_data['canceled_orders_amount']
+                total_franchise_commission += vehicle_data['franchise_commission_amount']
 
         response_data = {
             'total_completed_amount': total_completed_amount,

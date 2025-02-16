@@ -315,6 +315,105 @@ class FranchiseReportSerializer(serializers.ModelSerializer):
         return float((Decimal(str(total_cost)) * obj.commission) / 100)
 
 
+class FranchiseReportSerializerV2(serializers.ModelSerializer):
+    auto = serializers.SerializerMethodField()
+    bike = serializers.SerializerMethodField()
+    ship = serializers.SerializerMethodField()
+    helicopter = serializers.SerializerMethodField()
+    specialtechnic = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Franchise
+        fields = ['id', 'name', 'city', 'auto', 'bike', 'ship', 'helicopter', 'specialtechnic']
+
+    def get_trips_for_vehicle_type(self, obj, vehicle_type, status=None):
+        """Получает поездки для конкретного типа транспорта"""
+        content_type = ContentType.objects.get(model=vehicle_type)
+        vehicles = Vehicle.objects.filter(
+            city=obj.city,
+            polymorphic_ctype=content_type
+        ).values_list('id', flat=True)
+
+        filters = {'status': status} if status else {}
+        filters.update({
+            'content_type': content_type,
+            'object_id__in': vehicles
+        })
+
+        period = self.context.get('period')
+        if period:
+            start_date, end_date = obj.get_date_range(period)
+            if start_date and end_date:
+                filters.update({
+                    'end_date__gte': start_date,
+                    'end_date__lte': end_date
+                })
+
+        return Trip.objects.filter(**filters)
+
+    def get_vehicle_type_data(self, obj, vehicle_type):
+        """Получает все метрики для конкретного типа транспорта"""
+        # Получаем завершенные поездки
+        completed_trips = self.get_trips_for_vehicle_type(obj, vehicle_type, status='finished')
+        completed_amount = completed_trips.aggregate(
+            total=Sum('total_cost')
+        )['total']
+        completed_amount = float(completed_amount) if completed_amount else 0.00
+
+        # Комиссия арендодателей
+        total_commission = Decimal('0.00')
+        for trip in completed_trips:
+            vehicle = trip.vehicle
+            if hasattr(vehicle, 'owner') and hasattr(vehicle.owner, 'lessor'):
+                lessor = vehicle.owner.lessor
+                commission = (Decimal(str(trip.total_cost)) * lessor.commission) / 100
+                total_commission += commission
+
+        # Средний процент комиссии
+        lessors = Lessor.objects.filter(
+            user__vehicle__city=obj.city,
+            user__vehicle__polymorphic_ctype=ContentType.objects.get(model=vehicle_type)
+        ).distinct()
+        avg_commission = lessors.aggregate(
+            avg_commission=Avg('commission')
+        )['avg_commission']
+        avg_commission = float(avg_commission) if avg_commission else 0.00
+
+        # Отмененные заказы
+        canceled_trips = self.get_trips_for_vehicle_type(obj, vehicle_type, status='canceled')
+        canceled_amount = canceled_trips.aggregate(
+            total=Sum('total_cost')
+        )['total']
+        canceled_amount = float(canceled_amount) if canceled_amount else 0.00
+
+        # Комиссия франшизы
+        franchise_commission = float((Decimal(str(completed_amount)) * obj.commission) / 100)
+
+        return {
+            'completed_orders_amount': completed_amount,
+            'lessors_commission': float(total_commission),
+            'avg_lessors_commission': avg_commission,
+            'canceled_orders_count': canceled_trips.count(),
+            'canceled_orders_amount': canceled_amount,
+            'franchise_commission_amount': franchise_commission
+        }
+
+    def get_auto(self, obj):
+        return self.get_vehicle_type_data(obj, 'auto')
+
+    def get_bike(self, obj):
+        return self.get_vehicle_type_data(obj, 'bike')
+
+    def get_ship(self, obj):
+        return self.get_vehicle_type_data(obj, 'ship')
+
+    def get_helicopter(self, obj):
+        return self.get_vehicle_type_data(obj, 'helicopter')
+
+    def get_specialtechnic(self, obj):
+        return self.get_vehicle_type_data(obj, 'specialtechnic')
+
+
 class UserReportSerializer(serializers.ModelSerializer):
     platform = serializers.ChoiceField(choices=User.PLATFORMS)
     count = serializers.IntegerField()
