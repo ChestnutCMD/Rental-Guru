@@ -264,6 +264,8 @@ class IsAdminOrSelf(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.role == 'admin':
             return True
+        if hasattr(request.user, 'franchise') and request.user.franchise == obj.franchise:
+            return True
         if request.user.role == 'manager' and obj.user == request.user:
             if 'permissions' in request.data:
                 return False
