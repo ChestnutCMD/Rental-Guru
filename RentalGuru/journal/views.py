@@ -16,13 +16,17 @@ from journal.serializers import TripSerializer
 from vehicle.models import Vehicle
 
 
+class Pagination(LimitOffsetPagination):
+    default_limit = 10
+
+
 @extend_schema(summary="Журнал аренды", description="Журнал аренды")
 class TripByFranchiseView(ListAPIView):
     permission_classes = [IsAuthenticated, IsAdminManagerOrFranchiseOwner]
     serializer_class = TripSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = TripFilter
-    pagination_class = LimitOffsetPagination
+    pagination_class = Pagination
 
     def get_queryset(self):
         franchise_id = self.kwargs.get('franchise_id')
@@ -43,7 +47,7 @@ class TripByFranchiseView(ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        type_counts = Counter(queryset.values_list('content_type__model', flat=True))
+        type_counts = dict(Counter(queryset.values_list('content_type__model', flat=True)))
 
         page = self.paginate_queryset(queryset)
         if page is not None:
