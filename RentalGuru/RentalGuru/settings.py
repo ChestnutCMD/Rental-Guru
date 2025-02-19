@@ -200,13 +200,18 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'DEBUG',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
         'chat': {
             'handlers': ['console'],
@@ -220,6 +225,7 @@ LOGGING = {
         },
     },
 }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {

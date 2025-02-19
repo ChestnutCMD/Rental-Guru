@@ -13,6 +13,7 @@ class IsAdminOrSelf(ManagerObjectPermission):
     """
     Пермишн для проверки прав администратора или принадлежности объекта пользователю.
     """
+
     def has_object_permission(self, request, view, obj):
         if super().has_object_permission(request, view, obj):
             return True

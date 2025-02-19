@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -321,16 +322,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     fcm_token = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+        fcm_token = attrs.get('fcm_token')
+
         try:
-            user = User.objects.get(email=attrs['email'])
+            user = User.objects.select_related('manager').get(email=email)
         except User.DoesNotExist:
             raise ValidationError({'detail': 'Не найдено пользователя с такими учетными данными'})
 
-        if not user.check_password(attrs['password']):
+        if not user.check_password(password):
             raise ValidationError({'detail': 'Неверный пароль'})
 
-        data = super().validate(attrs)
-        data["user_id"] = user.id
+        refresh = self.get_token(user)
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user_id': user.id,
+        }
 
         if hasattr(user, 'manager'):
             data['manager_id'] = user.manager.id
@@ -341,17 +350,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 if message:
                     data["message"] = message
 
-        user.last_login = timezone.now()
-        try:
-            user.save(update_fields=['last_login'])
-        except Exception as e:
-            raise ValidationError({'detail': f'Ошибка сохранения данных: {e}'})
+        user.last_login = now()
+        user.save(update_fields=['last_login'])
 
-        # Если FCM-токен передан, то обновляем его
-        fcm_token = attrs.get('fcm_token')
         if fcm_token:
             try:
-                FCMToken.objects.update_or_create(user=user, token=fcm_token, defaults={'last_used_at': timezone.now()})
+                FCMToken.objects.update_or_create(user=user, defaults={'token': fcm_token, 'last_used_at': now()})
             except IntegrityError:
                 pass
 

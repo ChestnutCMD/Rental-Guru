@@ -1,5 +1,3 @@
-from collections import Counter
-
 from django.db.models import Q, Count
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -51,9 +49,21 @@ class TripByFranchiseView(ListAPIView):
         return trips
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.get_queryset()
 
-        type_counts = queryset.values('content_type__model').annotate(
+        count_query_params = request.query_params.copy()
+
+        if 'type' in count_query_params:
+            del count_query_params['type']
+
+        count_filter = self.filterset_class(
+            data=count_query_params,
+            queryset=queryset,
+            request=request
+        )
+        filtered_queryset_for_counts = count_filter.qs
+
+        type_counts = filtered_queryset_for_counts.values('content_type__model').annotate(
             count=Count('content_type__model')
         )
 
@@ -70,7 +80,9 @@ class TripByFranchiseView(ListAPIView):
             'specialtechnic': counts_dict.get('specialtechnic', 0)
         }
 
-        page = self.paginate_queryset(queryset)
+        filtered_queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(filtered_queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
 
@@ -81,7 +93,7 @@ class TripByFranchiseView(ListAPIView):
 
             return self.get_paginated_response(response_data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(filtered_queryset, many=True)
         return Response({
             'counts': counts,
             'data': serializer.data

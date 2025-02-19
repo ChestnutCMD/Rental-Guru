@@ -228,6 +228,11 @@ class SetPasswordView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
+    def get_queryset(self):
+        if self.action == 'list':
+            return User.objects.only("id", "first_name", "last_name", "email", "role", "avatar")
+        return User.objects.all()
+
     def get_serializer_class(self):
         if self.action == 'create':
             return RegisterSerializer
