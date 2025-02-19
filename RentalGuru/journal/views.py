@@ -40,8 +40,7 @@ class TripByFranchiseView(ListAPIView):
         )
 
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True)) \
-            .select_related('organizer', 'content_type') \
-            .prefetch_related('object_id__owner')
+            .select_related('organizer', 'content_type')
         return trips
 
     def list(self, request, *args, **kwargs):
