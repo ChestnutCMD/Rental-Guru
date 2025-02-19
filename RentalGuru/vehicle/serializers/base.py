@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -265,10 +267,16 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
     average_ratings = serializers.SerializerMethodField()
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelGetSerializer(read_only=True)
+    commission = serializers.SerializerMethodField()
 
     class Meta:
         fields = '__all__'
         read_only_fields = ['owner', 'average_ratings', 'verified']
+
+    def get_commission(self, obj):
+        if obj.owner.lessor.franchise:
+            return obj.owner.lessor.commission + Decimal(obj.owner.lessor.franchise.commission)
+        return obj.owner.lessor.commission
 
     @extend_schema_field(serializers.FloatField())
     def get_average_ratings(self, obj):
