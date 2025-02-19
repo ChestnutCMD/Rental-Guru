@@ -1,6 +1,6 @@
 from collections import Counter
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView
@@ -16,8 +16,14 @@ from journal.serializers import TripSerializer
 from vehicle.models import Vehicle
 
 
-class Pagination(LimitOffsetPagination):
-    default_limit = 10
+class CustomLimitOffsetPagination(LimitOffsetPagination):
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
 
 
 @extend_schema(summary="Журнал аренды", description="Журнал аренды")
@@ -26,7 +32,7 @@ class TripByFranchiseView(ListAPIView):
     serializer_class = TripSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = TripFilter
-    pagination_class = Pagination
+    pagination_class = CustomLimitOffsetPagination
 
     def get_queryset(self):
         franchise_id = self.kwargs.get('franchise_id')
@@ -40,25 +46,43 @@ class TripByFranchiseView(ListAPIView):
         )
 
         trips = Trip.objects.filter(object_id__in=vehicles.values_list('id', flat=True)) \
-            .select_related('organizer', 'content_type')
+            .select_related('organizer', 'content_type') \
+            .prefetch_related('object_id__owner')
         return trips
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        type_counts = dict(Counter(queryset.values_list('content_type__model', flat=True)))
+        type_counts = queryset.values('content_type__model').annotate(
+            count=Count('content_type__model')
+        )
+
+        counts_dict = {
+            item['content_type__model']: item['count']
+            for item in type_counts
+        }
+
+        counts = {
+            'auto': counts_dict.get('auto', 0),
+            'bike': counts_dict.get('bike', 0),
+            'ship': counts_dict.get('ship', 0),
+            'helicopter': counts_dict.get('helicopter', 0),
+            'specialtechnic': counts_dict.get('specialtechnic', 0)
+        }
 
         page = self.paginate_queryset(queryset)
         if page is not None:
-            return self.get_paginated_response(page, type_counts)
+            serializer = self.get_serializer(page, many=True)
+
+            response_data = {
+                'counts': counts,
+                'data': serializer.data
+            }
+
+            return self.get_paginated_response(response_data)
 
         serializer = self.get_serializer(queryset, many=True)
-        return Response({"counts": type_counts, "data": serializer.data})
-
-    def get_paginated_response(self, data, type_counts):
-        response = self.paginator.get_paginated_response(data)
-        response.data["results"] = {
-            "counts": type_counts,
-            "data": response.data.pop("results"),
-        }
-        return response
+        return Response({
+            'counts': counts,
+            'data': serializer.data
+        })
