@@ -19,7 +19,12 @@ class TripFilter(django_filters.FilterSet):
                                                   ('quarter', 'Квартал'),
                                                   ('year', 'Год')],
                                          method='filter_by_period')
-    type = django_filters.CharFilter(method='filter_by_type')
+    type = django_filters.ChoiceFilter(choises=[('auto', 'Автомобиль'),
+                                                ('bike', 'Мотоцикл'),
+                                                ('ship', 'Судно'),
+                                                ('helicopter', 'Вертолет'),
+                                                ('specialtechnic', 'Спецтехника')],
+                                       method='filter_by_type')
     lessor_id = django_filters.NumberFilter(method='filter_by_owner')
 
     class Meta:
