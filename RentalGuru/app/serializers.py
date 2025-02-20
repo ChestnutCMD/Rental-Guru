@@ -355,7 +355,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         if fcm_token:
             try:
-                FCMToken.objects.update_or_create(user=user, defaults={'token': fcm_token, 'last_used_at': now()})
+                existing_token = FCMToken.objects.filter(user=user, token=fcm_token).first()
+                if existing_token:
+                    existing_token.last_used_at = now()
+                    existing_token.save(update_fields=['last_used_at'])
+                else:
+                    FCMToken.objects.create(user=user, token=fcm_token, last_used_at=now())
             except IntegrityError:
                 pass
 
