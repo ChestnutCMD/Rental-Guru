@@ -71,7 +71,6 @@ class PaymentViewSet(viewsets.ViewSet):
                 payment.payment_id = None
                 payment.url = None
                 payment.status = 'pending'
-                payment.save()
 
             receipt = {
                 "Email": request.user.email,
@@ -103,7 +102,6 @@ class PaymentViewSet(viewsets.ViewSet):
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             payment.payment_id = response['PaymentId']
-            payment.status = 'pending'
             payment.url = response.get('PaymentURL')
             payment.save()
 
