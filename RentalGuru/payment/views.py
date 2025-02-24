@@ -146,7 +146,7 @@ class TinkoffCallbackView(APIView):
 
         # Проверяем подпись
         if not self.verify_signature(data):
-            return Response({"error": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Недействительная подпись"}, status=status.HTTP_403_FORBIDDEN)
 
         required_fields = {'PaymentId', 'Status', 'Amount'}
         missing_fields = required_fields - data.keys()

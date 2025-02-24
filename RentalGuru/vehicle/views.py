@@ -389,7 +389,7 @@ def gps_tracking_view(request, vehicle_id):
 
     # Проверка прав доступа. следует добавить еще пользователей. Пока непонятно каких
     if not request.user != vehicle.owner:
-        return Response({"error": "You don't have permission to track this vehicle"}, status=403)
+        return Response({"error": "У вас нет разрешения на отслеживание этого транспортного средства"}, status=403)
 
     data = {
         'vehicle_id': vehicle.id,

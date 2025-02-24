@@ -581,7 +581,7 @@ class LessorStatisticsView(APIView):
             start_date = None
             previous_start = None
         else:
-            return Response({"error": "Invalid period"}, status=400)
+            return Response({"error": "Неверный период"}, status=400)
 
         if start_date:
             trips = Trip.objects.filter(
