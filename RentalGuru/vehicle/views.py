@@ -109,7 +109,7 @@ class AutoViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(owner=user)
+                    queryset = queryset.filter()
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:
@@ -145,7 +145,7 @@ class BikeViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(owner=user)
+                    queryset = queryset.filter(verified=True)
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:
@@ -182,7 +182,7 @@ class ShipViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(owner=user)
+                    queryset = queryset.filter(verified=True)
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:
@@ -217,7 +217,7 @@ class HelicopterViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(owner=user)
+                    queryset = queryset.filter(verified=True)
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:
@@ -252,7 +252,7 @@ class SpecialTechnicViewSet(BaseViewSet):
                 is_renter = hasattr(user, 'renter')
                 is_lessor = hasattr(user, 'lessor')
                 if is_lessor:
-                    queryset = queryset.filter(owner=user)
+                    queryset = queryset.filter(verified=True)
                 elif is_renter:
                     queryset = queryset.filter(verified=True)
         else:
@@ -532,21 +532,13 @@ class AllVehiclesListView(APIView):
     def get_vehicle_queries(self, user, ordering):
         queries = []
         if user.is_authenticated:
-            if hasattr(user, 'renter'):
+            if user.role in ['renter', 'lessor']:
                 queries = [
                     (Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), AutoListSerializer),
                     (Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), BikeListSerializer),
                     (Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), ShipListSerializer),
                     (Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
                     (SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
-                ]
-            elif hasattr(user, 'lessor'):
-                queries = [
-                    (Auto.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), AutoListSerializer),
-                    (Bike.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), BikeListSerializer),
-                    (Ship.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), ShipListSerializer),
-                    (Helicopter.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
-                    (SpecialTechnic.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
                 ]
             else:
                 queries = [
