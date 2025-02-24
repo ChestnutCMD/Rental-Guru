@@ -46,3 +46,12 @@ class TinkoffAPI:
         params["Token"] = self._generate_token(params)
         response = requests.post(self.cancel_url, json=params, headers={"Content-Type": "application/json"})
         return response.json()
+
+    def get_state(self, payment_id):
+        """Запрос статуса платежа по его ID"""
+        payload = {
+            "TerminalKey": self.terminal_key,
+            "PaymentId": payment_id
+        }
+        response = requests.post(f"{self.base_url}GetState", json=payload)
+        return response.json()

@@ -1,6 +1,8 @@
 import hashlib
 import logging
 import random
+import time
+
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -47,7 +49,7 @@ class PaymentViewSet(viewsets.ViewSet):
         try:
             payment = Payment.objects.get(pk=pk, request_rent__organizer=request.user)
 
-            if payment.status != 'pending':
+            if payment.status in ['canceled', 'success']:
                 return Response({'detail': 'Платеж уже обработан или отменен.'}, status=status.HTTP_400_BAD_REQUEST)
 
             if not payment.request_rent.vehicle:
@@ -57,8 +59,18 @@ class PaymentViewSet(viewsets.ViewSet):
             if not payment.request_rent.id:
                 return Response({'detail': 'Некорректная заявка на аренду.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if payment.url:
-                return Response({'detail': 'Платеж уже инициализирован.', 'payment_url': payment.url})
+            tinkoff = TinkoffAPI()
+            if payment.payment_id:
+                status_response = tinkoff.get_state(payment.payment_id)
+                if status_response.get("Status") in ["NEW", "FORM_SHOWED", "AUTHORIZED"]:
+                    return Response({
+                        'detail': 'Платеж уже инициирован.',
+                        'payment_url': payment.url
+                    }, status=status.HTTP_200_OK)
+
+                payment.payment_id = None
+                payment.url = None
+                payment.status = 'pending'
 
             receipt = {
                 "Email": request.user.email,
@@ -74,10 +86,10 @@ class PaymentViewSet(viewsets.ViewSet):
                     }
                 ]
             }
+            order_id = f"{payment.id}_{int(time.time())}"
 
-            tinkoff = TinkoffAPI()
             response = tinkoff.create_payment(
-                order_id=str(payment.id),
+                order_id=order_id,
                 amount=int(payment.amount * 100),
                 description=f'Аренда транспорта {payment.request_rent.vehicle} (заявка #{payment.request_rent.id})',
                 receipt=receipt
@@ -90,7 +102,6 @@ class PaymentViewSet(viewsets.ViewSet):
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             payment.payment_id = response['PaymentId']
-            payment.status = 'pending'
             payment.url = response.get('PaymentURL')
             payment.save()
 
