@@ -1,6 +1,3 @@
-from itertools import chain
-
-from asgiref.sync import sync_to_async
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
@@ -25,6 +22,7 @@ class BaseFilter(filters.FilterSet):
 
     delivery = filters.BooleanFilter(field_name='delivery')
     ensurance = filters.CharFilter(field_name='ensurance')
+    long_distance = filters.BooleanFilter(field_name='long_distance')
 
     class Meta:
         abstract = True

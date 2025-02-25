@@ -509,6 +509,8 @@ class AllVehiclesListView(APIView):
                              description='The initial index from which to return the results.'),
             OpenApiParameter("lessor_id", type=OpenApiTypes.INT, description="ID арендодателя"),
             OpenApiParameter("vehicle_type", type=OpenApiTypes.STR, enum=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'], description="Тип транспорта"),
+            OpenApiParameter("long_distance", type=OpenApiTypes.BOOL, description="Междугородние поездки"),
+            OpenApiParameter("delivery", type=OpenApiTypes.BOOL, description="Доставка"),
         ]
     )
     def get(self, request):
