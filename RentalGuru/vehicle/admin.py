@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
+from django.utils.html import format_html
 from tornado.escape import linkify
 
 from feedback.models import Feedback
@@ -128,15 +129,20 @@ class RentPriceInline(admin.TabularInline):
 
 
 class BaseVehicleAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'model', 'year', 'owner', 'city', 'id', 'get_average_rating')
+    list_display = ('brand', 'model', 'year', 'owner', 'city', 'id', 'get_average_rating', 'verified_text',)
     list_display_links = ('brand', 'model', 'owner', 'city',)
-    search_fields = ('brand__name', 'model__name', 'year', 'owner__email', 'city__title')
-    list_filter = ('brand', 'model', 'year', 'owner', 'city__title')
+    search_fields = ('brand__name', 'model__name', 'year', 'owner__email', 'city__title', )
+    list_filter = ('brand', 'model', 'year', 'owner', 'city__title', 'verified')
     ordering = ('-year',)
     list_per_page = 20
     readonly_fields = ('get_average_rating',)
 
     inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline, FeedbackInline]
+
+    def verified_text(self, obj):
+        return "Да" if obj.verified else "Нет"
+
+    verified_text.short_description = 'Верифицирован'
 
     def get_vehicle_type(self, obj):
         return obj.__class__.__name__

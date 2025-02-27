@@ -164,7 +164,7 @@ class Vehicle(PolymorphicModel):
                                      related_name='vehicles', verbose_name='Автопарк')
 
     year = models.IntegerField(null=True, blank=True, validators=[year_validate], verbose_name='Год выпуска')
-    description = models.CharField(max_length=255, null=True, blank=True, verbose_name='Описание')
+    description = models.TextField(null=True, blank=True, verbose_name='Описание')
     long_distance = models.BooleanField(default=False, verbose_name='Междугородние поездки')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     ensurance = models.CharField(max_length=30, verbose_name='Страховка')
