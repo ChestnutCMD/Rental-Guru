@@ -167,7 +167,7 @@ class Vehicle(PolymorphicModel):
     description = models.TextField(null=True, blank=True, verbose_name='Описание')
     long_distance = models.BooleanField(default=False, verbose_name='Междугородние поездки')
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
-    ensurance = models.CharField(max_length=30, verbose_name='Страховка')
+    ensurance = models.CharField(max_length=255, verbose_name='Страховка')
     drivers_rating = models.DecimalField(null=True, blank=True, decimal_places=1, max_digits=2, verbose_name='Рейтинг арендатора')
     drivers_only_verified = models.BooleanField(default=True, verbose_name='Сдавать только верифицированным пользователям')
     price_delivery = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Стоимость доставки транспорта')
