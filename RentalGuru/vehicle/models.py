@@ -336,13 +336,22 @@ def vehicle_photo_upload_to(instance, filename):
 class VehiclePhoto(models.Model):
     vehicle = models.ForeignKey('Vehicle', related_name='photos', on_delete=models.CASCADE)
     photo = models.ImageField(upload_to=vehicle_photo_upload_to, verbose_name='Фото')
+    order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Фото'
+        verbose_name_plural = 'Фото'
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.order == 0:
+            max_order = VehiclePhoto.objects.filter(vehicle=self.vehicle).aggregate(models.Max('order'))['order__max']
+            self.order = (max_order or 0) + 1
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Photo for vehicle id-{self.vehicle.pk}'
-
-    class Meta:
-        verbose_name = 'Фото'
-        verbose_name_plural = 'Фото'
 
 
 class AutoFuelType(models.Model):

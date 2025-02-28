@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db.models import Max
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -176,10 +177,16 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
             ])
 
         if photos_data:
-            VehiclePhoto.objects.bulk_create([
-                VehiclePhoto(vehicle=instance, **photo_data)
-                for photo_data in photos_data
-            ])
+            existing_max_order = VehiclePhoto.objects.filter(vehicle=instance).aggregate(Max('order'))['order__max'] or 0
+            new_photos = []
+
+            for i, photo_data in enumerate(photos_data):
+                if 'order' not in photo_data or photo_data['order'] is None:
+                    photo_data['order'] = existing_max_order + i + 1
+
+                new_photos.append(VehiclePhoto(vehicle=instance, **photo_data))
+
+            VehiclePhoto.objects.bulk_create(new_photos)
 
         return instance
 
@@ -252,7 +259,9 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         for price_data in prices_data:
             RentPrice.objects.create(vehicle=vehicle, **price_data)
 
-        for photo_data in photos_data:
+        for i, photo_data in enumerate(photos_data, start=1):
+            if 'order' not in photo_data or photo_data['order'] is None:
+                photo_data['order'] = i
             VehiclePhoto.objects.create(vehicle=vehicle, **photo_data)
 
         return vehicle
@@ -289,7 +298,7 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_photos(self, obj):
         return [
-            {"id": i.id, "url": f"{HOST_URL}/{i.photo.url}"}
+            {"id": i.id, "url": f"{HOST_URL}/{i.photo.url}", "order": i.order}
             for i in obj.photos.all()
         ]
 
@@ -373,3 +382,13 @@ class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehicle
         fields = ['id', 'brand_name', 'model_name', 'vehicle_type']
+
+
+class UpdatePhotoOrderSerializer(serializers.Serializer):
+    photo_id = serializers.IntegerField(required=True, help_text="ID фотографии")
+    new_order = serializers.IntegerField(required=True, min_value=1, help_text="Новый порядок фотографии")
+
+    def validate_photo_id(self, value):
+        if not VehiclePhoto.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Фото с таким ID не существует.")
+        return value

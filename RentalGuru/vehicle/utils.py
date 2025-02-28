@@ -1,4 +1,6 @@
 from datetime import timedelta
+from django.db import transaction
+from django.db.models import F, Max
 
 
 def merge_periods(periods):
@@ -40,3 +42,33 @@ def merge_periods(periods):
 
     return merged_periods
 
+
+def update_photo_order(vehicle, old_order, new_order):
+    """
+    Обновляет порядок фотографий при изменении одной из них.
+    """
+    if old_order == new_order:
+        return
+
+    from vehicle.models import VehiclePhoto
+
+    with transaction.atomic():
+        max_order = VehiclePhoto.objects.filter(vehicle=vehicle).aggregate(Max('order'))['order__max'] or 0
+
+        temp_order = max_order + 1000
+        VehiclePhoto.objects.filter(vehicle=vehicle, order=old_order).update(order=temp_order)
+
+        if old_order < new_order:
+            VehiclePhoto.objects.filter(
+                vehicle=vehicle,
+                order__gt=old_order,
+                order__lte=new_order
+            ).update(order=F('order') - 1)
+        else:
+            VehiclePhoto.objects.filter(
+                vehicle=vehicle,
+                order__gte=new_order,
+                order__lt=old_order
+            ).update(order=F('order') + 1)
+
+        VehiclePhoto.objects.filter(vehicle=vehicle, order=temp_order).update(order=new_order)

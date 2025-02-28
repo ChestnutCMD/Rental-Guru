@@ -28,7 +28,7 @@ from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, Sp
     BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
-    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer
+    PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer, UpdatePhotoOrderSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
     AutoTransmissionSerializer, AutoBodyTypeSerializer
@@ -41,6 +41,7 @@ from .serializers.helicopter import HelicopterGetSerializer, HelicopterListSeria
     HelicopterUpdateSerializer
 from .serializers.specialtechnic import SpecialTechnicGetSerializer, SpecialTechnicListSerializer, \
     SpecialTechnicCreateSerializer, SpecialTechnicUpdateSerializer
+from .utils import update_photo_order
 
 
 @extend_schema(summary="Марка транспорта", description="Марка транспорта")
@@ -738,3 +739,22 @@ class DeleteVehicleDocumentView(APIView):
 
         document.delete()
         return Response({'detail': 'Документ успешно удален.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(summary="Изменение порядка вывода фото", description="Изменение порядка вывода фото", request=UpdatePhotoOrderSerializer)
+class UpdatePhotoOrderView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+
+    def post(self, request, *args, **kwargs):
+        serializer = UpdatePhotoOrderSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        photo_id = serializer.validated_data['photo_id']
+        new_order = serializer.validated_data['new_order']
+
+        photo = VehiclePhoto.objects.get(id=photo_id)
+        old_order = photo.order
+
+        update_photo_order(photo.vehicle, old_order, new_order)
+
+        return Response({"detail": "Порядок фотографий обновлен"}, status=status.HTTP_200_OK)
