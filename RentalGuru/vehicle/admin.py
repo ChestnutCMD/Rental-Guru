@@ -65,8 +65,18 @@ class PaymentMethodAdmin(BaseFeatures):
 
 
 @admin.register(VehicleBrand)
-class VehicleBrandAdmin(BaseFeatures):
-    pass
+class VehicleBrandAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'display_categories')
+    search_fields = ('name',)
+    ordering = ('name',)
+    filter_horizontal = ('transport_categories',)
+    list_filter = ('transport_categories',)
+
+    def display_categories(self, obj):
+        """Выводим категории транспорта в списке"""
+        return ", ".join([category.get_name_display() for category in obj.transport_categories.all()])
+
+    display_categories.short_description = "Категории транспорта"
 
 
 @admin.register(VehicleModel)

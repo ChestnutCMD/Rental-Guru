@@ -21,7 +21,7 @@ from chat.models import Trip
 from manager.permissions import ManagerObjectPermission, IsFranchiseDirector
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
-    VehicleModelFilter
+    VehicleModelFilter, VehicleBrandFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
     VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
@@ -49,6 +49,8 @@ class VehicleBrandViewSet(viewsets.ModelViewSet):
     queryset = VehicleBrand.objects.all()
     serializer_class = VehicleBrandSerializer
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = VehicleBrandFilter
 
 
 @extend_schema(summary="Модель транспорта", description="Модель транспорта")

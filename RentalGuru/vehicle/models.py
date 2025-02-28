@@ -18,9 +18,23 @@ from vehicle.utils import merge_periods
 
 
 class VehicleBrand(models.Model):
+    TRANSPORT_CATEGORIES = [
+        ('auto', 'Автомобили'),
+        ('bike', 'Мотоциклы'),
+        ('helicopter', 'Вертолёты'),
+        ('ship', 'Судна'),
+        ('special_technic', 'Спецтехника'),
+    ]
+
     name = models.CharField(max_length=50, unique=True)
     logo = models.ImageField(upload_to='media/images/vehicle/brand_logo')
     search_vector = SearchVectorField(null=True, blank=True)
+
+    transport_categories = models.ManyToManyField(
+        'VehicleCategory',
+        related_name='brands',
+        verbose_name='Категории транспорта'
+    )
 
     def __str__(self):
         return self.name
@@ -32,6 +46,25 @@ class VehicleBrand(models.Model):
             GinIndex(fields=['name'], name='vehicle_brand_name_trgm', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['search_vector'])
         ]
+
+
+class VehicleCategory(models.Model):
+    CATEGORY_CHOICES = [
+        ('auto', 'Автомобили'),
+        ('bike', 'Мотоциклы'),
+        ('helicopter', 'Вертолёты'),
+        ('ship', 'Судна'),
+        ('special_technic', 'Спецтехника'),
+    ]
+
+    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES, unique=True, verbose_name="Тип транспорта")
+
+    def __str__(self):
+        return self.get_name_display()
+
+    class Meta:
+        verbose_name = "Категория транспорта"
+        verbose_name_plural = "Категории транспорта"
 
 
 class VehicleModel(models.Model):

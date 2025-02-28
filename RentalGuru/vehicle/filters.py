@@ -3,7 +3,8 @@ from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
 from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel, \
-    BikeFeaturesAdditionally, ShipFeaturesAdditionally, FeaturesForChildren, VehicleFeaturesFunctions, FeaturesEquipment
+    BikeFeaturesAdditionally, ShipFeaturesAdditionally, FeaturesForChildren, VehicleFeaturesFunctions, \
+    FeaturesEquipment, VehicleBrand
 
 
 class BaseFilter(filters.FilterSet):
@@ -208,3 +209,14 @@ class VehicleModelFilter(filters.FilterSet):
     class Meta:
         model = VehicleModel
         fields = ['vehicle_type']
+
+
+class VehicleBrandFilter(filters.FilterSet):
+    category = filters.ChoiceFilter(choices=VehicleModel.VEHICLE_TYPES, label="Тип транспорта", method='filter_by_category')
+
+    def filter_by_category(self, queryset, name, value):
+        return queryset.filter(transport_categories__name=value)
+
+    class Meta:
+        model = VehicleBrand
+        fields = ['category']
