@@ -92,6 +92,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'app.middleware.TranslationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -188,6 +189,11 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
+# Настройки перевода
+TRANSLATION_ENABLED = True  # Включить/выключить middleware
+TRANSLATION_DEFAULT_LANGUAGE = 'ru'  # Язык по умолчанию
+TRANSLATION_CACHE_ENABLED = False  # Включить кеширование переводов
+TRANSLATION_SERVICE = 'google'
 
 # Logging into 'info.log'
 LOGGING = {
