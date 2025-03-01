@@ -5,16 +5,16 @@ import concurrent.futures
 from RentalGuru import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
-from googletrans import Translator, LANGUAGES
+from mtranslate import translate
 
 logger = logging.getLogger(__name__)
+
 
 class TranslationMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        self.translator = Translator()
         self.CACHE_TIMEOUT = getattr(settings, 'TRANSLATION_CACHE_TIMEOUT', 60 * 60 * 24)
-        self.MAX_WORKERS = getattr(settings, 'TRANSLATION_MAX_WORKERS', 4)
+        self.MAX_WORKERS = getattr(settings, 'TRANSLATION_MAX_WORKERS', 2)
 
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
@@ -29,10 +29,6 @@ class TranslationMiddleware(MiddlewareMixin):
         if not user_language or user_language == settings.TRANSLATION_DEFAULT_LANGUAGE:
             return response
 
-        if user_language not in LANGUAGES:
-            logger.warning(f"Язык {user_language} не поддерживается Google Translate")
-            return response
-
         if 'application/json' in response.get('Content-Type', ''):
             try:
                 data = json.loads(response.content.decode('utf-8'))
@@ -41,7 +37,7 @@ class TranslationMiddleware(MiddlewareMixin):
                 self._extract_translatable_strings(data, strings_to_translate)
 
                 if strings_to_translate:
-                    translated_strings = self._translate_strings_parallel(strings_to_translate, user_language)
+                    translated_strings = self._translate_strings(strings_to_translate, user_language)
                     translated_data = self._apply_translations(data, translated_strings)
                 else:
                     translated_data = data
@@ -92,66 +88,30 @@ class TranslationMiddleware(MiddlewareMixin):
 
         return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
 
-    def _translate_strings_parallel(self, strings_to_translate, target_language):
-        """Переводит строки параллельно, используя ThreadPoolExecutor"""
-        unique_strings = {text: text for path, text in strings_to_translate.items()}
-        cached_translations = {}
-        strings_to_request = []
+    def _translate_strings(self, strings_to_translate, target_language):
+        """Переводит строки по одной и кеширует результат"""
+        translated_strings = {}
 
-        for text in unique_strings.keys():
-            if text is None:  # Фильтруем None
+        for text in strings_to_translate.values():
+            if text is None:  # Пропускаем None
                 continue
 
             cache_key = f"trans_{hashlib.md5((text + target_language).encode()).hexdigest()}"
-            cached = cache.get(cache_key)
+            cached_translation = cache.get(cache_key)
 
-            if cached:
-                cached_translations[text] = cached
+            if cached_translation:
+                translated_strings[text] = cached_translation
             else:
-                strings_to_request.append(text)
+                try:
+                    translated_text = translate(text, target_language)
+                    if not translated_text.strip():
+                        logger.warning(f"Пустой перевод для: '{text}'")
+                        translated_text = text
 
-        if strings_to_request:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-                future_to_batch = {executor.submit(self._translate_batch, batch, target_language): batch for batch in [strings_to_request]}
-                for future in concurrent.futures.as_completed(future_to_batch):
-                    batch = future_to_batch[future]
-                    try:
-                        result = future.result()
-                        for original, translated in result.items():
-                            if translated is None or translated.strip() == "":
-                                logger.warning(f"Пустой перевод для '{original}'")
-                                translated = original
+                    translated_strings[text] = translated_text
+                    cache.set(cache_key, translated_text, self.CACHE_TIMEOUT)
+                except Exception as e:
+                    logger.error(f"Ошибка перевода '{text}': {str(e)}")
+                    translated_strings[text] = text
 
-                            cached_translations[original] = translated
-                            cache_key = f"trans_{hashlib.md5((original + target_language).encode()).hexdigest()}"
-                            cache.set(cache_key, translated, self.CACHE_TIMEOUT)
-                    except Exception as e:
-                        logger.error(f"Ошибка при переводе батча: {str(e)}")
-
-        return {text: cached_translations.get(text, text) for text in unique_strings.keys()}
-
-    def _translate_batch(self, texts, target_language):
-        """Переводит пакет строк за один запрос к API"""
-        result = {}
-
-        try:
-            translated = self.translator.translate(texts, dest=target_language)
-
-            if not isinstance(translated, list):
-                translated = [translated]
-
-            if len(translated) != len(texts):
-                logger.warning(f"Некорректный размер ответа от Google Translate: {len(translated)} вместо {len(texts)}")
-                return {text: text for text in texts}
-
-            for i, trans in enumerate(translated):
-                if hasattr(trans, 'text') and trans.text:
-                    result[texts[i]] = trans.text
-                else:
-                    result[texts[i]] = texts[i]
-
-        except Exception as e:
-            logger.error(f"Ошибка batch-перевода: {str(e)}")
-            return {text: text for text in texts}
-
-        return result
+        return translated_strings
