@@ -20,13 +20,19 @@ class TranslationMiddleware(MiddlewareMixin):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
             return response
 
-        if not hasattr(request, 'user') or not request.user.is_authenticated:
-            return response
+        query_language = request.GET.get('lang')
 
-        user_language = getattr(request.user, 'language', None)
-        user_language = getattr(user_language, 'code', settings.TRANSLATION_DEFAULT_LANGUAGE) if user_language else settings.TRANSLATION_DEFAULT_LANGUAGE
+        if not query_language:
+            if hasattr(request, 'user') and request.user.is_authenticated:
+                user_language = getattr(request.user, 'language', None)
+                target_language = getattr(user_language, 'code',
+                                          settings.TRANSLATION_DEFAULT_LANGUAGE) if user_language else settings.TRANSLATION_DEFAULT_LANGUAGE
+            else:
+                target_language = settings.TRANSLATION_DEFAULT_LANGUAGE
+        else:
+            target_language = query_language
 
-        if not user_language or user_language == settings.TRANSLATION_DEFAULT_LANGUAGE:
+        if not target_language or target_language == settings.TRANSLATION_DEFAULT_LANGUAGE:
             return response
 
         if 'application/json' in response.get('Content-Type', ''):
@@ -37,8 +43,12 @@ class TranslationMiddleware(MiddlewareMixin):
                 self._extract_translatable_strings(data, strings_to_translate)
 
                 if strings_to_translate:
-                    translated_strings = self._translate_strings(strings_to_translate, user_language)
-                    translated_data = self._apply_translations(data, translated_strings)
+
+                    path_to_text = {path: text for path, text in strings_to_translate.items()}
+
+                    translated_strings = self._translate_strings(path_to_text.values(), target_language)
+
+                    translated_data = self._apply_translations_by_path(data, path_to_text, translated_strings)
                 else:
                     translated_data = data
 
@@ -63,25 +73,89 @@ class TranslationMiddleware(MiddlewareMixin):
         elif isinstance(data, str) and self._should_translate(data):
             result[path] = data
 
-    def _apply_translations(self, data, translations):
-        """Применяет переводы к данным"""
-        if isinstance(data, dict):
-            return {k: self._apply_translations(v, translations) for k, v in data.items()}
+    def _apply_translations_by_path(self, data, path_to_text, translations):
+        """Применяет переводы к данным по указанным путям"""
 
-        elif isinstance(data, list):
-            return [self._apply_translations(item, translations) for item in data]
+        result = data
+        for path, text in path_to_text.items():
+            if text in translations:
 
-        elif isinstance(data, str) and self._should_translate(data):
-            return translations.get(data, data)
+                components = self._parse_path(path)
 
-        return data
+                self._set_value_by_path(result, components, translations[text])
+
+        return result
+
+    def _parse_path(self, path):
+        """Разбивает путь на компоненты"""
+        components = []
+        current = ""
+        i = 0
+
+        while i < len(path):
+            if path[i] == '.':
+                if current:
+                    components.append(current)
+                    current = ""
+            elif path[i] == '[':
+                if current:
+                    components.append(current)
+                    current = ""
+                i += 1
+                index = ""
+                while i < len(path) and path[i] != ']':
+                    index += path[i]
+                    i += 1
+                components.append(int(index))
+            else:
+                current += path[i]
+            i += 1
+
+        if current:
+            components.append(current)
+
+        return components
+
+    def _set_value_by_path(self, data, components, value):
+        """Устанавливает значение по пути"""
+        if not components:
+            return
+
+        current = data
+        for i, component in enumerate(components[:-1]):
+            if isinstance(component, int):
+                if i < len(components) - 1 and isinstance(components[i + 1], int):
+                    if isinstance(current, list) and component < len(current):
+                        current = current[component]
+                    else:
+                        return
+                else:
+                    if isinstance(current, list) and component < len(current):
+                        current = current[component]
+                    else:
+                        return
+            else:
+                if isinstance(current, dict) and component in current:
+                    current = current[component]
+                else:
+                    return
+
+        last_component = components[-1]
+        if isinstance(last_component, int):
+            if isinstance(current, list) and last_component < len(current):
+                current[last_component] = value
+        else:
+            if isinstance(current, dict) and last_component in current:
+                current[last_component] = value
 
     def _should_translate(self, text):
         """Определяет, нужно ли переводить текст"""
         if not isinstance(text, str) or not text.strip():
             return False
 
-        EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS', ['code', 'url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone', 'http://', 'https://'])
+        EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS',
+                                    ['code', 'url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating',
+                                     'email', 'phone', 'http://', 'https://'])
 
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
             return False
@@ -89,14 +163,15 @@ class TranslationMiddleware(MiddlewareMixin):
         return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
 
     def _translate_strings(self, strings_to_translate, target_language):
-        """Переводит строки по одной и кеширует результат"""
+        """Переводит строки и кеширует результат"""
         translated_strings = {}
+        unique_strings = set(strings_to_translate)
 
-        for text in strings_to_translate.values():
-            if text is None:  # Пропускаем None
+        for text in unique_strings:
+            if text is None:
                 continue
 
-            cache_key = f"trans_{hashlib.md5((text + target_language).encode()).hexdigest()}"
+            cache_key = f"trans_{target_language}_{hashlib.md5(text.encode()).hexdigest()}"
             cached_translation = cache.get(cache_key)
 
             if cached_translation:
