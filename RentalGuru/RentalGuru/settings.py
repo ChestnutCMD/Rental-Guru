@@ -190,10 +190,12 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
 # Настройки перевода
-TRANSLATION_ENABLED = True  # Включить/выключить middleware
+TRANSLATION_ENABLED = True
 TRANSLATION_DEFAULT_LANGUAGE = 'ru'  # Язык по умолчанию
-TRANSLATION_CACHE_ENABLED = False  # Включить кеширование переводов
-TRANSLATION_SERVICE = 'google'
+TRANSLATION_CACHE_TIMEOUT = 86400  # Время кеширования переводов (24 часа)
+TRANSLATION_MAX_LENGTH = 5000  # Максимальная длина текста для перевода
+TRANSLATION_BATCH_SIZE = 10  # Размер пакета для перевода
+TRANSLATION_EXCLUDED_KEYWORDS = ['url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone']
 
 # Logging into 'info.log'
 LOGGING = {
