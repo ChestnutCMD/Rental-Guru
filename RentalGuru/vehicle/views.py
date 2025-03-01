@@ -18,25 +18,26 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
-from manager.permissions import ManagerObjectPermission, IsFranchiseDirector
+from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
     VehicleModelFilter, VehicleBrandFilter
 from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, SpecialTechnic, RatingUpdateLog, Vehicle, \
-    VehicleFeaturesFunctions, AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
+    AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
-    BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument
+    BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument, AutoFeaturesFunctions, BikeFeaturesFunctions, \
+    ShipFeaturesFunctions
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
-from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, VehicleFeaturesFunctionsSerializer, \
+from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, \
     PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer, UpdatePhotoOrderSerializer
 from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateSerializer, \
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
-    AutoTransmissionSerializer, AutoBodyTypeSerializer
+    AutoTransmissionSerializer, AutoBodyTypeSerializer, AutoFeaturesFunctionsSerializer
 from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer, \
-    BikeFeaturesAdditionallySerializer, BikeTransmissionSerializer
+    BikeFeaturesAdditionallySerializer, BikeTransmissionSerializer, BikeFeaturesFunctionsSerializer
 from .serializers.rating import UpdateRatingSerializer
 from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer, \
-    ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer
+    ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer, ShipFeaturesFunctionsSerializer
 from .serializers.helicopter import HelicopterGetSerializer, HelicopterListSerializer, HelicopterCreateSerializer, \
     HelicopterUpdateSerializer
 from .serializers.specialtechnic import SpecialTechnicGetSerializer, SpecialTechnicListSerializer, \
@@ -407,10 +408,22 @@ def gps_tracking_view(request, vehicle_id):
     return Response(data)
 
 
-@extend_schema(summary="Список функций транспорта", description="Список функций транспорта")
-class VehicleFeaturesFunctionsListView(ListAPIView):
-    queryset = VehicleFeaturesFunctions.objects.all()
-    serializer_class = VehicleFeaturesFunctionsSerializer
+@extend_schema(summary="Список функций автомобилей", description="Список функций автомобилей")
+class AutoFeaturesFunctionsListView(ListAPIView):
+    queryset = AutoFeaturesFunctions.objects.all()
+    serializer_class = AutoFeaturesFunctionsSerializer
+
+
+@extend_schema(summary="Список функций мотоциклов", description="Список функций мотоциклов")
+class BikeFeaturesFunctionsListView(ListAPIView):
+    queryset = BikeFeaturesFunctions.objects.all()
+    serializer_class = BikeFeaturesFunctionsSerializer
+
+
+@extend_schema(summary="Список функций суден", description="Список функций суден")
+class ShipFeaturesFunctionsListView(ListAPIView):
+    queryset = ShipFeaturesFunctions.objects.all()
+    serializer_class = ShipFeaturesFunctionsSerializer
 
 
 @extend_schema(summary="Список дополнительных особенностей авто", description="Список дополнительных особенностей авто")

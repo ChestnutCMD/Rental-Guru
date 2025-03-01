@@ -3,8 +3,8 @@ from rest_framework import serializers
 
 from .base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
     BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer, VehicleClassSerializer
-from ..models import FeaturesForChildren, VehicleFeaturesFunctions, AutoFeaturesAdditionally, Auto, AutoFuelType, \
-    AutoTransmission, AutoBodyType, VehicleClass, VehicleModel
+from ..models import FeaturesForChildren, AutoFeaturesAdditionally, Auto, AutoFuelType, \
+    AutoTransmission, AutoBodyType, VehicleClass, AutoFeaturesFunctions
 
 
 class AutoFuelTypeSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class AutoBodyTypeSerializer(serializers.ModelSerializer):
 
 class AutoCreateSerializer(BaseVehicleCreateSerializer):
     features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all())
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all())
     fuel_type = serializers.PrimaryKeyRelatedField(queryset=AutoFuelType.objects.all())
     transmission = serializers.PrimaryKeyRelatedField(queryset=AutoTransmission.objects.all())
@@ -77,7 +77,7 @@ class AutoCreateSerializer(BaseVehicleCreateSerializer):
 
 class AutoUpdateSerializer(BaseVehicleUpdateSerializer):
     features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all())
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all())
     fuel_type = serializers.PrimaryKeyRelatedField(queryset=AutoFuelType.objects.all())
     transmission = serializers.PrimaryKeyRelatedField(queryset=AutoTransmission.objects.all())
@@ -97,6 +97,12 @@ class FeaturesForChildrenSerializer(serializers.ModelSerializer):
 class AutoFeaturesAdditionallySerializer(serializers.ModelSerializer):
     class Meta:
         model = AutoFeaturesAdditionally
+        fields = '__all__'
+
+
+class AutoFeaturesFunctionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AutoFeaturesFunctions
         fields = '__all__'
 
 

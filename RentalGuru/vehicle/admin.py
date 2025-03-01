@@ -29,8 +29,18 @@ class BaseType(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-@admin.register(VehicleFeaturesFunctions)
-class VehicleFeaturesFunctionsAdmin(BaseFeatures):
+@admin.register(AutoFeaturesFunctions)
+class AutoFeaturesFunctionsAdmin(BaseFeatures):
+    pass
+
+
+@admin.register(BikeFeaturesFunctions)
+class BikeFeaturesFunctionsAdmin(BaseFeatures):
+    pass
+
+
+@admin.register(ShipFeaturesFunctions)
+class ShipFeaturesFunctionsAdmin(BaseFeatures):
     pass
 
 

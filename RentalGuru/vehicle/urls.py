@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import VehicleBrandViewSet, VehicleModelViewSet, AutoViewSet, BikeViewSet, ShipViewSet, HelicopterViewSet, \
-    SpecialTechnicViewSet, UpdateRatingView, gps_tracking_view, VehicleFeaturesFunctionsListView, \
+    SpecialTechnicViewSet, UpdateRatingView, gps_tracking_view, \
     AutoFeaturesAdditionallyListView, BikeFeaturesAdditionallyListView, ShipFeaturesAdditionallyListView, \
     FeaturesForChildrenListView, FeaturesEquipmentListView, PaymentMethodListView, BikeTransmissionListView, \
     AutoTransmissionListView, AutoFuelTypeListView, AutoBodyTypeListView, VehicleClassListView, AllVehiclesListView, \
-    VehiclePhotoDeleteView, VehicleSearchViewSet, DeleteVehicleDocumentView, UpdatePhotoOrderView
+    VehiclePhotoDeleteView, VehicleSearchViewSet, DeleteVehicleDocumentView, UpdatePhotoOrderView, \
+    AutoFeaturesFunctionsListView, BikeFeaturesFunctionsListView, ShipFeaturesFunctionsListView
 
 router = DefaultRouter()
 router.register(r'brands', VehicleBrandViewSet)
@@ -20,10 +21,12 @@ router.register(r'vehicle_search', VehicleSearchViewSet, basename='search_vehicl
 urlpatterns = [
     path('', include(router.urls)),
     path('update-rating/', UpdateRatingView.as_view(), name='update-rating'),
-    path('vehicle_features/', VehicleFeaturesFunctionsListView.as_view(), name='vehicle_features'),
+    path('auto_functions/', AutoFeaturesFunctionsListView.as_view(), name='auto_functions'),
     path('auto_features/', AutoFeaturesAdditionallyListView.as_view(), name='auto_features'),
+    path('bike_functions/', BikeFeaturesFunctionsListView.as_view(), name='bike_functions'),
     path('bike_features/', BikeFeaturesAdditionallyListView.as_view(), name='bike_features'),
     path('ship_features/', ShipFeaturesAdditionallyListView.as_view(), name='ship_features'),
+    path('ship_functions/', ShipFeaturesFunctionsListView.as_view(), name='ship_functions'),
     path('auto_for_children/', FeaturesForChildrenListView.as_view(), name='for_children_features'),
     path('ship_equipment/', FeaturesEquipmentListView.as_view(), name='equipment_features'),
     path('payment_method/', PaymentMethodListView.as_view(), name='payment_method'),
@@ -39,5 +42,4 @@ urlpatterns = [
     path('photos/<int:photo_id>/delete/', VehiclePhotoDeleteView.as_view(), name='delete_vehicle_photo'),
     path('photos/update_order/', UpdatePhotoOrderView.as_view(), name='update_order_photo'),
     path('documents/delete/<int:document_id>/', DeleteVehicleDocumentView.as_view(), name='delete-vehicle-document'),
-
 ]

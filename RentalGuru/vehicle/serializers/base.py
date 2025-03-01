@@ -8,7 +8,7 @@ from rest_framework import serializers
 from RentalGuru.settings import HOST_URL
 from app.models import Lessor
 from vehicle.models import VehicleDocument, Availability, RentPrice, VehiclePhoto, PaymentMethod, VehicleModel, \
-    VehicleBrand, VehicleFeaturesFunctions, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic, Vehicle
+    VehicleBrand, VehicleClass, Auto, Bike, Ship, Helicopter, SpecialTechnic, Vehicle
 from vehicle.utils import merge_periods
 
 
@@ -301,12 +301,6 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
             {"id": i.id, "url": f"{HOST_URL}/{i.photo.url}", "order": i.order}
             for i in obj.photos.all()
         ]
-
-
-class VehicleFeaturesFunctionsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VehicleFeaturesFunctions
-        fields = '__all__'
 
 
 class BaseVehicleListSerializer(serializers.ModelSerializer):

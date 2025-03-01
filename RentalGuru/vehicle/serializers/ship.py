@@ -1,13 +1,13 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from vehicle.models import VehicleFeaturesFunctions, ShipFeaturesAdditionally, FeaturesEquipment, Ship, VehicleClass
+from vehicle.models import ShipFeaturesAdditionally, FeaturesEquipment, Ship, VehicleClass, ShipFeaturesFunctions
 from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
     BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer, VehicleClassSerializer
 
 
 class ShipCreateSerializer(BaseVehicleCreateSerializer):
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
@@ -43,7 +43,7 @@ class ShipCreateSerializer(BaseVehicleCreateSerializer):
 
 
 class ShipUpdateSerializer(BaseVehicleUpdateSerializer):
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=VehicleFeaturesFunctions.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesFunctions.objects.all())
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
@@ -61,6 +61,12 @@ class ShipFeaturesAdditionallySerializer(serializers.ModelSerializer):
 class FeaturesEquipmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturesEquipment
+        fields = '__all__'
+
+
+class ShipFeaturesFunctionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShipFeaturesFunctions
         fields = '__all__'
 
 

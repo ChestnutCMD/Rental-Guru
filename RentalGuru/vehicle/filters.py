@@ -3,8 +3,8 @@ from django_filters import rest_framework as filters
 from haversine import haversine, Unit
 
 from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopter, SpecialTechnic, VehicleModel, \
-    BikeFeaturesAdditionally, ShipFeaturesAdditionally, FeaturesForChildren, VehicleFeaturesFunctions, \
-    FeaturesEquipment, VehicleBrand
+    BikeFeaturesAdditionally, ShipFeaturesAdditionally, FeaturesForChildren, \
+    FeaturesEquipment, VehicleBrand, AutoFeaturesFunctions, BikeFeaturesFunctions, ShipFeaturesFunctions
 
 
 class BaseFilter(filters.FilterSet):
@@ -99,7 +99,7 @@ class AutoFilter(BaseFilter):
     )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
-        queryset=VehicleFeaturesFunctions.objects.all(),
+        queryset=AutoFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
     )
@@ -127,7 +127,7 @@ class BikeFilter(BaseFilter):
     )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
-        queryset=VehicleFeaturesFunctions.objects.all(),
+        queryset=BikeFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
     )
@@ -159,7 +159,7 @@ class ShipFilter(BaseFilter):
     )
     features_functions = filters.ModelMultipleChoiceFilter(
         field_name='features_functions__name',
-        queryset=VehicleFeaturesFunctions.objects.all(),
+        queryset=ShipFeaturesFunctions.objects.all(),
         to_field_name='name',
         label='Функции'
     )

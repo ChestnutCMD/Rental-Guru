@@ -92,15 +92,37 @@ class VehicleModel(models.Model):
         ]
 
 
-class VehicleFeaturesFunctions(models.Model):
+class AutoFeaturesFunctions(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = 'Функция'
-        verbose_name_plural = 'Функции'
+        verbose_name = 'Автомобиль, функция'
+        verbose_name_plural = 'Автомобиль, функции'
+
+
+class BikeFeaturesFunctions(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Мотоцикл, функция'
+        verbose_name_plural = 'Мотоцикл, функции'
+
+
+class ShipFeaturesFunctions(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Судно, функция'
+        verbose_name_plural = 'Судно, функции'
 
 
 class AutoFeaturesAdditionally(models.Model):
@@ -468,7 +490,7 @@ class Auto(Vehicle):
     drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
     features_for_children = models.ManyToManyField(FeaturesForChildren, related_name='auto', blank=True, verbose_name='Для детей')
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='auto', blank=True, verbose_name='Функции')
+    features_functions = models.ManyToManyField(AutoFeaturesFunctions, related_name='auto', blank=True, verbose_name='Функции')
     features_additionally = models.ManyToManyField(AutoFeaturesAdditionally, related_name='auto', blank=True, verbose_name='Дополнительно')
 
     def __str__(self):
@@ -511,7 +533,7 @@ class Bike(Vehicle):
     drivers_age = models.PositiveIntegerField(null=True, blank=True, verbose_name='Возраст водителя')
     drivers_experience = models.PositiveIntegerField(null=True, blank=True, verbose_name='Стаж водителя')
 
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='bike', verbose_name='Функции')
+    features_functions = models.ManyToManyField(BikeFeaturesFunctions, related_name='bike', verbose_name='Функции')
     features_additionally = models.ManyToManyField(BikeFeaturesAdditionally, related_name='bike', verbose_name='Допольнительно')
 
     def __str__(self):
@@ -545,7 +567,7 @@ class Ship(Vehicle):
     fuel_tank = models.IntegerField(null=True, blank=True, verbose_name='Топливный бак, л')
     acceptable_mileage = models.IntegerField(verbose_name='Допустимый пробег, день')
 
-    features_functions = models.ManyToManyField(VehicleFeaturesFunctions, related_name='ship', verbose_name='Функции')
+    features_functions = models.ManyToManyField(ShipFeaturesFunctions, related_name='ship', verbose_name='Функции')
     features_additionally = models.ManyToManyField(ShipFeaturesAdditionally, related_name='ship', verbose_name='Допольнительно')
     features_equipment = models.ManyToManyField(FeaturesEquipment, related_name='ship', verbose_name='Оборудование')
 
