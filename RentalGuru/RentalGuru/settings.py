@@ -191,11 +191,15 @@ CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
 # Настройки перевода
 TRANSLATION_ENABLED = True
-TRANSLATION_DEFAULT_LANGUAGE = 'ru'  # Язык по умолчанию
-TRANSLATION_CACHE_TIMEOUT = 86400  # Время кеширования переводов (24 часа)
-TRANSLATION_MAX_LENGTH = 5000  # Максимальная длина текста для перевода
-TRANSLATION_BATCH_SIZE = 10  # Размер пакета для перевода
-TRANSLATION_EXCLUDED_KEYWORDS = ['url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone']
+TRANSLATION_DEFAULT_LANGUAGE = 'ru'
+TRANSLATION_CACHE_TIMEOUT = 86400  # 24 часа
+TRANSLATION_MAX_LENGTH = 5000  # Максимальная длина
+TRANSLATION_MIN_LENGTH = 3  # Минимальная длина для перевода
+TRANSLATION_MAX_WORKERS = 4  # Количество параллельных потоков
+TRANSLATION_EXCLUDED_KEYWORDS = [
+    'url', 'slug', 'id', 'price', 'year', 'latitude',
+    'longitude', 'rating', 'email', 'phone', 'http://', 'https://'
+]
 
 # Logging into 'info.log'
 LOGGING = {

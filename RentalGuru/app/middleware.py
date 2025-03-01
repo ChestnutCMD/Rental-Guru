@@ -1,6 +1,7 @@
 import json
 import logging
 import hashlib
+import concurrent.futures
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
@@ -13,9 +14,11 @@ class TranslationMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         super().__init__(get_response)
         self.translator = Translator()
-        self.CACHE_TIMEOUT = getattr(settings, 'TRANSLATION_CACHE_TIMEOUT', 60 * 60 * 24)  # 24 часа по умолчанию
-        self.MAX_TEXT_LENGTH = getattr(settings, 'TRANSLATION_MAX_LENGTH', 5000)  # максимальная длина текста
-        self.BATCH_SIZE = getattr(settings, 'TRANSLATION_BATCH_SIZE', 10)  # размер пакета для перевода
+        self.CACHE_TIMEOUT = getattr(settings, 'TRANSLATION_CACHE_TIMEOUT', 60 * 60 * 24)
+        self.MAX_TEXT_LENGTH = getattr(settings, 'TRANSLATION_MAX_LENGTH', 5000)
+        self.MAX_WORKERS = getattr(settings, 'TRANSLATION_MAX_WORKERS', 4)
+        self.TRANSLATION_THRESHOLD = getattr(settings, 'TRANSLATION_MIN_LENGTH', 3)
+        self.translatable_fields = set()
 
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
@@ -40,69 +43,136 @@ class TranslationMiddleware(MiddlewareMixin):
         if 'application/json' in response.get('Content-Type', ''):
             try:
                 data = json.loads(response.content.decode('utf-8'))
-                translated_data = self.translate_data(data, user_language)
+
+                strings_to_translate = {}
+                self._extract_translatable_strings(data, strings_to_translate)
+
+                if strings_to_translate:
+                    translated_strings = self._translate_strings_parallel(strings_to_translate, user_language)
+
+                    translated_data = self._apply_translations(data, translated_strings)
+                else:
+                    translated_data = data
+
                 response.content = json.dumps(translated_data, ensure_ascii=False).encode('utf-8')
             except Exception as e:
                 logger.error(f"Ошибка перевода JSON: {str(e)}")
 
         return response
 
-    def translate_data(self, data, target_language):
-        """ Переводит данные JSON, исключая технические поля и None """
-        if data is None:
-            return data
+    def _extract_translatable_strings(self, data, result, path=""):
+        """Извлекает все строки, которые нужно перевести"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_path = f"{path}.{key}" if path else key
+                self._extract_translatable_strings(value, result, new_path)
 
-        try:
-            if isinstance(data, str):
-                if not data.strip() or self.is_excluded_field(data) or len(data) > self.MAX_TEXT_LENGTH:
-                    return data
-                return self.get_translation(data, target_language)
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                new_path = f"{path}[{i}]"
+                self._extract_translatable_strings(item, result, new_path)
 
-            elif isinstance(data, list):
-                return [self.translate_data(item, target_language) for item in data]
+        elif isinstance(data, str) and self._should_translate(data):
 
-            elif isinstance(data, dict):
-                return {key: self.translate_data(value, target_language) for key, value in data.items()}
+            result[path] = data
 
-            else:
-                return data
+    def _apply_translations(self, data, translations):
+        """Применяет переводы к данным"""
+        if isinstance(data, dict):
+            return {k: self._apply_translations(v, translations) for k, v in data.items()}
 
-        except Exception as e:
-            logger.error(f"Ошибка перевода данных '{str(data)[:50]}...' типа {type(data)}: {str(e)}")
-            return data
+        elif isinstance(data, list):
+            return [self._apply_translations(item, translations) for item in data]
 
-    def get_translation(self, text, target_language):
-        """ Получение перевода с использованием кеширования """
-        if not text or not isinstance(text, str) or len(text) > self.MAX_TEXT_LENGTH:
-            return text
+        elif isinstance(data, str) and self._should_translate(data):
 
-        cache_key = f"trans_{hashlib.md5((text + target_language).encode()).hexdigest()}"
+            return translations.get(data, data)
 
-        cached_translation = cache.get(cache_key)
-        if cached_translation:
-            return cached_translation
+        return data
 
-        try:
-            result = self.translator.translate(text, dest=target_language)
-            translated_text = result.text if hasattr(result, 'text') else text
+    def _should_translate(self, text):
+        """Определяет, нужно ли переводить текст"""
+        if not isinstance(text, str) or not text.strip():
+            return False
 
-            cache.set(cache_key, translated_text, self.CACHE_TIMEOUT)
-
-            return translated_text
-        except Exception as e:
-            logger.error(f"Ошибка перевода '{text[:100]}...': {str(e)}")
-            return text
-
-    def is_excluded_field(self, value):
-        """ Исключаем технические поля из перевода """
-        if not isinstance(value, str):
-            return True
+        if len(text) < self.TRANSLATION_THRESHOLD or len(text) > self.MAX_TEXT_LENGTH:
+            return False
 
         EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS',
                                     ['url', 'slug', 'id', 'price', 'year', 'latitude',
                                      'longitude', 'rating', 'email', 'phone', 'http://', 'https://'])
 
-        if len(value.strip()) < 3 or value.startswith(('http://', 'https://')):
-            return True
+        if text.startswith(('http://', 'https://')) or text.strip().isdigit():
+            return False
 
-        return any(keyword in value.lower() for keyword in EXCLUDED_KEYWORDS)
+        return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
+
+    def _translate_strings_parallel(self, strings_to_translate, target_language):
+        """Переводит строки параллельно, используя ThreadPoolExecutor"""
+
+        unique_strings = {}
+        for path, text in strings_to_translate.items():
+            unique_strings[text] = text
+
+        cached_translations = {}
+        strings_to_request = []
+
+        for text in unique_strings.keys():
+            cache_key = f"trans_{hashlib.md5((text + target_language).encode()).hexdigest()}"
+            cached = cache.get(cache_key)
+
+            if cached:
+                cached_translations[text] = cached
+            else:
+                strings_to_request.append(text)
+
+        if strings_to_request:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+
+                batch_size = 10
+                batches = [strings_to_request[i:i + batch_size] for i in range(0, len(strings_to_request), batch_size)]
+
+                future_to_batch = {executor.submit(self._translate_batch, batch, target_language): batch for batch in
+                                   batches}
+
+                for future in concurrent.futures.as_completed(future_to_batch):
+                    batch = future_to_batch[future]
+                    try:
+                        result = future.result()
+
+                        for original, translated in result.items():
+                            cached_translations[original] = translated
+
+                            cache_key = f"trans_{hashlib.md5((original + target_language).encode()).hexdigest()}"
+                            cache.set(cache_key, translated, self.CACHE_TIMEOUT)
+                    except Exception as e:
+                        logger.error(f"Ошибка при переводе батча: {str(e)}")
+
+        result = {}
+        for path, text in strings_to_translate.items():
+            result[text] = cached_translations.get(text, text)
+
+        return result
+
+    def _translate_batch(self, texts, target_language):
+        """Переводит пакет строк за один запрос к API"""
+        result = {}
+
+        try:
+            translated = self.translator.translate(texts, dest=target_language)
+
+            if not isinstance(translated, list):
+                translated = [translated]
+
+            for i, trans in enumerate(translated):
+                if i < len(texts) and hasattr(trans, 'text'):
+                    result[texts[i]] = trans.text
+                else:
+                    if i < len(texts):
+                        result[texts[i]] = texts[i]
+        except Exception as e:
+            logger.error(f"Ошибка batch-перевода: {str(e)}")
+            for text in texts:
+                result[text] = text
+
+        return result
