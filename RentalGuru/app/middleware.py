@@ -36,8 +36,8 @@ class TranslationMiddleware(MiddlewareMixin):
         if 'application/json' in response.get('Content-Type', ''):
             try:
                 data = json.loads(response.content.decode('utf-8'))
-
                 strings_to_translate = {}
+
                 self._extract_translatable_strings(data, strings_to_translate)
 
                 if strings_to_translate:
@@ -60,12 +60,9 @@ class TranslationMiddleware(MiddlewareMixin):
                 self._extract_translatable_strings(value, result, new_path)
 
         elif isinstance(data, list):
-            if all(isinstance(item, str) for item in data):
-                result[path] = "\n".join(data)
-            else:
-                for i, item in enumerate(data):
-                    new_path = f"{path}[{i}]"
-                    self._extract_translatable_strings(item, result, new_path)
+            for i, item in enumerate(data):
+                new_path = f"{path}[{i}]"
+                self._extract_translatable_strings(item, result, new_path)
 
         elif isinstance(data, str) and self._should_translate(data):
             result[path] = data
@@ -76,11 +73,7 @@ class TranslationMiddleware(MiddlewareMixin):
             return {k: self._apply_translations(v, translations) for k, v in data.items()}
 
         elif isinstance(data, list):
-            if all(isinstance(item, str) for item in data):
-                translated_text = translations.get("\n".join(data), "\n".join(data))
-                return translated_text.split("\n")
-            else:
-                return [self._apply_translations(item, translations) for item in data]
+            return [self._apply_translations(item, translations) for item in data]
 
         elif isinstance(data, str) and self._should_translate(data):
             return translations.get(data, data)
@@ -106,6 +99,9 @@ class TranslationMiddleware(MiddlewareMixin):
         strings_to_request = []
 
         for text in unique_strings.keys():
+            if text is None:  # Фильтруем None
+                continue
+
             cache_key = f"trans_{hashlib.md5((text + target_language).encode()).hexdigest()}"
             cached = cache.get(cache_key)
 
@@ -122,6 +118,10 @@ class TranslationMiddleware(MiddlewareMixin):
                     try:
                         result = future.result()
                         for original, translated in result.items():
+                            if translated is None or translated.strip() == "":
+                                logger.warning(f"Пустой перевод для '{original}'")
+                                translated = original
+
                             cached_translations[original] = translated
                             cache_key = f"trans_{hashlib.md5((original + target_language).encode()).hexdigest()}"
                             cache.set(cache_key, translated, self.CACHE_TIMEOUT)
@@ -145,10 +145,11 @@ class TranslationMiddleware(MiddlewareMixin):
                 return {text: text for text in texts}
 
             for i, trans in enumerate(translated):
-                if hasattr(trans, 'text'):
+                if hasattr(trans, 'text') and trans.text:
                     result[texts[i]] = trans.text
                 else:
                     result[texts[i]] = texts[i]
+
         except Exception as e:
             logger.error(f"Ошибка batch-перевода: {str(e)}")
             return {text: text for text in texts}
