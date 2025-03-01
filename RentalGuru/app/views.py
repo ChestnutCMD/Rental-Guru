@@ -52,7 +52,7 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Пароль успешно обновлен'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -656,7 +656,7 @@ class TelegramRegisterView(APIView):
             refresh = RefreshToken.for_user(user)
 
             return Response({
-                "message": "User registered successfully",
+                "message": "Пользователь зарегистрирован",
                 "user_id": user.id,
                 "email": user.email,
                 "role": role,

@@ -2,7 +2,7 @@ import json
 import logging
 import hashlib
 import concurrent.futures
-from django.conf import settings
+from RentalGuru import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
 from googletrans import Translator, LANGUAGES
