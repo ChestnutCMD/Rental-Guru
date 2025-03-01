@@ -9,15 +9,12 @@ from googletrans import Translator, LANGUAGES
 
 logger = logging.getLogger(__name__)
 
-
 class TranslationMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         super().__init__(get_response)
         self.translator = Translator()
         self.CACHE_TIMEOUT = getattr(settings, 'TRANSLATION_CACHE_TIMEOUT', 60 * 60 * 24)
-        self.MAX_TEXT_LENGTH = getattr(settings, 'TRANSLATION_MAX_LENGTH', 5000)
         self.MAX_WORKERS = getattr(settings, 'TRANSLATION_MAX_WORKERS', 4)
-        self.TRANSLATION_THRESHOLD = getattr(settings, 'TRANSLATION_MIN_LENGTH', 3)
 
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
@@ -63,9 +60,12 @@ class TranslationMiddleware(MiddlewareMixin):
                 self._extract_translatable_strings(value, result, new_path)
 
         elif isinstance(data, list):
-            for i, item in enumerate(data):
-                new_path = f"{path}[{i}]"
-                self._extract_translatable_strings(item, result, new_path)
+            if all(isinstance(item, str) for item in data):
+                result[path] = "\n".join(data)
+            else:
+                for i, item in enumerate(data):
+                    new_path = f"{path}[{i}]"
+                    self._extract_translatable_strings(item, result, new_path)
 
         elif isinstance(data, str) and self._should_translate(data):
             result[path] = data
@@ -76,7 +76,11 @@ class TranslationMiddleware(MiddlewareMixin):
             return {k: self._apply_translations(v, translations) for k, v in data.items()}
 
         elif isinstance(data, list):
-            return [self._apply_translations(item, translations) for item in data]
+            if all(isinstance(item, str) for item in data):
+                translated_text = translations.get("\n".join(data), "\n".join(data))
+                return translated_text.split("\n")
+            else:
+                return [self._apply_translations(item, translations) for item in data]
 
         elif isinstance(data, str) and self._should_translate(data):
             return translations.get(data, data)
@@ -88,9 +92,6 @@ class TranslationMiddleware(MiddlewareMixin):
         if not isinstance(text, str) or not text.strip():
             return False
 
-        if len(text) < self.TRANSLATION_THRESHOLD or len(text) > self.MAX_TEXT_LENGTH:
-            return False
-
         EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS', ['url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone', 'http://', 'https://'])
 
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
@@ -100,7 +101,6 @@ class TranslationMiddleware(MiddlewareMixin):
 
     def _translate_strings_parallel(self, strings_to_translate, target_language):
         """Переводит строки параллельно, используя ThreadPoolExecutor"""
-
         unique_strings = {text: text for path, text in strings_to_translate.items()}
         cached_translations = {}
         strings_to_request = []
@@ -116,15 +116,11 @@ class TranslationMiddleware(MiddlewareMixin):
 
         if strings_to_request:
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-                batch_size = 10
-                batches = [strings_to_request[i:i + batch_size] for i in range(0, len(strings_to_request), batch_size)]
-                future_to_batch = {executor.submit(self._translate_batch, batch, target_language): batch for batch in batches}
-
+                future_to_batch = {executor.submit(self._translate_batch, batch, target_language): batch for batch in [strings_to_request]}
                 for future in concurrent.futures.as_completed(future_to_batch):
                     batch = future_to_batch[future]
                     try:
                         result = future.result()
-
                         for original, translated in result.items():
                             cached_translations[original] = translated
                             cache_key = f"trans_{hashlib.md5((original + target_language).encode()).hexdigest()}"
@@ -144,9 +140,9 @@ class TranslationMiddleware(MiddlewareMixin):
             if not isinstance(translated, list):
                 translated = [translated]
 
-            if len(translated) != len(texts):  # Проверяем, совпадает ли количество переводов
+            if len(translated) != len(texts):
                 logger.warning(f"Некорректный размер ответа от Google Translate: {len(translated)} вместо {len(texts)}")
-                return {text: text for text in texts}  # Возвращаем оригинальные тексты
+                return {text: text for text in texts}
 
             for i, trans in enumerate(translated):
                 if hasattr(trans, 'text'):
