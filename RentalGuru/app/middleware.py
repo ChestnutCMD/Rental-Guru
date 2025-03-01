@@ -15,10 +15,21 @@ class TranslationMiddleware(MiddlewareMixin):
         super().__init__(get_response)
         self.CACHE_TIMEOUT = getattr(settings, 'TRANSLATION_CACHE_TIMEOUT', 60 * 60 * 24)
         self.MAX_WORKERS = getattr(settings, 'TRANSLATION_MAX_WORKERS', 2)
+        self.ERROR_KEYS = getattr(settings, 'TRANSLATION_ERROR_KEYS',
+                                  ['detail', 'error', 'message', 'non_field_errors'])
+        self.DRF_ERROR_LANGUAGE = getattr(settings, 'DRF_ERROR_LANGUAGE', 'en')
 
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
             return response
+
+        is_error_response = False
+        if 'application/json' in response.get('Content-Type', ''):
+            try:
+                data = json.loads(response.content.decode('utf-8'))
+                is_error_response = self._is_error_response(data, response.status_code)
+            except Exception:
+                pass
 
         query_language = request.GET.get('lang')
 
@@ -31,8 +42,7 @@ class TranslationMiddleware(MiddlewareMixin):
                 target_language = settings.TRANSLATION_DEFAULT_LANGUAGE
         else:
             target_language = query_language
-
-        if not target_language or target_language == settings.TRANSLATION_DEFAULT_LANGUAGE:
+        if not target_language or (target_language == settings.TRANSLATION_DEFAULT_LANGUAGE and not is_error_response):
             return response
 
         if 'application/json' in response.get('Content-Type', ''):
@@ -40,13 +50,18 @@ class TranslationMiddleware(MiddlewareMixin):
                 data = json.loads(response.content.decode('utf-8'))
                 strings_to_translate = {}
 
-                self._extract_translatable_strings(data, strings_to_translate)
+                self._extract_translatable_strings(data, strings_to_translate, is_error=is_error_response)
 
                 if strings_to_translate:
-
                     path_to_text = {path: text for path, text in strings_to_translate.items()}
 
-                    translated_strings = self._translate_strings(path_to_text.values(), target_language)
+                    source_language = self.DRF_ERROR_LANGUAGE if is_error_response else None
+
+                    translated_strings = self._translate_strings(
+                        path_to_text.values(),
+                        target_language,
+                        source_language=source_language
+                    )
 
                     translated_data = self._apply_translations_by_path(data, path_to_text, translated_strings)
                 else:
@@ -58,30 +73,41 @@ class TranslationMiddleware(MiddlewareMixin):
 
         return response
 
-    def _extract_translatable_strings(self, data, result, path=""):
+    def _is_error_response(self, data, status_code):
+        """Определяет, является ли ответ сообщением об ошибке"""
+        if status_code >= 400:
+            return True
+        if isinstance(data, dict):
+            return any(key in data for key in self.ERROR_KEYS)
+
+        return False
+
+    def _extract_translatable_strings(self, data, result, path="", is_error=False):
         """Извлекает все строки, которые нужно перевести"""
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = f"{path}.{key}" if path else key
-                self._extract_translatable_strings(value, result, new_path)
+                error_field = is_error or key in self.ERROR_KEYS
+
+                if error_field and isinstance(value, str) and value.strip():
+                    result[new_path] = value
+                else:
+                    self._extract_translatable_strings(value, result, new_path, error_field)
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
                 new_path = f"{path}[{i}]"
-                self._extract_translatable_strings(item, result, new_path)
+                self._extract_translatable_strings(item, result, new_path, is_error)
 
-        elif isinstance(data, str) and self._should_translate(data):
+        elif isinstance(data, str) and (is_error or self._should_translate(data)):
             result[path] = data
 
     def _apply_translations_by_path(self, data, path_to_text, translations):
         """Применяет переводы к данным по указанным путям"""
-
         result = data
         for path, text in path_to_text.items():
             if text in translations:
-
                 components = self._parse_path(path)
-
                 self._set_value_by_path(result, components, translations[text])
 
         return result
@@ -162,7 +188,7 @@ class TranslationMiddleware(MiddlewareMixin):
 
         return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
 
-    def _translate_strings(self, strings_to_translate, target_language):
+    def _translate_strings(self, strings_to_translate, target_language, source_language=None):
         """Переводит строки и кеширует результат"""
         translated_strings = {}
         unique_strings = set(strings_to_translate)
@@ -171,14 +197,19 @@ class TranslationMiddleware(MiddlewareMixin):
             if text is None:
                 continue
 
-            cache_key = f"trans_{target_language}_{hashlib.md5(text.encode()).hexdigest()}"
+            source_lang_part = f"_{source_language}" if source_language else ""
+            cache_key = f"trans{source_lang_part}_{target_language}_{hashlib.md5(text.encode()).hexdigest()}"
             cached_translation = cache.get(cache_key)
 
             if cached_translation:
                 translated_strings[text] = cached_translation
             else:
                 try:
-                    translated_text = translate(text, target_language)
+                    if source_language:
+                        translated_text = translate(text, target_language)
+                    else:
+                        translated_text = translate(text, target_language)
+
                     if not translated_text.strip():
                         logger.warning(f"Пустой перевод для: '{text}'")
                         translated_text = text
