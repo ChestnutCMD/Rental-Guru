@@ -81,7 +81,7 @@ class TranslationMiddleware(MiddlewareMixin):
         if not isinstance(text, str) or not text.strip():
             return False
 
-        EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS', ['url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone', 'http://', 'https://'])
+        EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS', ['code', 'url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating', 'email', 'phone', 'http://', 'https://'])
 
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
             return False
