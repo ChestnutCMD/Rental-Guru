@@ -341,8 +341,8 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
     )
 
 
-admin.site.register(Auto, AutoAdmin)
-admin.site.register(Bike, BikeAdmin)
-admin.site.register(Ship, ShipAdmin)
-admin.site.register(Helicopter, HelicopterAdmin)
-admin.site.register(SpecialTechnic, SpecialTechnicAdmin)
+# admin.site.register(Auto, AutoAdmin)
+# admin.site.register(Bike, BikeAdmin)
+# admin.site.register(Ship, ShipAdmin)
+# admin.site.register(Helicopter, HelicopterAdmin)
+# admin.site.register(SpecialTechnic, SpecialTechnicAdmin)
