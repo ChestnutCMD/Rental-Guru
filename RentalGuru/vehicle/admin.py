@@ -1,14 +1,8 @@
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
-from django.utils.html import format_html
-from tornado.escape import linkify
 
 from feedback.models import Feedback
 from .models import *
-
-admin.site.site_header = "Rental Guru"
-admin.site.site_title = "Rental Guru Admin"
-admin.site.index_title = "CRM"
 
 
 class BaseFeatures(admin.ModelAdmin):
@@ -71,6 +65,7 @@ class FeaturesEquipmentAdmin(BaseFeatures):
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(BaseFeatures):
+    admin_order = 1
     pass
 
 
@@ -81,6 +76,7 @@ class VehicleBrandAdmin(admin.ModelAdmin):
     ordering = ('name',)
     filter_horizontal = ('transport_categories',)
     list_filter = ('transport_categories',)
+    admin_order = 3
 
     def display_categories(self, obj):
         """Выводим категории транспорта в списке"""
@@ -95,10 +91,12 @@ class VehicleModelAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('vehicle_type', 'brand')
     ordering = ('name',)
+    admin_order = 4
 
 
 @admin.register(VehicleClass)
 class VehicleClassAdmin(BaseType):
+    admin_order = 2
     pass
 
 
@@ -118,7 +116,7 @@ class AutoBodyTypeAdmin(BaseType):
 
 
 @admin.register(BikeTransmission)
-class BikeTransmission(BaseType):
+class BikeTransmissionAdmin(BaseType):
     pass
 
 
@@ -341,8 +339,8 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
     )
 
 
-# admin.site.register(Auto, AutoAdmin)
-# admin.site.register(Bike, BikeAdmin)
-# admin.site.register(Ship, ShipAdmin)
-# admin.site.register(Helicopter, HelicopterAdmin)
-# admin.site.register(SpecialTechnic, SpecialTechnicAdmin)
+admin.site.register(Auto, AutoAdmin)
+admin.site.register(Bike, BikeAdmin)
+admin.site.register(Ship, ShipAdmin)
+admin.site.register(Helicopter, HelicopterAdmin)
+admin.site.register(SpecialTechnic, SpecialTechnicAdmin)
