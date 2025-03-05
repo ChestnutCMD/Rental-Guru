@@ -196,16 +196,16 @@ class SetPasswordView(APIView):
                     qr = QRCode.objects.get(referral_link=cache_data.get('source_details'))
                     qr.count += 1
                     qr.save()
-                elif cache_data['source_type'] == 'promo':
-                    promocode = PromoCode.objects.get(title=cache_data.get('source_details'))
-                    promocode.count += 1
-                    promocode.save()
-                    if promocode.type == 'cash' and member_type == 'renter':
-                        renter = Renter.objects.get(user=user)
-                        renter.bonus_account += promocode.total
-                        renter.save()
-                    else:
-                        UsedPromoCode.objects.create(user=user, promo_code=promocode)
+            if cache_data['source_type'] == 'promo':
+                promocode = PromoCode.objects.get(title=cache_data.get('source_details'))
+                promocode.count += 1
+                promocode.save()
+                if promocode.type == 'cash' and member_type == 'renter':
+                    renter = Renter.objects.get(user=user)
+                    renter.bonus_account += promocode.total
+                    renter.save()
+                else:
+                    UsedPromoCode.objects.create(user=user, promo_code=promocode)
             message = "Пользователь успешно зарегистрирован."
 
         elif cache_data['action'] == 'reset_password':

@@ -89,8 +89,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 promo = PromoCode.objects.get(title=promocode)
                 if promo.influencer:
                     cache_data['influencer_id'] = promo.influencer.id
-                    cache_data['source_type'] = 'promo'
-                    cache_data['source_details'] = promocode
+                cache_data['source_type'] = 'promo'
+                cache_data['source_details'] = promocode
             except PromoCode.DoesNotExist:
                 raise serializers.ValidationError({"referral_code": "Неправильный промокод"})
 
