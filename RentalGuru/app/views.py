@@ -68,9 +68,11 @@ class PasswordResetRequestView(APIView):
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+
+        email = serializer.validated_data['email'].lower()
+
         try:
-            User.objects.get(email=request.data.get('email'))
+            User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({"message": "Пользователя с таким Email не существует"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -102,7 +104,7 @@ class VerifyCodeView(APIView):
     def post(self, request):
         serializer = VerifyCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+        email = serializer.validated_data['email'].lower()
         code = serializer.validated_data['code']
 
         cached_data = redis_1.get(f"auth_{email}")
@@ -142,7 +144,7 @@ class SetPasswordView(APIView):
     def post(self, request):
         serializer = SetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+        email = serializer.validated_data['email'].lower()
         password = serializer.validated_data['password']
 
         cached_data = redis_1.get(f"auth_{email}")
