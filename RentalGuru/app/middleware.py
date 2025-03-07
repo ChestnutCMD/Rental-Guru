@@ -89,9 +89,12 @@ class TranslationMiddleware(MiddlewareMixin):
                 new_path = f"{path}.{key}" if path else key
                 error_field = is_error or key in self.ERROR_KEYS
 
-                if error_field and isinstance(value, str) and value.strip():
+                excluded_field = key in getattr(settings, 'TRANSLATION_EXCLUDED_FIELDS',
+                                                ['date_joined', 'created_at', 'updated_at'])
+
+                if error_field and isinstance(value, str) and value.strip() and not excluded_field:
                     result[new_path] = value
-                else:
+                elif not excluded_field:
                     self._extract_translatable_strings(value, result, new_path, error_field)
 
         elif isinstance(data, list):
@@ -100,7 +103,12 @@ class TranslationMiddleware(MiddlewareMixin):
                 self._extract_translatable_strings(item, result, new_path, is_error)
 
         elif isinstance(data, str) and (is_error or self._should_translate(data)):
-            result[path] = data
+            field_name = path.split('.')[-1] if '.' in path else path
+            excluded_field = field_name in getattr(settings, 'TRANSLATION_EXCLUDED_FIELDS',
+                                                   ['date_joined', 'created_at', 'updated_at'])
+
+            if not excluded_field:
+                result[path] = data
 
     def _apply_translations_by_path(self, data, path_to_text, translations):
         """Применяет переводы к данным по указанным путям"""

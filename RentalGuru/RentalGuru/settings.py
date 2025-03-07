@@ -197,7 +197,7 @@ TRANSLATION_MAX_LENGTH = 5000  # Максимальная длина
 TRANSLATION_MIN_LENGTH = 3  # Минимальная длина для перевода
 TRANSLATION_MAX_WORKERS = 4  # Количество параллельных потоков
 TRANSLATION_EXCLUDED_KEYWORDS = [
-    'url', 'slug', 'id', 'price', 'year', 'latitude',
+    'url', 'slug', 'id', 'price', 'year', 'latitude', 'code',
     'longitude', 'rating', 'email', 'phone', 'http://', 'https://'
 ]
 
