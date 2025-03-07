@@ -439,7 +439,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         fields = ['email', 'first_name', 'last_name', 'telephone', 'role']
 
     def create(self, validated_data):
-        email = validated_data.pop('email')
+        email = validated_data.pop('email').lower()
         first_name = validated_data.pop('first_name', '')
         last_name = validated_data.pop('last_name', '')
         telephone = validated_data.pop('telephone', None)
