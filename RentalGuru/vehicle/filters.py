@@ -86,21 +86,21 @@ class AutoFilter(BaseFilter):
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
     body_type = filters.CharFilter(field_name='body_type__slug', label='Тип кузова')
     features_additionally = filters.ModelMultipleChoiceFilter(
-        field_name='features_additionally__name',
+        field_name='features_additionally__id',
         queryset=AutoFeaturesAdditionally.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Выбор особенностей'
     )
     features_for_children = filters.ModelMultipleChoiceFilter(
-        field_name='features_for_children__name',
+        field_name='features_for_children__id',
         queryset=FeaturesForChildren.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Для детей'
     )
     features_functions = filters.ModelMultipleChoiceFilter(
-        field_name='features_functions__name',
+        field_name='features_functions__id',
         queryset=AutoFeaturesFunctions.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Функции'
     )
 
@@ -120,15 +120,15 @@ class BikeFilter(BaseFilter):
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
     features_additionally = filters.ModelMultipleChoiceFilter(
-        field_name='features_additionally__name',
+        field_name='features_additionally__id',
         queryset=BikeFeaturesAdditionally.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Выбор особенностей'
     )
     features_functions = filters.ModelMultipleChoiceFilter(
-        field_name='features_functions__name',
+        field_name='features_functions__id',
         queryset=BikeFeaturesFunctions.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Функции'
     )
 
@@ -152,21 +152,21 @@ class ShipFilter(BaseFilter):
     type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
     grot = filters.CharFilter(field_name='grot', label='Грот')
     features_additionally = filters.ModelMultipleChoiceFilter(
-        field_name='features_additionally__name',
+        field_name='features_additionally__id',
         queryset=ShipFeaturesAdditionally.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Выбор особенностей'
     )
     features_functions = filters.ModelMultipleChoiceFilter(
-        field_name='features_functions__name',
+        field_name='features_functions__id',
         queryset=ShipFeaturesFunctions.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Функции'
     )
     features_equipment = filters.ModelMultipleChoiceFilter(
-        field_name='features_equipment__name',
+        field_name='features_equipment__id',
         queryset=FeaturesEquipment.objects.all(),
-        to_field_name='name',
+        to_field_name='id',
         label='Оборудование'
     )
 
