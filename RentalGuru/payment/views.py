@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import random
 import time
 
 from django.http import Http404
@@ -92,7 +91,8 @@ class PaymentViewSet(viewsets.ViewSet):
                 order_id=order_id,
                 amount=int(payment.amount * 100),
                 description=f'Аренда транспорта {payment.request_rent.vehicle} (заявка #{payment.request_rent.id})',
-                receipt=receipt
+                receipt=receipt,
+                lang=payment.request_rent.organizer.language.code
             )
 
             logger.info(f"Tinkoff API response: {response}")

@@ -22,14 +22,14 @@ class TinkoffAPI:
         sorted_params = ''.join(str(params[key]) for key in sorted(params.keys()))
         return hashlib.sha256(sorted_params.encode("utf-8")).hexdigest()
 
-    def create_payment(self, order_id, amount, description, receipt):
+    def create_payment(self, order_id, amount, description, receipt, lang):
         """Создание платежа"""
         payload = {'TerminalKey': self.terminal_key,
                    'Amount': amount,
                    'OrderId': order_id,
                    'Description': description,
-                   'SuccessURL': self.success_url,
-                   'FailURL': self.fail_url,
+                   'SuccessURL': f"{self.success_url}{lang}/profile?trip=true",
+                   'FailURL': f"{self.success_url}{lang}/profile?trip=true",
                    'NotificationURL': f'{HOST_URL}/payment/callback/'}
         payload['Token'] = self._generate_token(payload)
         payload['Receipt'] = receipt
