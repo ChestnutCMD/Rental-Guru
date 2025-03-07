@@ -189,7 +189,16 @@ class TranslationMiddleware(MiddlewareMixin):
 
         EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS',
                                     ['code', 'url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating',
-                                     'email', 'phone', 'http://', 'https://'])
+                                     'date_joined',
+                                     'email', 'phone', 'http://', 'https://', 'language'])
+
+        if len(text.strip()) <= 2:
+            return False
+
+        LANGUAGE_CODES = getattr(settings, 'TRANSLATION_EXCLUDED_LANGUAGE_CODES',
+                                 ['EN', 'RU', 'FR', 'DE', 'ES', 'IT', 'CN', 'JP', 'AR', 'UK'])
+        if text.upper() in LANGUAGE_CODES:
+            return False
 
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
             return False
