@@ -48,7 +48,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         ref_code = request.query_params.get('code', None)
         promocode = request.query_params.get('promocode', None)
         platform = validated_data.get('platform', 'unknown')
-        validated_data['email'] = validated_data['email'].lowwer()
+        validated_data['email'] = validated_data['email'].lower()
         # Проверка свободного Email
         user = User.objects.filter(email=validated_data['email'])
         if user:
