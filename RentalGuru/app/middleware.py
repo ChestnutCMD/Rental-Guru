@@ -2,6 +2,8 @@ import json
 import logging
 import hashlib
 import concurrent.futures
+import re
+
 from RentalGuru import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
@@ -18,6 +20,9 @@ class TranslationMiddleware(MiddlewareMixin):
         self.ERROR_KEYS = getattr(settings, 'TRANSLATION_ERROR_KEYS',
                                   ['detail', 'error', 'message', 'non_field_errors'])
         self.DRF_ERROR_LANGUAGE = getattr(settings, 'DRF_ERROR_LANGUAGE', 'en')
+        # Compile regex patterns for better performance
+        self.timestamp_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}')
+        self.iso_date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}(\.\d+)?([zZ]|[+-]\d{2}:?\d{2})?$')
 
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
@@ -87,13 +92,18 @@ class TranslationMiddleware(MiddlewareMixin):
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = f"{path}.{key}" if path else key
-                error_field = is_error or key in self.ERROR_KEYS
 
+                # Skip timestamp keys entirely
+                if key.lower() in ['timestamp', 'created_at', 'updated_at', 'date', 'datetime', 'time']:
+                    continue
+
+                error_field = is_error or key in self.ERROR_KEYS
                 excluded_field = key in getattr(settings, 'TRANSLATION_EXCLUDED_FIELDS',
                                                 ['date_joined', 'created_at', 'updated_at'])
 
                 if error_field and isinstance(value, str) and value.strip() and not excluded_field:
-                    result[new_path] = value
+                    if not self._is_timestamp(value):  # Skip timestamps
+                        result[new_path] = value
                 elif not excluded_field:
                     self._extract_translatable_strings(value, result, new_path, error_field)
 
@@ -107,8 +117,20 @@ class TranslationMiddleware(MiddlewareMixin):
             excluded_field = field_name in getattr(settings, 'TRANSLATION_EXCLUDED_FIELDS',
                                                    ['date_joined', 'created_at', 'updated_at'])
 
-            if not excluded_field:
+            if not excluded_field and not self._is_timestamp(data):  # Skip timestamps
                 result[path] = data
+
+    def _is_timestamp(self, text):
+        """Check if the string is a timestamp in ISO format or similar"""
+        if not isinstance(text, str):
+            return False
+
+        # Check for ISO 8601 date format
+        if self.iso_date_pattern.match(text):
+            return True
+
+        # Check for other common timestamp formats
+        return bool(self.timestamp_pattern.match(text))
 
     def _apply_translations_by_path(self, data, path_to_text, translations):
         """Применяет переводы к данным по указанным путям"""
@@ -189,7 +211,7 @@ class TranslationMiddleware(MiddlewareMixin):
 
         EXCLUDED_KEYWORDS = getattr(settings, 'TRANSLATION_EXCLUDED_KEYWORDS',
                                     ['code', 'url', 'slug', 'id', 'price', 'year', 'latitude', 'longitude', 'rating',
-                                     'date_joined',
+                                     'date_joined', 'timestamp',
                                      'email', 'phone', 'http://', 'https://', 'language'])
 
         if len(text.strip()) <= 2:
@@ -201,6 +223,10 @@ class TranslationMiddleware(MiddlewareMixin):
             return False
 
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
+            return False
+
+        # Skip timestamps
+        if self._is_timestamp(text):
             return False
 
         return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
