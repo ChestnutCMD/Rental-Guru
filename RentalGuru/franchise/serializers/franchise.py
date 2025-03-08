@@ -101,11 +101,18 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     telephone = serializers.CharField(source='user.telephone')
+    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all())
 
     class Meta:
         model = Franchise
         fields = ['id', 'name', 'inn', 'telephone', 'country', 'city', 'email', 'first_name', 'last_name']
         read_only_fields = ['id']
+
+    def validate_city(self, value):
+        """Проверка, что для города нет уже зарегистрированной франшизы"""
+        if Franchise.objects.filter(city=value).exists():
+            raise serializers.ValidationError(f'Для города {value.title} уже зарегистрирована франшиза.')
+        return value
 
     def create(self, validated_data):
         from django.contrib.auth import get_user_model
@@ -119,48 +126,43 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
         if not email:
             raise serializers.ValidationError({"email": "Поле email обязательно для заполнения."})
 
-        first_name = user_data.get('first_name')
-        last_name = user_data.get('last_name')
-        telephone = user_data.get('telephone')
-
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
 
         city = validated_data.get('city')
+        country = validated_data.get('country')
         if not city:
             raise serializers.ValidationError({"city": "Поле city обязательно для заполнения."})
-
-        existing_franchise = Franchise.objects.filter(city=city).first()
-        if existing_franchise:
-            raise serializers.ValidationError({
-                "city": f"Для города {existing_franchise.city} уже зарегистрирована франшиза."
-            })
+        if not country:
+            raise serializers.ValidationError({"country": "Поле country обязательно для заполнения."})
 
         password = User.objects.make_random_password()
         with transaction.atomic():
             user = User.objects.create_user(
                 email=email,
-                first_name=first_name,
-                last_name=last_name,
+                first_name=user_data.get('first_name'),
+                last_name=user_data.get('last_name'),
                 password=password,
-                telephone=telephone,
+                telephone=user_data.get('telephone'),
                 role='member',
             )
 
-            validated_data["email"] = email
-            franchise = Franchise.objects.create(director=user, telephone_1=user.telephone, email_1=email, name=validated_data["name"], inn=validated_data["inn"])
+            franchise = Franchise.objects.create(
+                director=user,
+                telephone_1=user.telephone,
+                email_1=email,
+                name=validated_data["name"],
+                inn=validated_data["inn"],
+                city=city,
+                country=country
+            )
 
             Notification.objects.create(
                 user=user,
-                content=f"Добро пожаловать, {first_name}! Вы успешно зарегистрированы как директор франшизы '{franchise.name}'. Ваш пароль: {password}",
+                content=f"Добро пожаловать, {user.first_name}! Вы зарегистрированы как директор франшизы '{franchise.name}'. Ваш пароль: {password}",
             )
 
         return franchise
-
-    def validate_city(self, value):
-        if Franchise.objects.filter(city=value).exclude(id=self.instance.id if self.instance else None).exists():
-            raise serializers.ValidationError(f'Для города {value} уже зарегистрирована франшиза.')
-        return value
 
 
 class FranchiseUpdateSerializer(serializers.ModelSerializer):
