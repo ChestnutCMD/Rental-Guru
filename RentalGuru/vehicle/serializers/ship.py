@@ -7,9 +7,9 @@ from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSe
 
 
 class ShipCreateSerializer(BaseVehicleCreateSerializer):
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesFunctions.objects.all())
-    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
-    features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesFunctions.objects.all(), required=False)
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all(), required=False)
+    features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all(), required=False)
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
 
     class Meta(BaseVehicleCreateSerializer.Meta):

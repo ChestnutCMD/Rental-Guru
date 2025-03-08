@@ -26,9 +26,9 @@ class AutoBodyTypeSerializer(serializers.ModelSerializer):
 
 
 class AutoCreateSerializer(BaseVehicleCreateSerializer):
-    features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all())
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesFunctions.objects.all())
-    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all())
+    features_for_children = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesForChildren.objects.all(), required=False)
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesFunctions.objects.all(), required=False)
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=AutoFeaturesAdditionally.objects.all(), required=False)
     fuel_type = serializers.PrimaryKeyRelatedField(queryset=AutoFuelType.objects.all())
     transmission = serializers.PrimaryKeyRelatedField(queryset=AutoTransmission.objects.all())
     body_type = serializers.PrimaryKeyRelatedField(queryset=AutoBodyType.objects.all())

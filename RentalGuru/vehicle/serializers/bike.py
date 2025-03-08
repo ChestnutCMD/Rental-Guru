@@ -14,8 +14,8 @@ class BikeTransmissionSerializer(serializers.ModelSerializer):
 
 
 class BikeCreateSerializer(BaseVehicleCreateSerializer):
-    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesFunctions.objects.all())
-    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all())
+    features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesFunctions.objects.all(), required=False)
+    features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all(), required=False)
     transmission = serializers.PrimaryKeyRelatedField(queryset=BikeTransmission.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
 
