@@ -24,6 +24,10 @@ class TranslationMiddleware(MiddlewareMixin):
         self.timestamp_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}')
         self.iso_date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}(\.\d+)?([zZ]|[+-]\d{2}:?\d{2})?$')
 
+        # Define common timestamp field names
+        self.timestamp_fields = ['timestamp', 'created_at', 'updated_at', 'date', 'datetime',
+                                 'time', 'created', 'modified', 'published_at', 'last_updated']
+
     def process_response(self, request, response):
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
             return response
@@ -47,14 +51,20 @@ class TranslationMiddleware(MiddlewareMixin):
                 target_language = settings.TRANSLATION_DEFAULT_LANGUAGE
         else:
             target_language = query_language
+
+        # If there's no translation to be done, return the original response
         if not target_language or (target_language == settings.TRANSLATION_DEFAULT_LANGUAGE and not is_error_response):
             return response
 
         if 'application/json' in response.get('Content-Type', ''):
             try:
                 data = json.loads(response.content.decode('utf-8'))
-                strings_to_translate = {}
 
+                # Pre-process timestamps to protect them
+                timestamp_replacements = {}
+                self._protect_timestamps(data, timestamp_replacements)
+
+                strings_to_translate = {}
                 self._extract_translatable_strings(data, strings_to_translate, is_error=is_error_response)
 
                 if strings_to_translate:
@@ -72,11 +82,46 @@ class TranslationMiddleware(MiddlewareMixin):
                 else:
                     translated_data = data
 
+                # Restore the protected timestamps
+                self._restore_timestamps(translated_data, timestamp_replacements)
+
                 response.content = json.dumps(translated_data, ensure_ascii=False).encode('utf-8')
             except Exception as e:
                 logger.error(f"Ошибка перевода JSON: {str(e)}")
 
         return response
+
+    def _protect_timestamps(self, data, replacements, path=""):
+        """Replace timestamp values with placeholders to protect them from translation"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_path = f"{path}.{key}" if path else key
+
+                # If this is a timestamp field and the value is a string that looks like a timestamp
+                if (key.lower() in self.timestamp_fields or self._is_timestamp(str(value))) and isinstance(value, str):
+                    placeholder = f"__TIMESTAMP_{len(replacements)}__"
+                    replacements[placeholder] = value
+                    data[key] = placeholder
+                else:
+                    self._protect_timestamps(value, replacements, new_path)
+
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                new_path = f"{path}[{i}]"
+                self._protect_timestamps(item, replacements, new_path)
+
+    def _restore_timestamps(self, data, replacements):
+        """Restore the original timestamp values from placeholders"""
+        if isinstance(data, dict):
+            for key, value in list(data.items()):
+                if isinstance(value, str) and value.startswith("__TIMESTAMP_") and value.endswith("__"):
+                    if value in replacements:
+                        data[key] = replacements[value]
+                else:
+                    self._restore_timestamps(value, replacements)
+        elif isinstance(data, list):
+            for item in data:
+                self._restore_timestamps(item, replacements)
 
     def _is_error_response(self, data, status_code):
         """Определяет, является ли ответ сообщением об ошибке"""
@@ -94,7 +139,7 @@ class TranslationMiddleware(MiddlewareMixin):
                 new_path = f"{path}.{key}" if path else key
 
                 # Skip timestamp keys entirely
-                if key.lower() in ['timestamp', 'created_at', 'updated_at', 'date', 'datetime', 'time']:
+                if key.lower() in self.timestamp_fields:
                     continue
 
                 error_field = is_error or key in self.ERROR_KEYS
@@ -102,7 +147,7 @@ class TranslationMiddleware(MiddlewareMixin):
                                                 ['date_joined', 'created_at', 'updated_at'])
 
                 if error_field and isinstance(value, str) and value.strip() and not excluded_field:
-                    if not self._is_timestamp(value):  # Skip timestamps
+                    if not self._is_timestamp(value) and not value.startswith("__TIMESTAMP_"):
                         result[new_path] = value
                 elif not excluded_field:
                     self._extract_translatable_strings(value, result, new_path, error_field)
@@ -117,7 +162,7 @@ class TranslationMiddleware(MiddlewareMixin):
             excluded_field = field_name in getattr(settings, 'TRANSLATION_EXCLUDED_FIELDS',
                                                    ['date_joined', 'created_at', 'updated_at'])
 
-            if not excluded_field and not self._is_timestamp(data):  # Skip timestamps
+            if not excluded_field and not self._is_timestamp(data) and not data.startswith("__TIMESTAMP_"):
                 result[path] = data
 
     def _is_timestamp(self, text):
@@ -129,8 +174,12 @@ class TranslationMiddleware(MiddlewareMixin):
         if self.iso_date_pattern.match(text):
             return True
 
+        # More explicit check for common timestamp patterns
+        if re.match(r'^\d{4}-\d{2}-\d{2}[Tt]?\d{2}:\d{2}:\d{2}', text.replace(" ", "")):
+            return True
+
         # Check for other common timestamp formats
-        return bool(self.timestamp_pattern.match(text))
+        return bool(self.timestamp_pattern.match(text.replace(" ", "")))
 
     def _apply_translations_by_path(self, data, path_to_text, translations):
         """Применяет переводы к данным по указанным путям"""
@@ -225,8 +274,8 @@ class TranslationMiddleware(MiddlewareMixin):
         if text.startswith(('http://', 'https://')) or text.strip().isdigit():
             return False
 
-        # Skip timestamps
-        if self._is_timestamp(text):
+        # Skip timestamps and placeholders
+        if self._is_timestamp(text) or text.startswith("__TIMESTAMP_"):
             return False
 
         return not any(keyword in text.lower() for keyword in EXCLUDED_KEYWORDS)
