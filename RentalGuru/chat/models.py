@@ -187,7 +187,7 @@ class RequestRent(models.Model):
         )
 
     def __str__(self):
-        return f'Заявка на аренду id-{self.pk}'
+        return f'Заявка на аренду №-{self.pk}'
 
     class Meta:
         verbose_name = 'Заявка на аренду'
