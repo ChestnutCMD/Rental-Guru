@@ -34,6 +34,7 @@ class Influencer(models.Model):
     email_2 = models.EmailField(max_length=100, null=True, blank=True, verbose_name='Почта №2')
     telephone_1 = models.CharField(max_length=13, null=True, blank=True, verbose_name='Телефон №1')
     telephone_2 = models.CharField(max_length=13, null=True, blank=True, verbose_name='Телефон №2')
+    account = models.DecimalField(default=0, max_digits=12, decimal_places=2, verbose_name='Счет')
 
     def __str__(self):
         return f'{self.user.first_name} - {self.referral_code}'

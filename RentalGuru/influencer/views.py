@@ -343,9 +343,21 @@ class InfluencerPaymentsView(ListAPIView):
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
-        influencer_id = self.kwargs.get('influencer_id')
-        get_object_or_404(Influencer, id=influencer_id)
-        return Payment.objects.filter(influencer_id=influencer_id, status='success').select_related('request_rent', 'influencer').order_by('-updated_at')
+        influencer_id = self.kwargs.get("influencer_id")
+        influencer = get_object_or_404(Influencer, id=influencer_id)
+        self.influencer_account = influencer.account
+        return Payment.objects.filter(
+            influencer_id=influencer_id, status="success"
+        ).select_related("request_rent", "influencer").order_by("-updated_at")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            "account": self.influencer_account,
+            "payments": serializer.data
+        })
 
 
 PERIODS = {

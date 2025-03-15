@@ -540,11 +540,26 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestWithdraw
         fields = '__all__'
-        read_only_fields = ['id', 'influencer', 'amount', 'created_at']
+        read_only_fields = ['id', 'influencer', 'created_at']
 
     def validate(self, attrs):
         request = self.context['request']
         user = request.user
+
+        # Проверяем, что пользователь — инфлюенсер
+        influencer = getattr(user, 'influencer', None)
+        if not influencer:
+            raise serializers.ValidationError({"influencer": "Вы не являетесь инфлюенсером."})
+
+        # Если создается новый запрос на вывод средств
+        if not self.instance:
+            amount = attrs.get("amount")
+            if amount is None:
+                raise serializers.ValidationError({"amount": "Необходимо указать сумму."})
+            if amount > influencer.account:
+                raise serializers.ValidationError({"amount": "Недостаточно средств на балансе."})
+
+        # Проверки при изменении существующего запроса
         status = attrs.get('status', self.instance.status if self.instance else None)
         denied_reason = attrs.get('denied_reason')
 
@@ -560,10 +575,24 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def create(self, validated_data):
+        """При создании автоматически устанавливаем инфлюенсера."""
+        request = self.context['request']
+        validated_data['influencer'] = request.user.influencer
+        return super().create(validated_data)
+
     def update(self, instance, validated_data):
+        """При подтверждении вывода уменьшаем баланс инфлюенсера."""
         status = validated_data.get('status', instance.status)
+
         if status == 'denied' and not validated_data.get('denied_reason'):
             raise serializers.ValidationError({"denied_reason": "Необходимо указать причину отказа."})
+
+        if status == 'completed':
+            if instance.amount > instance.influencer.account:
+                raise serializers.ValidationError({"amount": "Недостаточно средств на балансе."})
+            instance.influencer.account -= instance.amount
+            instance.influencer.save()
 
         return super().update(instance, validated_data)
 
