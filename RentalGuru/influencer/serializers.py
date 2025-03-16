@@ -527,12 +527,23 @@ class RequestWithdrawCreateSerializer(serializers.ModelSerializer):
         model = RequestWithdraw
         fields = ['amount']
 
-    def create(self, validated_data):
+    def validate_amount(self, value):
+        """Проверяем, что сумма не превышает баланс инфлюенсера."""
         request = self.context['request']
         user = request.user
-        if not user.influencer:
-            raise serializers.ValidationError({"influencer": "Пользователь не является партнером"})
-        validated_data['influencer'] = user.influencer
+
+        if not hasattr(user, 'influencer') or not user.influencer:
+            raise serializers.ValidationError("Пользователь не является партнером.")
+
+        if value > user.influencer.account:
+            raise serializers.ValidationError("Недостаточно средств на балансе.")
+
+        return value
+
+    def create(self, validated_data):
+        """Автоматически назначаем инфлюенсера при создании заявки."""
+        request = self.context['request']
+        validated_data['influencer'] = request.user.influencer
         return super().create(validated_data)
 
 
@@ -543,19 +554,8 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'influencer', 'created_at']
 
     def validate(self, attrs):
-        request = self.context['request']
-        user = request.user
-
-        influencer = getattr(user, 'influencer', None)
-        if not influencer:
-            raise serializers.ValidationError({"influencer": "Вы не являетесь инфлюенсером."})
-
-        if not self.instance:
-            amount = attrs.get("amount")
-            if amount is None:
-                raise serializers.ValidationError({"amount": "Необходимо указать сумму."})
-            if amount > influencer.account:  # Проверяем, что сумма не превышает баланс
-                raise serializers.ValidationError({"amount": "Недостаточно средств на балансе."})
+        """Проверка изменения статуса и причины отказа."""
+        user = self.context['request'].user
 
         status = attrs.get('status', self.instance.status if self.instance else None)
         denied_reason = attrs.get('denied_reason')
@@ -572,18 +572,9 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def create(self, validated_data):
-        """При создании автоматически устанавливаем инфлюенсера."""
-        request = self.context['request']
-        validated_data['influencer'] = request.user.influencer
-        return super().create(validated_data)
-
     def update(self, instance, validated_data):
-        """При подтверждении вывода уменьшаем баланс инфлюенсера."""
+        """Списание средств при подтверждении вывода."""
         status = validated_data.get('status', instance.status)
-
-        if status == 'denied' and not validated_data.get('denied_reason'):
-            raise serializers.ValidationError({"denied_reason": "Необходимо указать причину отказа."})
 
         if status == 'completed':
             if instance.amount > instance.influencer.account:
