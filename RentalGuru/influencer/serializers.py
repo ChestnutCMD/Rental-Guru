@@ -546,20 +546,17 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
         request = self.context['request']
         user = request.user
 
-        # Проверяем, что пользователь — инфлюенсер
         influencer = getattr(user, 'influencer', None)
         if not influencer:
             raise serializers.ValidationError({"influencer": "Вы не являетесь инфлюенсером."})
 
-        # Если создается новый запрос на вывод средств
         if not self.instance:
             amount = attrs.get("amount")
             if amount is None:
                 raise serializers.ValidationError({"amount": "Необходимо указать сумму."})
-            if amount > influencer.account:
+            if amount > influencer.account:  # Проверяем, что сумма не превышает баланс
                 raise serializers.ValidationError({"amount": "Недостаточно средств на балансе."})
 
-        # Проверки при изменении существующего запроса
         status = attrs.get('status', self.instance.status if self.instance else None)
         denied_reason = attrs.get('denied_reason')
 
@@ -591,6 +588,7 @@ class RequestWithdrawSerializer(serializers.ModelSerializer):
         if status == 'completed':
             if instance.amount > instance.influencer.account:
                 raise serializers.ValidationError({"amount": "Недостаточно средств на балансе."})
+
             instance.influencer.account -= instance.amount
             instance.influencer.save()
 
