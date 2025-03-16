@@ -1,22 +1,19 @@
 from datetime import timedelta
-
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Sum
-from django.utils import timezone
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView, get_object_or_404
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from chat.models import RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
     RequestWithdraw, RegistrationSource
 from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest, IsAdminOrOwner
@@ -27,7 +24,6 @@ from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer,
 from manager.permissions import ManagerObjectPermission
 from payment.models import Payment
 from vehicle.models import Vehicle
-from .tasks import withdraw_request
 
 
 class InfluencerViewSet(ModelViewSet):
@@ -334,6 +330,21 @@ class RequestWithdrawViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
+class InfluencerPaymentsPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+    def get_paginated_response(self, data):
+        """Добавляем поле account в ответ"""
+        return Response({
+            "account": self.account,
+            "count": self.count,
+            "next": self.get_next_link(),
+            "previous": self.get_previous_link(),
+            "payments": data
+        })
+
+
 @extend_schema(summary="Вывод транзакций", description="Вывод транзакций")
 class InfluencerPaymentsView(ListAPIView):
     """
@@ -341,23 +352,18 @@ class InfluencerPaymentsView(ListAPIView):
     """
     permission_classes = [IsAdminOrOwner]
     serializer_class = PaymentSerializer
+    pagination_class = InfluencerPaymentsPagination
 
     def get_queryset(self):
         influencer_id = self.kwargs.get("influencer_id")
         influencer = get_object_or_404(Influencer, id=influencer_id)
-        self.influencer_account = influencer.account
+
+        if self.paginator:
+            self.paginator.account = influencer.account
+
         return Payment.objects.filter(
             influencer_id=influencer_id, status="success"
         ).select_related("request_rent", "influencer").order_by("-updated_at")
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-
-        return Response({
-            "account": self.influencer_account,
-            "payments": serializer.data
-        })
 
 
 PERIODS = {
