@@ -20,17 +20,22 @@ class TranslationMiddleware(MiddlewareMixin):
         self.ERROR_KEYS = getattr(settings, 'TRANSLATION_ERROR_KEYS',
                                   ['detail', 'error', 'message', 'non_field_errors'])
         self.DRF_ERROR_LANGUAGE = getattr(settings, 'DRF_ERROR_LANGUAGE', 'en')
-        # Compile regex patterns for better performance
+
         self.timestamp_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}')
         self.iso_date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[tT]?\d{2}:\d{2}:\d{2}(\.\d+)?([zZ]|[+-]\d{2}:?\d{2})?$')
 
-        # Define common timestamp field names
         self.timestamp_fields = ['timestamp', 'created_at', 'updated_at', 'date', 'datetime',
                                  'time', 'created', 'modified', 'published_at', 'last_updated']
 
     def process_response(self, request, response):
+
         if not getattr(settings, 'TRANSLATION_ENABLED', True):
             return response
+
+        if 'lang' not in request.GET:
+            return response
+
+        query_language = request.GET.get('lang')
 
         is_error_response = False
         if 'application/json' in response.get('Content-Type', ''):
@@ -40,9 +45,8 @@ class TranslationMiddleware(MiddlewareMixin):
             except Exception:
                 pass
 
-        query_language = request.GET.get('lang')
-
         if not query_language:
+
             if hasattr(request, 'user') and request.user.is_authenticated:
                 user_language = getattr(request.user, 'language', None)
                 target_language = getattr(user_language, 'code',
@@ -52,7 +56,6 @@ class TranslationMiddleware(MiddlewareMixin):
         else:
             target_language = query_language
 
-        # If there's no translation to be done, return the original response
         if not target_language or (target_language == settings.TRANSLATION_DEFAULT_LANGUAGE and not is_error_response):
             return response
 
@@ -60,7 +63,6 @@ class TranslationMiddleware(MiddlewareMixin):
             try:
                 data = json.loads(response.content.decode('utf-8'))
 
-                # Pre-process timestamps to protect them
                 timestamp_replacements = {}
                 self._protect_timestamps(data, timestamp_replacements)
 
@@ -82,7 +84,6 @@ class TranslationMiddleware(MiddlewareMixin):
                 else:
                     translated_data = data
 
-                # Restore the protected timestamps
                 self._restore_timestamps(translated_data, timestamp_replacements)
 
                 response.content = json.dumps(translated_data, ensure_ascii=False).encode('utf-8')
