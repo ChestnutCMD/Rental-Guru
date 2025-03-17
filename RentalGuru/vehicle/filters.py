@@ -15,7 +15,7 @@ class BaseFilter(filters.FilterSet):
     brand = filters.CharFilter(method='filter_by_brand', label='Марка')
     year = filters.RangeFilter(field_name='year', label='Год выпуска')
     rental_date = filters.DateFromToRangeFilter(method='filter_by_rental_date', label='Выбор даты аренды')
-    city = filters.CharFilter(field_name='city__title', label='Город')
+    city = filters.NumberFilter(field_name='city__id', label='Город')
 
     lat = filters.NumberFilter(method='filter_by_lat_lon', label='Широта')
     lon = filters.NumberFilter(method='filter_by_lat_lon', label='Долгота')

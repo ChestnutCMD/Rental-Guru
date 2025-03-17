@@ -515,7 +515,7 @@ class AllVehiclesListView(APIView):
                              description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
             OpenApiParameter("rental_date_before", type=OpenApiTypes.STR,
                              description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
-            OpenApiParameter("city", type=OpenApiTypes.STR, description="Город"),
+            OpenApiParameter("city", type=OpenApiTypes.INT, description="Город"),
             OpenApiParameter("lat", type=OpenApiTypes.NUMBER, description="Широта"),
             OpenApiParameter("lon", type=OpenApiTypes.NUMBER, description="Долгота"),
             OpenApiParameter("radius", type=OpenApiTypes.NUMBER, description="Радиус в км"),
