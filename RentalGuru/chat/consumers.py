@@ -495,45 +495,107 @@ class ChatConsumer(BaseChatConsumer):
         chat = await database_sync_to_async(self.get_chat_instance)()
         request_rent = chat.request_rent
 
-        is_owner = await database_sync_to_async(lambda: user == request_rent.vehicle.owner)()
-        has_availability = await self.has_on_request_availability(request_rent.vehicle)
-        request_status = await self.check_request_status(request_rent)
+        vehicle_data = await self.get_vehicle_data(request_rent, user)
+
+        if not vehicle_data['is_valid']:
+            return False
+
+        is_owner = vehicle_data['is_owner']
+        has_availability = vehicle_data['has_availability']
+        request_status = vehicle_data['valid_status']
 
         if is_owner and has_availability and request_status:
-            request_rent.status = 'unknown'
+            await self.update_request_rent_fields(request_rent, update_data)
 
-            fields_to_update = ['start_time', 'end_time', 'start_date', 'end_date', 'total_cost']
-            for field in fields_to_update:
-                if field in update_data:
-                    setattr(request_rent, field, update_data[field])
+            message_content = await self.prepare_message_content(request_rent)
 
-            if 'content_type' in update_data:
-                content_type = await self.get_content_type(update_data['content_type'])
-                request_rent.content_type = content_type
-
-            if 'object_id' in update_data:
-                request_rent.object_id = update_data['object_id']
-
-            await database_sync_to_async(request_rent.save)()
-            if request_rent.vehicle.owner.lessor.franchise:
-                amount = Decimal(request_rent.total_cost)/Decimal(100) * Decimal(request_rent.vehicle.owner.lessor.commission + Decimal(request_rent.vehicle.owner.lessor.franchise.commission))
-            else:
-                amount = Decimal(request_rent.total_cost)/Decimal(100) * Decimal(request_rent.vehicle.owner.lessor.commission)
-            message_content = {
-                "start_time": request_rent.start_time,
-                "end_time": request_rent.end_time,
-                "start_date": request_rent.start_date,
-                "end_date": request_rent.end_date,
-                "total_cost": request_rent.total_cost,
-                "status": request_rent.status,
-                "vehicle_type": request_rent.content_type.model,
-                "vehicle_id": request_rent.object_id,
-                "amount": round(float(amount), 2)
-            }
             await self.handle_send_message({'message': json.dumps(message_content, ensure_ascii=False)})
 
             return True
         return False
+
+    @database_sync_to_async
+    def get_vehicle_data(self, request_rent, user):
+        """Получение все данных, связанных с транспортным средством, за одну транзакцию"""
+        result = {
+            'is_valid': False,
+            'is_owner': False,
+            'has_availability': False,
+            'valid_status': False
+        }
+
+        try:
+            content_type = request_rent.content_type
+            if not content_type:
+                return result
+
+            vehicle_model = content_type.model_class()
+            vehicle = vehicle_model.objects.get(id=request_rent.object_id)
+
+            result['is_valid'] = True
+            result['is_owner'] = user == vehicle.owner
+            result['has_availability'] = vehicle.availabilities.filter(on_request=True).exists()
+            result['valid_status'] = request_rent.status in ['unknown', 'denied']
+
+            return result
+        except Exception as e:
+            logger.error(f"Error getting vehicle data: {str(e)}")
+            return result
+
+    @database_sync_to_async
+    def update_request_rent_fields(self, request_rent, update_data):
+        """Обновление полей request_rent"""
+        request_rent.status = 'unknown'
+
+        fields_to_update = ['start_time', 'end_time', 'start_date', 'end_date', 'total_cost']
+        for field in fields_to_update:
+            if field in update_data:
+                setattr(request_rent, field, update_data[field])
+
+        if 'content_type' in update_data:
+            content_type = ContentType.objects.get(model=update_data['content_type'].lower())
+            request_rent.content_type = content_type
+
+        if 'object_id' in update_data:
+            request_rent.object_id = update_data['object_id']
+
+        request_rent.save()
+
+    @database_sync_to_async
+    def prepare_message_content(self, request_rent):
+        """Подготовка данных сообщения"""
+        content_type_model = request_rent.content_type.model if request_rent.content_type else "unknown"
+
+        amount = 0
+        try:
+            content_type = request_rent.content_type
+            vehicle_model = content_type.model_class()
+            vehicle = vehicle_model.objects.get(id=request_rent.object_id)
+
+            owner = vehicle.owner
+            if hasattr(owner, 'lessor'):
+                lessor = owner.lessor
+                commission_rate = lessor.commission
+
+                if hasattr(lessor, 'franchise') and lessor.franchise:
+                    commission_rate += lessor.franchise.commission
+
+                amount = Decimal(request_rent.total_cost) / Decimal(100) * Decimal(commission_rate)
+                amount = round(float(amount), 2)
+        except Exception as e:
+            logger.error(f"Error calculating commission: {str(e)}")
+
+        return {
+            "start_time": request_rent.start_time,
+            "end_time": request_rent.end_time,
+            "start_date": request_rent.start_date,
+            "end_date": request_rent.end_date,
+            "total_cost": request_rent.total_cost,
+            "status": request_rent.status,
+            "vehicle_type": content_type_model,
+            "vehicle_id": request_rent.object_id,
+            "amount": amount
+        }
 
     @database_sync_to_async
     def check_request_status(self, request_rent):
