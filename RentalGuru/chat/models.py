@@ -76,7 +76,8 @@ class RequestRent(models.Model):
                 "deposit_cost": float(self.deposit_cost),
                 "delivery_cost": float(self.delivery_cost),
                 "delivery": self.delivery,
-                "amount": round(float(amount), 2)
+                "amount": round(float(amount), 2),
+                "on_request": self.on_request
             }, ensure_ascii=False)
 
             Message.objects.create(
