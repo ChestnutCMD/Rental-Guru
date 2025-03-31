@@ -144,7 +144,7 @@ class RequestRent(models.Model):
             with transaction.atomic():
                 super(RequestRent, self).save(*args, **kwargs)
                 if original.status != 'accept' and self.status == 'accept':
-                    self.total_cost = self.calculate_rent_price()
+                    # self.total_cost = self.calculate_rent_price()
                     self.create_payment()
 
         super(RequestRent, self).save(*args, **kwargs)
