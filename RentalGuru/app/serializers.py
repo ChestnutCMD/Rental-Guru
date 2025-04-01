@@ -322,7 +322,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     fcm_token = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
-        email = attrs.get('email')
+        email = attrs.get('email').lower()
         password = attrs.get('password')
         fcm_token = attrs.get('fcm_token')
 
