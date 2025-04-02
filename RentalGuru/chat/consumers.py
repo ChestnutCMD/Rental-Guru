@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 class BaseChatConsumer(AsyncWebsocketConsumer):
     """ Базовый чат от кторого наследуются чат на аренду и чат с техподдержкой"""
     language_preferences = {}
+    connected_users = {}
 
     async def connect(self):
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
@@ -63,6 +64,10 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         BaseChatConsumer.language_preferences[self.chat_group_name][self.channel_name] = self.language
 
+        if self.chat_group_name not in BaseChatConsumer.connected_users:
+            BaseChatConsumer.connected_users[self.chat_group_name] = set()
+        BaseChatConsumer.connected_users[self.chat_group_name].add(self.scope['user'].id)
+
         await self.channel_layer.group_add(
             self.chat_group_name,
             self.channel_name
@@ -82,6 +87,11 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             BaseChatConsumer.language_preferences[self.chat_group_name].pop(self.channel_name, None)
             if not BaseChatConsumer.language_preferences[self.chat_group_name]:
                 BaseChatConsumer.language_preferences.pop(self.chat_group_name, None)
+
+        if hasattr(self, 'scope') and 'user' in self.scope and self.chat_group_name in BaseChatConsumer.connected_users:
+            BaseChatConsumer.connected_users[self.chat_group_name].discard(self.scope['user'].id)
+            if not BaseChatConsumer.connected_users[self.chat_group_name]:
+                BaseChatConsumer.connected_users.pop(self.chat_group_name, None)
 
         await self.channel_layer.group_discard(
             self.chat_group_name,
@@ -206,6 +216,9 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             message = await self.save_message(user, message_content, file)
             message_data = self.format_message(message, user)
 
+            # Create notifications for offline users
+            await self.notify_offline_users(user.id)
+
             # Отправление сообщения всем участникам чата
             await self.channel_layer.group_send(
                 self.chat_group_name,
@@ -230,6 +243,42 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 'message': 'Internal server error'
             }))
             return False
+
+    async def notify_offline_users(self, sender_id):
+        """ Создание уведомлений для оффлайн пользователей """
+
+        chat_participants = await self.get_chat_participants()
+        connected_users = BaseChatConsumer.connected_users.get(self.chat_group_name, set())
+        offline_users = [user_id for user_id in chat_participants if
+                         user_id != sender_id and user_id not in connected_users]
+
+        if offline_users:
+            await self.create_notifications_for_users(offline_users)
+
+    @database_sync_to_async
+    def get_chat_participants(self):
+        """ Получение всех учатников чата """
+        return self.get_chat_participant_ids()
+
+    def get_chat_participant_ids(self):
+        """
+        Абстрактный метод, который будет реализован подклассами для возврата
+        списка идентификаторов пользователей, являющихся участниками чата
+        """
+        raise NotImplementedError
+
+    @database_sync_to_async
+    def create_notifications_for_users(self, user_ids):
+        """ Создание уведомления """
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        users = User.objects.filter(id__in=user_ids)
+        for user in users:
+            Notification.objects.create(
+                user=user,
+                content="Получено новое сообщение"
+            )
 
     async def handle_update_message(self, data):
         try:
@@ -275,7 +324,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             return False
 
     async def load_previous_messages(self, offset, limit):
-        """Загрузка предыдущих сообщений с учетом offset и limit"""
+        """ Загрузка предыдущих сообщений с учетом offset и limit """
         messages = await self.get_previous_messages(offset, limit)
         return messages
 
@@ -321,7 +370,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 return False
 
     async def chat_message(self, event):
-        """Обработчик входящих сообщений"""
+        """ Обработчик входящих сообщений """
         action = event.get('action', 'new')
 
         if action == 'delete':
@@ -336,7 +385,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             }, ensure_ascii=False))
 
     async def chat_message_translated(self, event):
-        """Обработчик для переведенных сообщений"""
+        """ Обработчик для переведенных сообщений """
         await self.send(text_data=json.dumps({
             'type': 'message_translated',
             'message_id': event['message_id'],
@@ -358,7 +407,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_previous_messages(self, offset=0, limit=20):
-        """Получение предыдущих сообщений с поддержкой пагинации"""
+        """ Получение предыдущих сообщений с поддержкой пагинации """
         chat = self.get_chat_instance()
         user = self.scope['user']
 
@@ -724,6 +773,21 @@ class ChatConsumer(BaseChatConsumer):
     def get_messages_objects(self):
         return Message
 
+    def get_chat_participant_ids(self):
+        """ Получение ID организатора и владельца транспортного средства для участников чата """
+        chat = self.get_chat_instance()
+        request_rent = chat.request_rent
+
+        participants = []
+
+        if request_rent.organizer:
+            participants.append(request_rent.organizer.id)
+
+        if hasattr(request_rent, 'vehicle') and request_rent.vehicle and hasattr(request_rent.vehicle, 'owner'):
+            participants.append(request_rent.vehicle.owner.id)
+
+        return participants
+
 
 class ChatSupportConsumer(BaseChatConsumer):
     """ Чат техподдержки """
@@ -757,3 +821,18 @@ class ChatSupportConsumer(BaseChatConsumer):
             'message_id': message_id,
             'translated_content': translated_content
         }, ensure_ascii=False))
+
+    def get_chat_participant_ids(self):
+        """ Получение ID участников чата поддержки (создателя и службы поддержки) """
+        chat = self.get_chat_instance()
+        participants = []
+
+        if chat.creator:
+            participants.append(chat.creator.id)
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        support_staff = User.objects.filter(role__in=['admin']).values_list('id', flat=True)
+        participants.extend(support_staff)
+
+        return participants
