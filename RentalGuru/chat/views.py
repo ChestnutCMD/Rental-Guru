@@ -1,6 +1,6 @@
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Prefetch, OuterRef, Exists
+from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, permissions, status, filters
@@ -10,9 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from RentalGuru import settings
-from app.models import Lessor
+from app.models import Lessor, Renter
 from manager.permissions import ManagerObjectPermission
 from notification.models import Notification
+from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
 from .filters import MessageFilter, TripFilter, TripFilterBackend, RequestRentFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
@@ -451,7 +452,6 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.save()
         return Response({'detail': 'Заявка удалена.'}, status=status.HTTP_204_NO_CONTENT)
-
 
 @extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
 class TopicSupportViewSet(viewsets.ModelViewSet):

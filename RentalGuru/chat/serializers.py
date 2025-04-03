@@ -10,7 +10,7 @@ from influencer.utils import check_promocode
 from notification.models import Notification
 from payment.TinkoffClient import TinkoffAPI
 from payment.models import Payment
-from vehicle.models import RatingUpdateLog
+from vehicle.models import RatingUpdateLog, Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
 
 
@@ -131,130 +131,6 @@ class TripSerializer(serializers.ModelSerializer):
 
         return instance
 
-# class TripSerializer(serializers.ModelSerializer):
-#     set_rating = serializers.SerializerMethodField()
-#     set_feedback = serializers.SerializerMethodField()
-#     owner_name = serializers.SerializerMethodField()
-#
-#     class Meta:
-#         model = Trip
-#         fields = [
-#             'id', 'chat', 'organizer', 'content_type', 'object_id',
-#             'start_time', 'end_time', 'start_date', 'end_date',
-#             'total_cost', 'status', 'set_rating', 'set_feedback', 'owner_name'
-#         ]
-#         read_only_fields = fields
-#
-#     def get_set_rating(self, instance):
-#         return RatingUpdateLog.objects.filter(
-#             user=instance.organizer,
-#             content_type=instance.content_type,
-#             object_id=instance.object_id
-#         ).exists()
-#
-#     def get_owner_name(self, instance):
-#         return getattr(instance.vehicle.owner, 'first_name', None)
-#
-#     def get_set_feedback(self, instance):
-#         return Feedback.objects.filter(
-#             user=instance.organizer,
-#             content_type=instance.content_type,
-#             object_id=instance.object_id
-#         ).exists()
-#
-#     def create(self, validated_data):
-#         validated_data['organizer'] = self.context['request'].user
-#         return super().create(validated_data)
-#
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-#         representation['content_type'] = instance.content_type.model
-#
-#         request_rent = RequestRent.objects.select_related('chat').filter(chat=instance.chat).first()
-#         payment = Payment.objects.filter(request_rent=request_rent).first()
-#
-#         if payment:
-#             representation.update({
-#                 'payment_id': payment.id,
-#                 'amount': payment.amount
-#             })
-#         return representation
-#
-#     def _process_influencer_payment(self, influencer, request_rent):
-#         """ Начисление комиссионных инфлюенсерам """
-#         if influencer:
-#             payment = Payment.objects.get(request_rent=request_rent)
-#             cash = Decimal(payment.amount) * Decimal(influencer.commission) / 100
-#             influencer.account += cash
-#             influencer.save()
-#
-#     def _process_refund(self, instance, request_rent, payment):
-#         """ Обработка возврата средств """
-#         if payment.status == 'success' and instance.get_time_until_start().total_seconds() / 3600 > 48:
-#             response = TinkoffAPI().cancel_payment(payment.payment_id, payment.amount)
-#             if response.get("Success"):
-#                 payment.status = 'canceled'
-#                 payment.save()
-#                 return f"Будет произведен возврат {payment.amount} р."
-#         return ""
-#
-#     def _send_notification(self, user, content):
-#         """ Универсальный метод для отправки уведомлений """
-#         Notification.objects.create(user=user, content=content)
-#
-#     def update(self, instance, validated_data):
-#         request = self.context['request']
-#         previous_status = instance.status
-#         new_status = validated_data.get('status', previous_status)
-#
-#         # Отмена поездки
-#         if previous_status != 'canceled' and new_status == 'canceled':
-#             if request.user != instance.organizer and request.user.role not in ['admin', 'manager']:
-#                 raise serializers.ValidationError({"detail": "Вы не можете отменить поездку."})
-#
-#             request_rent = RequestRent.objects.select_related('chat').filter(chat=instance.chat).first()
-#             if not request_rent:
-#                 raise serializers.ValidationError({"detail": "Заявка на аренду не найдена."})
-#
-#             payment = Payment.objects.filter(request_rent=request_rent).first()
-#             if not payment:
-#                 raise serializers.ValidationError({"detail": "Платеж не найден."})
-#
-#             refund_message = self._process_refund(instance, request_rent, payment)
-#             self._send_notification(instance.organizer, f"Поездка с транспортом {instance.vehicle} была отменена. {refund_message}")
-#             self._send_notification(instance.vehicle.owner, f"Поездка с транспортом {instance.vehicle} была отменена.")
-#
-#         # Обновление статуса
-#         instance = super().update(instance, validated_data)
-#
-#         # Завершение поездки
-#         if previous_status != 'finished' and new_status == 'finished':
-#             self._send_notification(instance.organizer, f"Поездка с транспортом {instance.vehicle} была завершена. Оцените вашу поездку")
-#
-#             rating_exists = RatingUpdateLog.objects.filter(
-#                 user=instance.organizer,
-#                 content_type=instance.content_type,
-#                 object_id=instance.object_id
-#             ).exists()
-#
-#             feedback_exists = Feedback.objects.filter(
-#                 user=instance.organizer,
-#                 content_type=instance.content_type,
-#                 object_id=instance.object_id
-#             ).exists()
-#
-#             self._send_notification(
-#                 instance.vehicle.owner,
-#                 f"Поездка с транспортом {instance.vehicle} была завершена. Оцените вашу поездку",
-#             )
-#
-#             # Начисление средств инфлюенсерам
-#             request_rent = instance.chat.request_rent
-#             self._process_influencer_payment(getattr(instance.organizer.renter, 'influencer', None), request_rent)
-#             self._process_influencer_payment(getattr(instance.vehicle.owner.lessor, 'influencer', None), request_rent)
-#
-#         return instance
-
 
 class RequestRentSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.CharField(write_only=True)
@@ -328,7 +204,8 @@ class RequestRentSerializer(serializers.ModelSerializer):
         # Вывод суммы к оплате
         payment = Payment.objects.filter(request_rent=instance).first()
         representation['amount'] = payment.amount if payment else None
-
+        if instance.on_request:
+            representation['chat_id'] = instance.chat.id
         if trip:
             representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
             representation['renter_first_name'] = trip.organizer.first_name
