@@ -228,22 +228,64 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        base_queryset = RequestRent.objects.filter(is_deleted=False)
 
-        # Если admin или manager - возвращаем все заявки
+        # Use custom prefetching to get payment for each request_rent
+        payments_subquery = Payment.objects.filter(
+            request_rent=OuterRef('pk')
+        ).order_by('id')[:1]
+
+        # Prefetch trip information based on the content type and object_id
+        # This approach avoids the N+1 queries for trips
+        trip_subquery = Trip.objects.filter(
+            content_type=OuterRef('content_type'),
+            object_id=OuterRef('object_id'),
+            status='current'
+        ).order_by('id')[:1]
+
+        optimized_queryset = base_queryset.select_related(
+            'content_type',
+            'promocode'
+        ).prefetch_related(
+            'chat'  # Simple prefetch for chat objects
+        ).annotate(
+            # Add payment annotations
+            prefetched_payment_id=Subquery(payments_subquery.values('id')),
+            prefetched_payment_amount=Subquery(payments_subquery.values('amount')),
+
+            # Add trip-related annotations
+            trip_id=Subquery(trip_subquery.values('id')),
+            renter_id=Subquery(trip_subquery.values('organizer_id')),
+        )
+
+        # Prefetch the renter information for those trips that have it
+        # This optimizes the query for renter details (first_name, last_name, avatar)
+        renter_ids = optimized_queryset.exclude(renter_id=None).values_list('renter_id', flat=True)
+
+        if renter_ids:
+            optimized_queryset = optimized_queryset.prefetch_related(
+                Prefetch(
+                    'organizer__renter',
+                    queryset=Renter.objects.filter(user_id__in=renter_ids),
+                    to_attr='_prefetched_renter'
+                )
+            )
+
+        # Optimize the query depending on the user's role
         if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
-            return RequestRent.objects.filter(is_deleted=False)
+            return optimized_queryset
 
-        # Если директор франшизы или менеджер франшизы, показываем поездки, связанные с франшизой
+        # If franchise director or franchise manager, show trips related to the franchise
         if hasattr(user, 'franchise') and user.franchise:
             lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
             vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
-            return RequestRent.objects.filter(is_deleted=False, object_id__in=vehicle_ids)
+            return optimized_queryset.filter(object_id__in=vehicle_ids)
 
-        # Если пользователь - арендатор (renter), показываем только его заявки
+        # If user is a renter, show only their requests
         if hasattr(user, 'renter'):
-            return RequestRent.objects.filter(organizer=user, is_deleted=False)
+            return optimized_queryset.filter(organizer=user)
 
-        # Если пользователь - арендодатель (lessor), показываем заявки на его транспорт
+        # If user is a lessor, show requests for their vehicles
         if hasattr(user, 'lessor'):
             content_types = [
                 ContentType.objects.get_for_model(model)
@@ -259,7 +301,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             for content_type, ids in vehicle_ids.items():
                 q_objects |= Q(content_type=content_type, object_id__in=ids)
 
-            return RequestRent.objects.filter(is_deleted=False).filter(q_objects)
+            return optimized_queryset.filter(q_objects)
 
         return RequestRent.objects.none()
 
@@ -452,6 +494,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.save()
         return Response({'detail': 'Заявка удалена.'}, status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
 class TopicSupportViewSet(viewsets.ModelViewSet):

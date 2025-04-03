@@ -137,6 +137,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
     vehicle_id = serializers.IntegerField(write_only=True)
     promocode = serializers.CharField(required=False, allow_blank=True)
     bonus = serializers.IntegerField(required=False, allow_null=True)
+    chat_id = serializers.SerializerMethodField()
 
     class Meta:
         model = RequestRent
@@ -193,27 +194,39 @@ class RequestRentSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
+    def get_chat_id(self, obj):
+        if obj.on_request:
+            try:
+                return obj.chat.id
+            except (Chat.DoesNotExist, AttributeError):
+                return None
+        return None
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['vehicle_type'] = instance.content_type.model
         representation['vehicle_id'] = instance.object_id
 
-        vehicle = instance.content_type.get_object_for_this_type(id=instance.object_id)
-        trip = vehicle.trips.filter(status='current').select_related('organizer').first()
-
-        # Вывод суммы к оплате
-        payment = Payment.objects.filter(request_rent=instance).first()
-        representation['amount'] = payment.amount if payment else None
-        if instance.on_request:
-            representation['chat_id'] = instance.chat.id
-        if trip:
-            representation['renter_avatar'] = trip.organizer.avatar.url if trip.organizer.avatar else None
-            representation['renter_first_name'] = trip.organizer.first_name
-            representation['renter_last_name'] = trip.organizer.last_name
-
-        if instance.status == 'accept':
+        if hasattr(instance, 'prefetched_payment_amount'):
+            representation['amount'] = instance.prefetched_payment_amount
+        else:
             payment = Payment.objects.filter(request_rent=instance).first()
-            representation['payment_id'] = payment.id
+            representation['amount'] = payment.amount if payment else None
+
+        if hasattr(instance, 'renter_id') and instance.renter_id:
+
+            renter = None
+            if hasattr(instance, '_prefetched_renter'):
+                renter = instance._prefetched_renter
+
+            if renter:
+                representation['renter_avatar'] = renter.avatar.url if renter.avatar else None
+                representation['renter_first_name'] = renter.first_name
+                representation['renter_last_name'] = renter.last_name
+
+        if instance.status == 'accept' and hasattr(instance, 'prefetched_payment_id'):
+            representation['payment_id'] = instance.prefetched_payment_id
+
         return representation
 
     def validate(self, data):
