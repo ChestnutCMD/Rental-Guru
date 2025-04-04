@@ -84,8 +84,6 @@ class TripSerializer(serializers.ModelSerializer):
             if not request_rent:
                 raise serializers.ValidationError({"detail": "Заявка на аренду не найдена."})
 
-
-
             payment = Payment.objects.filter(request_rent=request_rent).first()
             if not payment:
                 raise serializers.ValidationError({"detail": "Платеж не найден."})
@@ -113,33 +111,34 @@ class TripSerializer(serializers.ModelSerializer):
             )
 
             # Возврат дат доступности
-            vehicle = instance.vehicle
-            trip_period = {
-                'start_date': instance.start_date,
-                'end_date': instance.end_date
-            }
-            # Получить текущие периоды доступности (не по запросу)
-            current_availabilities = Availability.objects.filter(vehicle=vehicle, on_request=False)
-            existing_periods = [
-                {'start_date': a.start_date, 'end_date': a.end_date}
-                for a in current_availabilities
-            ]
+            if not request_rent.on_request:
+                vehicle = instance.vehicle
+                trip_period = {
+                    'start_date': instance.start_date,
+                    'end_date': instance.end_date
+                }
+                # Получить текущие периоды доступности (не по запросу)
+                current_availabilities = Availability.objects.filter(vehicle=vehicle, on_request=False)
+                existing_periods = [
+                    {'start_date': a.start_date, 'end_date': a.end_date}
+                    for a in current_availabilities
+                ]
 
-            # Добавить отменённую поездку
-            existing_periods.append(trip_period)
+                # Добавить отменённую поездку
+                existing_periods.append(trip_period)
 
-            # Объединение и пересоздание доступностей
-            merged = merge_periods(existing_periods)
-            current_availabilities.delete()
+                # Объединение и пересоздание доступностей
+                merged = merge_periods(existing_periods)
+                current_availabilities.delete()
 
-            # Сохраняем новые
-            for period in merged:
-                Availability.objects.create(
-                    vehicle=vehicle,
-                    start_date=period['start_date'],
-                    end_date=period['end_date'],
-                    on_request=False
-                )
+                # Сохраняем новые
+                for period in merged:
+                    Availability.objects.create(
+                        vehicle=vehicle,
+                        start_date=period['start_date'],
+                        end_date=period['end_date'],
+                        on_request=False
+                    )
 
         instance = super().update(instance, validated_data)
 
