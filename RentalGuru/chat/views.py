@@ -230,13 +230,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         base_queryset = RequestRent.objects.filter(is_deleted=False)
 
-        # Use custom prefetching to get payment for each request_rent
         payments_subquery = Payment.objects.filter(
             request_rent=OuterRef('pk')
         ).order_by('id')[:1]
 
-        # Prefetch trip information based on the content type and object_id
-        # This approach avoids the N+1 queries for trips
         trip_subquery = Trip.objects.filter(
             content_type=OuterRef('content_type'),
             object_id=OuterRef('object_id'),
@@ -247,19 +244,16 @@ class RequestRentViewSet(viewsets.ModelViewSet):
             'content_type',
             'promocode'
         ).prefetch_related(
-            'chat'  # Simple prefetch for chat objects
+            'chat'
         ).annotate(
-            # Add payment annotations
+
             prefetched_payment_id=Subquery(payments_subquery.values('id')),
             prefetched_payment_amount=Subquery(payments_subquery.values('amount')),
 
-            # Add trip-related annotations
             trip_id=Subquery(trip_subquery.values('id')),
             renter_id=Subquery(trip_subquery.values('organizer_id')),
         )
 
-        # Prefetch the renter information for those trips that have it
-        # This optimizes the query for renter details (first_name, last_name, avatar)
         renter_ids = optimized_queryset.exclude(renter_id=None).values_list('renter_id', flat=True)
 
         if renter_ids:
@@ -271,21 +265,17 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 )
             )
 
-        # Optimize the query depending on the user's role
         if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
             return optimized_queryset
 
-        # If franchise director or franchise manager, show trips related to the franchise
         if hasattr(user, 'franchise') and user.franchise:
             lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
             vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
             return optimized_queryset.filter(object_id__in=vehicle_ids)
 
-        # If user is a renter, show only their requests
         if hasattr(user, 'renter'):
             return optimized_queryset.filter(organizer=user)
 
-        # If user is a lessor, show requests for their vehicles
         if hasattr(user, 'lessor'):
             content_types = [
                 ContentType.objects.get_for_model(model)
