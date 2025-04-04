@@ -101,6 +101,8 @@ class TripSerializer(serializers.ModelSerializer):
                     )
 
             else:
+                payment.status = 'canceled'
+                payment.save()
                 Notification.objects.create(
                     user=instance.organizer,
                     content=f"Поездка c транспортом {instance.vehicle} была отменена."
