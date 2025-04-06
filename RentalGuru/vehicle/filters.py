@@ -1,3 +1,5 @@
+import math
+
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from haversine import haversine, Unit
@@ -52,29 +54,111 @@ class BaseFilter(filters.FilterSet):
         return queryset.filter(brand__name__in=brand_names)
 
     def filter_by_lat_lon(self, queryset, name, value):
+        """ Фильтрация транспортных средств в заданном радиусе от указанной точки. """
         lat = self.data.get('lat')
         lon = self.data.get('lon')
-        radius = self.data.get('radius', 5)  # Радиус по умолчанию 5 км, если не передан
+        radius = self.data.get('radius', 5)  # Радиус по умолчанию 5 км
 
         if lat and lon:
-            lat = float(lat)
-            lon = float(lon)
-            radius = float(radius)
-            user_location = (lat, lon)
+            try:
+                lat = float(lat)
+                lon = float(lon)
+                radius = float(radius)
 
-            filtered_queryset = []
+                km_per_degree_lat = 111.0
+                # Один градус долготы зависит от широты (сужается к полюсам)
+                km_per_degree_lon = 111.0 * math.cos(math.radians(lat))
 
-            for vehicle in queryset:
-                if vehicle.latitude and vehicle.longitude:
-                    vehicle_location = (vehicle.latitude, vehicle.longitude)
-                    distance = haversine(user_location, vehicle_location, unit=Unit.KILOMETERS)
+                # Вычисляем границы координат для предварительной фильтрации
+                lat_delta = radius / km_per_degree_lat
+                lon_delta = radius / km_per_degree_lon
 
-                    if distance <= radius:
-                        filtered_queryset.append(vehicle)
+                lat_min = lat - lat_delta
+                lat_max = lat + lat_delta
+                lon_min = lon - lon_delta
+                lon_max = lon + lon_delta
 
-            return queryset.filter(id__in=[vehicle.id for vehicle in filtered_queryset])
+                # Предварительная фильтрация по ограничивающему прямоугольнику
+                filtered_qs = queryset.filter(
+                    latitude__isnull=False,
+                    longitude__isnull=False,
+                    latitude__gte=lat_min,
+                    latitude__lte=lat_max,
+                    longitude__gte=lon_min,
+                    longitude__lte=lon_max
+                )
+
+                # Точная фильтрация по формуле гаверсинуса с использованием базы данных
+                earth_radius = 6371
+
+                from django.db.models.expressions import RawSQL
+                distance_sql = f"""
+                {earth_radius} * 2 * ASIN(
+                    SQRT(
+                        POWER(SIN(RADIANS(%s - latitude) / 2), 2) +
+                        COS(RADIANS(%s)) * COS(RADIANS(latitude)) *
+                        POWER(SIN(RADIANS(%s - longitude) / 2), 2)
+                    )
+                )
+                """
+
+                filtered_qs = filtered_qs.annotate(
+                    distance=RawSQL(distance_sql, [lat, lat, lon])
+                ).filter(distance__lte=radius)
+
+                return filtered_qs
+
+            except (ValueError, TypeError):
+                return queryset
 
         return queryset
+
+    # def filter_by_lat_lon(self, queryset, name, value):
+    #     """
+    #     Фильтрация транспортных средств в заданном радиусе от указанной точки
+    #     с использованием PostgreSQL/PostGIS raw SQL запроса.
+    #     """
+    #     lat = self.data.get('lat')
+    #     lon = self.data.get('lon')
+    #     radius = self.data.get('radius', 5)
+    #
+    #     if not lat or not lon:
+    #         return queryset
+    #
+    #     try:
+    #         lat = float(lat)
+    #         lon = float(lon)
+    #         radius = float(radius)
+    #     except (ValueError, TypeError):
+    #         return queryset
+    #
+    #     model = queryset.model
+    #     table_name = model._meta.db_table
+    #
+    #     if not hasattr(model, 'latitude') or not hasattr(model, 'longitude'):
+    #         return queryset
+    #
+    #     ids = list(queryset.values_list('id', flat=True))
+    #     if not ids:
+    #         return queryset
+    #
+    #     sql = f"""
+    #     SELECT id
+    #     FROM {table_name}
+    #     WHERE id IN %s
+    #     AND ST_DWithin(
+    #         ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+    #         ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography,
+    #         %s * 1000  /* перевод км в метры */
+    #     )
+    #     """
+    #
+    #     from django.db import connection
+    #     with connection.cursor() as cursor:
+    #         cursor.execute(sql, [tuple(ids), lon, lat, radius])
+    #         filtered_ids = [row[0] for row in cursor.fetchall()]
+    #
+    #     return queryset.filter(id__in=filtered_ids)
 
 
 class AutoFilter(BaseFilter):

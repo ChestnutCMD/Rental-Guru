@@ -3,7 +3,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import Q, Min
+from django.db.models import Q, Min, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
@@ -103,7 +103,7 @@ class AutoViewSet(BaseViewSet):
         user = self.request.user
         queryset = (Auto.objects.annotate(price=Min('rent_prices__price'))
                     .select_related('owner', 'brand', 'model', 'transmission', 'fuel_type', 'body_type',
-                                    'vehicle_class')
+                                    'vehicle_class', 'city', 'owner__lessor')
                     .prefetch_related('payment_method', 'features_for_children', 'features_functions', 'photos',
                                       'features_additionally', 'availabilities', 'documents', 'rent_prices'))
         if user.is_authenticated:
@@ -139,9 +139,10 @@ class BikeViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Bike.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class').
-                    prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
-                                     'documents', 'rent_prices', 'photos'))
+        queryset = (Bike.objects.annotate(price=Min('rent_prices__price'))
+                    .select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class', 'city', 'owner__lessor')
+                    .prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
+                                      'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
             if user.role in ['admin', 'manager']:
                 return queryset.distinct()
@@ -175,10 +176,10 @@ class ShipViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Ship.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'vehicle_class').
-                    prefetch_related('payment_method', 'features_functions', 'features_additionally',
-                                     'features_equipment',
-                                     'availabilities', 'documents', 'rent_prices', 'photos'))
+        queryset = (Ship.objects.annotate(price=Min('rent_prices__price'))
+                    .select_related('owner', 'brand', 'model', 'vehicle_class', 'city', 'owner__lessor')
+                    .prefetch_related('payment_method', 'features_functions', 'features_additionally',
+                                      'features_equipment', 'availabilities', 'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
             if user.role in ['admin', 'manager']:
                 return queryset.distinct()
@@ -212,8 +213,9 @@ class HelicopterViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (Helicopter.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model', 'vehicle_class').
-                    prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+        queryset = (Helicopter.objects.annotate(price=Min('rent_prices__price'))
+                    .select_related('owner', 'brand', 'model', 'vehicle_class', 'city', 'owner__lessor')
+                    .prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
             if user.role in ['admin', 'manager']:
                 return queryset.distinct()
@@ -247,8 +249,9 @@ class SpecialTechnicViewSet(BaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = (SpecialTechnic.objects.annotate(price=Min('rent_prices__price')).select_related('owner', 'brand', 'model').
-                    prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
+        queryset = (SpecialTechnic.objects.annotate(price=Min('rent_prices__price'))
+                    .select_related('owner', 'brand', 'model', 'city', 'owner__lessor')
+                    .prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
             if user.role in ['admin', 'manager']:
                 return queryset.distinct()
@@ -494,124 +497,120 @@ class VehicleClassListView(ListAPIView):
     serializer_class = VehicleClassSerializer
 
 
-@extend_schema(summary="Список всего транспорта", description="Список всего транспорта")
-class AllVehiclesListView(APIView):
+VEHICLE_MODELS = {
+    'auto': (Auto, AutoListSerializer),
+    'bike': (Bike, BikeListSerializer),
+    'ship': (Ship, ShipListSerializer),
+    'helicopter': (Helicopter, HelicopterListSerializer),
+    'specialtechnic': (SpecialTechnic, SpecialTechnicListSerializer),
+}
+
+
+class AllVehiclesPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
+@extend_schema(summary="Список всего транспорта",
+               description="Список всего транспорта",
+               parameters=[
+                   OpenApiParameter("ordering", type=OpenApiTypes.STR, description="Сортировка по полям"),
+                   OpenApiParameter("super_host", type=OpenApiTypes.BOOL, description="Суперхост"),
+                   OpenApiParameter("day_price", type=OpenApiTypes.STR, description="Дневная цена в формате 'min,max'"),
+                   OpenApiParameter("verified_only", type=OpenApiTypes.BOOL,
+                                    description="Сдается только верифицированным пользователям"),
+                   OpenApiParameter("brand", type=OpenApiTypes.STR, description="Марка"),
+                   OpenApiParameter("year", type=OpenApiTypes.STR, description="Год выпуска в формате 'min,max'"),
+                   OpenApiParameter("rental_date_after", type=OpenApiTypes.STR,
+                                    description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
+                   OpenApiParameter("rental_date_before", type=OpenApiTypes.STR,
+                                    description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
+                   OpenApiParameter("city", type=OpenApiTypes.INT, description="Город"),
+                   OpenApiParameter("lat", type=OpenApiTypes.NUMBER, description="Широта"),
+                   OpenApiParameter("lon", type=OpenApiTypes.NUMBER, description="Долгота"),
+                   OpenApiParameter("radius", type=OpenApiTypes.NUMBER, description="Радиус в км"),
+                   OpenApiParameter('limit', type=int, location=OpenApiParameter.QUERY,
+                                    description='Number of results to return.'),
+                   OpenApiParameter('offset', type=int, location=OpenApiParameter.QUERY,
+                                    description='The initial index from which to return the results.'),
+                   OpenApiParameter("lessor_id", type=OpenApiTypes.INT, description="ID арендодателя"),
+                   OpenApiParameter("vehicle_type", type=OpenApiTypes.STR,
+                                    enum=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'],
+                                    description="Тип транспорта"),
+                   OpenApiParameter("long_distance", type=OpenApiTypes.BOOL, description="Междугородние поездки"),
+                   OpenApiParameter("delivery", type=OpenApiTypes.BOOL, description="Доставка"),
+               ]
+               )
+class AllVehiclesListView(ListAPIView):
     permission_classes = [AllowAny]
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    pagination_class = AllVehiclesPagination
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = BaseFilter
     ordering_fields = ['price', 'count_trip']
 
-    @extend_schema(
-        summary="Общий список всех видов транспорта",
-        parameters=[
-            OpenApiParameter("ordering", type=OpenApiTypes.STR, description="Сортировка по полям"),
-            OpenApiParameter("super_host", type=OpenApiTypes.BOOL, description="Суперхост"),
-            OpenApiParameter("day_price", type=OpenApiTypes.STR, description="Дневная цена в формате 'min,max'"),
-            OpenApiParameter("verified_only", type=OpenApiTypes.BOOL,
-                             description="Сдается только верифицированным пользователям"),
-            OpenApiParameter("brand", type=OpenApiTypes.STR, description="Марка"),
-            OpenApiParameter("year", type=OpenApiTypes.STR, description="Год выпуска в формате 'min,max'"),
-            OpenApiParameter("rental_date_after", type=OpenApiTypes.STR,
-                             description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
-            OpenApiParameter("rental_date_before", type=OpenApiTypes.STR,
-                             description="Выбор даты аренды в формате 'YYYY-MM-DD'"),
-            OpenApiParameter("city", type=OpenApiTypes.INT, description="Город"),
-            OpenApiParameter("lat", type=OpenApiTypes.NUMBER, description="Широта"),
-            OpenApiParameter("lon", type=OpenApiTypes.NUMBER, description="Долгота"),
-            OpenApiParameter("radius", type=OpenApiTypes.NUMBER, description="Радиус в км"),
-            OpenApiParameter('limit', type=int, location=OpenApiParameter.QUERY,
-                             description='Number of results to return.'),
-            OpenApiParameter('offset', type=int, location=OpenApiParameter.QUERY,
-                             description='The initial index from which to return the results.'),
-            OpenApiParameter("lessor_id", type=OpenApiTypes.INT, description="ID арендодателя"),
-            OpenApiParameter("vehicle_type", type=OpenApiTypes.STR, enum=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic'], description="Тип транспорта"),
-            OpenApiParameter("long_distance", type=OpenApiTypes.BOOL, description="Междугородние поездки"),
-            OpenApiParameter("delivery", type=OpenApiTypes.BOOL, description="Доставка"),
-        ]
-    )
-    def get(self, request):
-        all_vehicles = []
+    def get_queryset(self):
+        request = self.request
         user = request.user
         ordering = request.GET.get('ordering', 'price')
+        vehicle_type = request.GET.get('vehicle_type')
 
-        vehicle_queries = self.get_vehicle_queries(user, ordering)
+        models_to_query = VEHICLE_MODELS.items() if not vehicle_type else [(vehicle_type.lower(), VEHICLE_MODELS.get(vehicle_type.lower()))]
 
-        for queryset, serializer in vehicle_queries:
-            filtered_queryset = self.apply_filters(queryset, request)
-            vehicles_data = serializer(filtered_queryset, many=True).data
-            all_vehicles.extend(vehicles_data)
+        all_vehicles = []
+        for type_name, config in models_to_query:
+            if config is None:
+                continue
+            model_cls, _ = config
 
-        paginator = LimitOffsetPagination()
-        paginator.default_limit = 10
-        paginated_vehicles = paginator.paginate_queryset(all_vehicles, request)
+            base_qs = model_cls.objects.all().annotate(price=Min('rent_prices__price'))
 
-        return paginator.get_paginated_response(paginated_vehicles)
-
-    def get_vehicle_queries(self, user, ordering):
-        queries = []
-        if user.is_authenticated:
-            if hasattr(user, 'renter'):
-                queries = [
-                    (Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), AutoListSerializer),
-                    (Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), BikeListSerializer),
-                    (Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), ShipListSerializer),
-                    (Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
-                    (SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
-                ]
-            elif hasattr(user, 'lessor'):
-                queries = [
-                    (Auto.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), AutoListSerializer),
-                    (Bike.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), BikeListSerializer),
-                    (Ship.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), ShipListSerializer),
-                    (Helicopter.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
-                    (SpecialTechnic.objects.filter(owner=user).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
-                ]
+            # Фильтрация по пользователю
+            if user.is_authenticated:
+                if hasattr(user, 'renter'):
+                    base_qs = base_qs.filter(verified=True)
+                elif hasattr(user, 'lessor'):
+                    base_qs = base_qs.filter(owner=user)
             else:
-                queries = [
-                    (Auto.objects.all().annotate(price=Min('rent_prices__price')), AutoListSerializer),
-                    (Bike.objects.all().annotate(price=Min('rent_prices__price')), BikeListSerializer),
-                    (Ship.objects.all().annotate(price=Min('rent_prices__price')), ShipListSerializer),
-                    (Helicopter.objects.all().annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
-                    (SpecialTechnic.objects.all().annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
-                ]
-        else:
-            queries = [
-                (Auto.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), AutoListSerializer),
-                (Bike.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), BikeListSerializer),
-                (Ship.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), ShipListSerializer),
-                (Helicopter.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), HelicopterListSerializer),
-                (SpecialTechnic.objects.filter(verified=True).annotate(price=Min('rent_prices__price')), SpecialTechnicListSerializer),
-            ]
+                base_qs = base_qs.filter(verified=True)
 
-        for idx, (queryset, serializer) in enumerate(queries):
-            queryset = queryset.order_by(ordering)
-            queries[idx] = (queryset, serializer)
+            # Фильтрация по lessor_id
+            lessor_id = request.GET.get("lessor_id")
+            if lessor_id:
+                base_qs = base_qs.filter(owner__lessor__id=lessor_id)
 
-        return queries
+            # Применяем фильтры из BaseFilter
+            filterset = self.filterset_class(request.GET, queryset=base_qs)
+            if filterset.is_valid():
+                base_qs = filterset.qs
 
-    def apply_filters(self, queryset, request):
-        filterset = self.filterset_class(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
+            base_qs = base_qs.prefetch_related(
+                'photos',
+                'availabilities',
+                'rent_prices',
+            ).select_related(
+                'brand', 'model', 'city', 'owner', 'owner__lessor'
+            )
 
-        lessor_id = request.GET.get("lessor_id")
-        if lessor_id:
-            queryset = queryset.filter(owner__lessor__id=lessor_id)
-        vehicle_type = request.GET.get("vehicle_type")
+            base_qs = base_qs.order_by(ordering)
+            all_vehicles.extend(list(base_qs))
 
-        if vehicle_type:
-            vehicle_type_map = {
-                "auto": Auto,
-                "bike": Bike,
-                "ship": Ship,
-                "helicopter": Helicopter,
-                "specialtechnic": SpecialTechnic,
-            }
-            vehicle_model = vehicle_type_map.get(vehicle_type.lower())
-            if vehicle_model:
-                queryset = queryset.filter(id__in=vehicle_model.objects.values_list("id", flat=True))
+        # Финальная сортировка всех объектов
+        return sorted(all_vehicles, key=lambda obj: getattr(obj, ordering.strip('-')), reverse=ordering.startswith('-'))
 
-        return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+
+        # Сериализация с разными сериализаторами в зависимости от типа объекта
+        serialized_data = []
+        for obj in page:
+            for model_cls, serializer_cls in VEHICLE_MODELS.values():
+                if isinstance(obj, model_cls):
+                    serialized_data.append(serializer_cls(obj).data)
+                    break
+
+        return paginator.get_paginated_response(serialized_data)
 
 
 @extend_schema(summary="Удаление фото транспорта", description="Удаление фото транспорта по id")
@@ -750,13 +749,15 @@ class DeleteVehicleDocumentView(APIView):
             return Response({'detail': 'Документ не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
         if document.vehicle.owner != request.user and request.user.role not in ['administrator', 'manager']:
-            return Response({'detail': 'У вас нет прав для удаления этого документа.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': 'У вас нет прав для удаления этого документа.'},
+                            status=status.HTTP_403_FORBIDDEN)
 
         document.delete()
         return Response({'detail': 'Документ успешно удален.'}, status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(summary="Изменение порядка вывода фото", description="Изменение порядка вывода фото", request=UpdatePhotoOrderSerializer)
+@extend_schema(summary="Изменение порядка вывода фото", description="Изменение порядка вывода фото",
+               request=UpdatePhotoOrderSerializer)
 class UpdatePhotoOrderView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
 
