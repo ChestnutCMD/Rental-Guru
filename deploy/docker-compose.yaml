@@ -13,6 +13,7 @@ services:
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
       - ./.env:/app/.env
+      - ./logs:/app/info.log
     depends_on:
       postgres:
         condition: service_healthy
