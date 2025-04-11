@@ -206,18 +206,21 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'standard': {
-            'format': '[%(levelname)s] %(name)s: %(message)s'
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'info.log',
-            'formatter': 'standard',
+            'filename': os.path.join(BASE_DIR, 'logs', 'info.log'),
+            'formatter': 'verbose',
+            'level': 'INFO',
         },
     },
     'root': {
@@ -230,14 +233,14 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
         'django.request': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
-            'propagate': False,
-        },
-        'django.db.backends': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
             'propagate': False,
         },
         'chat': {
