@@ -124,10 +124,11 @@ class VehicleParkUpdateSerializer(serializers.ModelSerializer):
 
 class OrganizerSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
+    renter_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'avatar', 'telephone', 'average_rating']
+        fields = ['id', 'renter_id', 'first_name', 'last_name', 'avatar', 'telephone', 'average_rating']
 
     def get_average_rating(self, obj):
         renter = getattr(obj, 'renter', None)
@@ -135,10 +136,17 @@ class OrganizerSerializer(serializers.ModelSerializer):
             return round(renter.get_average_rating(), 2)
         return 0
 
+    def get_renter(self, obj):
+        renter = getattr(obj, 'renter', None)
+        if renter:
+            return renter.id
+        return None
+
 
 class RequestRentSerializer(serializers.ModelSerializer):
     organizer = OrganizerSerializer()
     lessor_id = serializers.SerializerMethodField()
+    lessor_name = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     object = serializers.SerializerMethodField()
     count_days = serializers.SerializerMethodField()
@@ -147,9 +155,13 @@ class RequestRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequestRent
         fields = [
-            'id', 'organizer', 'type', 'status', 'object', 'object_id', 'lessor_id', 'start_date',
+            'id', 'organizer', 'type', 'status', 'object', 'object_id', 'lessor_id', 'lessor_name', 'start_date',
             'end_date', 'count_days', 'total_cost', 'chat_id'
         ]
+
+    def get_lessor_name(self, obj):
+        vehicle = Vehicle.objects.filter(id=obj.object_id).first()
+        return vehicle.owner.first_name
 
     def get_lessor_id(self, obj):
         vehicle = Vehicle.objects.filter(id=obj.object_id).first()
