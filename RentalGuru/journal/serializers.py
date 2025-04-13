@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 class TripSerializer(serializers.ModelSerializer):
     organizer = serializers.StringRelatedField()
     organizer_user_id = serializers.IntegerField(source='organizer.id')
+    organizer_renter_id = serializers.IntegerField(source='organizer.renter.id')
     organizer_telephone = serializers.CharField(source='organizer.telephone')
     organizer_avatar = serializers.ImageField(source='organizer.avatar', allow_null=True)
     organizer_rating = serializers.SerializerMethodField()
@@ -26,7 +27,8 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = ['id', 'type', 'status', 'object', 'object_id', 'start_date', 'end_date', 'total_cost',
                   'owner_user_id', 'owner_lessor_id', 'owner', 'owner_telephone', 'owner_avatar', 'chat_id',
-                  'organizer', 'organizer_user_id', 'organizer_telephone', 'organizer_avatar', 'organizer_rating']
+                  'organizer', 'organizer_user_id', 'organizer_renter_id', 'organizer_telephone', 'organizer_avatar',
+                  'organizer_rating']
 
     def get_chat_id(self, obj):
         if obj.chat:
