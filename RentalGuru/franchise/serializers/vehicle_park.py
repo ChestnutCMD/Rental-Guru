@@ -136,7 +136,7 @@ class OrganizerSerializer(serializers.ModelSerializer):
             return round(renter.get_average_rating(), 2)
         return 0
 
-    def get_renter(self, obj):
+    def get_renter_id(self, obj):
         renter = getattr(obj, 'renter', None)
         if renter:
             return renter.id
