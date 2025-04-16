@@ -198,7 +198,7 @@ class SetPasswordView(APIView):
                     qr = QRCode.objects.get(referral_link=cache_data.get('source_details'))
                     qr.count += 1
                     qr.save()
-            if cache_data['source_type'] == 'promo':
+            if cache_data.get('source_type') == 'promo':
                 promocode = PromoCode.objects.get(title=cache_data.get('source_details'))
                 promocode.count += 1
                 promocode.save()
