@@ -326,7 +326,7 @@ class ReferralLinkSerializer(serializers.ModelSerializer):
         Подсчет суммы успешных платежей для ссылок инфлюенсера.
         """
         registered_users = RegistrationSource.objects.filter(
-            source_type='qr_code',
+            source_type='referral',
             source_details=obj.link
         ).values_list('user', flat=True)
         organizer_rents = RequestRent.objects.filter(
