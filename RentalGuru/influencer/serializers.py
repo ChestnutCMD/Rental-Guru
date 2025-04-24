@@ -39,7 +39,7 @@ class InfluencerListSerializer(serializers.ModelSerializer):
         """
         from payment.models import Payment
 
-        turnover = Payment.objects.filter(influencer=obj, status='paid').aggregate(total=Sum('amount'))['total']
+        turnover = Payment.objects.filter(influencer=obj, status='success').aggregate(total=Sum('amount'))['total']
         return turnover or 0
 
     def get_income(self, obj):
