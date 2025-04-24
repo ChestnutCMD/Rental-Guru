@@ -47,7 +47,7 @@ class InfluencerListSerializer(serializers.ModelSerializer):
         Возвращает доход (income) для инфлюенсера.
         """
         turnover = self.get_turnover(obj)
-        return float(turnover) / 100 * float(obj.commission) if turnover else 0
+        return round((float(turnover) / 100 * float(obj.commission)), 2) if turnover else 0
 
     def get_total_clicks(self, obj):
         """
