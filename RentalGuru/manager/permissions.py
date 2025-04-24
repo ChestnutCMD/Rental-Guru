@@ -277,7 +277,7 @@ class IsAdminOrDirector(BasePermission):
     def has_permission(self, request, view):
         if request.user.role == 'admin':
             return True
-        elif request.user.franchise:
+        elif hasattr(request.user, 'franchise') and request.user.franchise is not None:
             return True
         return False
 
