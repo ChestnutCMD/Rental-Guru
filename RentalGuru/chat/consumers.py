@@ -533,7 +533,6 @@ class ChatConsumer(BaseChatConsumer):
             else:
                 total_response_time = lessor.average_response_time * lessor.count_trip
                 total_response_time += response_time
-                lessor.count_trip += 1
                 lessor.average_response_time = total_response_time / lessor.count_trip
 
             lessor.save()
