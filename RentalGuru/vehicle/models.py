@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.exceptions import ValidationError
@@ -385,12 +387,14 @@ class VehicleDocument(models.Model):
 
 def vehicle_photo_upload_to(instance, filename):
     vehicle_type = instance.vehicle._meta.model_name
-    return f'media/images/vehicles/{vehicle_type}/{instance.vehicle.id}/{filename}'
+    ext = filename.split('.')[-1]
+    random_name = uuid.uuid4().hex[:10]
+    return f'media/images/vehicles/{vehicle_type}/{instance.vehicle.id}/{random_name}.{ext}'
 
 
 class VehiclePhoto(models.Model):
     vehicle = models.ForeignKey('Vehicle', related_name='photos', on_delete=models.CASCADE)
-    photo = models.ImageField(upload_to=vehicle_photo_upload_to, verbose_name='Фото')
+    photo = models.ImageField(upload_to=vehicle_photo_upload_to, verbose_name='Фото', max_length=255)
     order = models.PositiveIntegerField(default=0, verbose_name='Порядок')
 
     class Meta:
