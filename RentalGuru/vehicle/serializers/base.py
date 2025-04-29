@@ -132,7 +132,7 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 class BaseVehicleSerializer(serializers.ModelSerializer):
     payment_method = serializers.PrimaryKeyRelatedField(many=True, queryset=PaymentMethod.objects.all())
     availabilities = AvailabilitySerializer(many=True)
-    documents = VehicleDocumentSerializer(many=True)
+    # documents = VehicleDocumentSerializer(many=True)
     photos = VehiclePhotoSerializer(many=True)
     rent_prices = RentPriceSerializer(many=True)
     average_ratings = serializers.SerializerMethodField()
@@ -150,7 +150,7 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
     def update(self, instance, validated_data):
         instance.verified = False
         availabilities_data = validated_data.pop('availabilities', [])
-        documents_data = validated_data.pop('documents', [])
+        # documents_data = validated_data.pop('documents', [])
         prices_data = validated_data.pop('rent_prices', [])
         photos_data = validated_data.pop('photos', [])
 
@@ -163,11 +163,11 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
                 for availability_data in availabilities_data
             ])
 
-        if documents_data:
-            VehicleDocument.objects.bulk_create([
-                VehicleDocument(vehicle=instance, **document_data)
-                for document_data in documents_data
-            ])
+        # if documents_data:
+        #     VehicleDocument.objects.bulk_create([
+        #         VehicleDocument(vehicle=instance, **document_data)
+        #         for document_data in documents_data
+        #     ])
 
         if prices_data:
             instance.rent_prices.all().delete()
@@ -235,7 +235,7 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         validated_data['owner'] = request.user
 
         availabilities_data = validated_data.pop('availabilities', [])
-        documents_data = validated_data.pop('documents', [])
+        # documents_data = validated_data.pop('documents', [])
         prices_data = validated_data.pop('rent_prices', [])
         photos_data = validated_data.pop('photos', [])
         min_rent_day = validated_data.pop('min_rent_day', '')
@@ -253,8 +253,8 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         for availability_data in availabilities_data:
             Availability.objects.create(vehicle=vehicle, **availability_data)
 
-        for document_data in documents_data:
-            VehicleDocument.objects.create(vehicle=vehicle, **document_data)
+        # for document_data in documents_data:
+        #     VehicleDocument.objects.create(vehicle=vehicle, **document_data)
 
         for price_data in prices_data:
             RentPrice.objects.create(vehicle=vehicle, **price_data)
@@ -270,7 +270,7 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
 class BaseVehicleGetSerializer(serializers.ModelSerializer):
     payment_method = serializers.SerializerMethodField()
     availabilities = AvailabilitySerializer(many=True)
-    documents = VehicleDocumentSerializer(many=True)
+    # documents = VehicleDocumentSerializer(many=True)
     photos = serializers.SerializerMethodField()
     rent_prices = RentPriceSerializer(many=True)
     average_ratings = serializers.SerializerMethodField()

@@ -130,9 +130,9 @@ class AvailabilityInline(admin.TabularInline):
     extra = 1
 
 
-class VehicleDocumentInline(admin.TabularInline):
-    model = VehicleDocument
-    extra = 1
+# class VehicleDocumentInline(admin.TabularInline):
+#     model = VehicleDocument
+#     extra = 1
 
 
 class VehiclePhotoInline(admin.TabularInline):
@@ -155,7 +155,7 @@ class BaseVehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
     readonly_fields = ('get_average_rating',)
 
-    inlines = [AvailabilityInline, VehicleDocumentInline, RentPriceInline, VehiclePhotoInline, FeedbackInline]
+    inlines = [AvailabilityInline, RentPriceInline, VehiclePhotoInline, FeedbackInline]  # VehicleDocumentInline
 
     def verified_text(self, obj):
         return "Да" if obj.verified else "Нет"
