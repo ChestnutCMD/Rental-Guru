@@ -185,10 +185,20 @@ class RenterDetailSerializer(serializers.ModelSerializer):
 
 
 class LessorDetailSerializer(serializers.ModelSerializer):
+    commission = serializers.SerializerMethodField()
+
     class Meta:
         model = Lessor
         fields = ['id', 'super_host', 'count_trip', 'average_response_time', 'commission']
         read_only_fields = ['id', 'super_host', 'count_trip', 'average_response_time', 'commission']
+
+    def get_commission(self, obj):
+        """Возвращает общую комиссию (основная + франшиза, если есть)"""
+        total_commission = obj.commission
+        if hasattr(obj, 'franchise') and obj.franchise:
+            total_commission += obj.franchise.commission
+
+        return total_commission
 
 
 class CurrencySerializer(serializers.ModelSerializer):
