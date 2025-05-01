@@ -11,7 +11,7 @@ from vehicle.models import AutoFeaturesAdditionally, Auto, Bike, Ship, Helicopte
 
 class BaseFilter(filters.FilterSet):
     super_host = filters.BooleanFilter(field_name='owner__lessor__super_host', label='Суперхост')
-    day_price = filters.RangeFilter(field_name='rent_prices__price', label='Дневная цена')
+    day_price = filters.RangeFilter(field_name='rent_prices__total', label='Дневная цена')
     verified_only = filters.BooleanFilter(field_name='drivers_only_verified',
                                           label='Сдается только верифицированным пользователям')
     brand = filters.CharFilter(method='filter_by_brand', label='Марка')
