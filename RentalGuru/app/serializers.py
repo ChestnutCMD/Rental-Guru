@@ -185,6 +185,8 @@ class RenterDetailSerializer(serializers.ModelSerializer):
 
 
 class LessorDetailSerializer(serializers.ModelSerializer):
+    commission = serializers.FloatField()
+    
     class Meta:
         model = Lessor
         fields = ['id', 'super_host', 'count_trip', 'average_response_time', 'commission']
