@@ -59,10 +59,14 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
+            # TODO: пересчитать
             if self.vehicle.owner.lessor.franchise:
-                amount = Decimal(self.total_cost)/Decimal(100) * (self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission))
+                commission = self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
             else:
-                amount = Decimal(self.total_cost)/Decimal(100) * self.vehicle.owner.lessor.commission
+                commission = self.vehicle.owner.lessor.commission
+
+            amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
+
             message_content = json.dumps({
                 "status": self.status,
                 "organizer_id": self.organizer.id,
@@ -109,7 +113,7 @@ class RequestRent(models.Model):
 
         if not rent_price:
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
-
+        #TODO: пересчитать
         # Вычисление общей стоимости аренды
         total_cost = (rental_days / period_days) * float(rent_price.total)
 
@@ -151,10 +155,13 @@ class RequestRent(models.Model):
     def create_payment(self):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
+
         if self.vehicle.owner.lessor.franchise:
-            amount = Decimal(self.total_cost) / 100 * Decimal(self.vehicle.owner.lessor.commission + self.vehicle.owner.lessor.franchise.commission)
+            commission = self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
         else:
-            amount = Decimal(self.total_cost) / 100 * Decimal(self.vehicle.owner.lessor.commission)
+            commission = self.vehicle.owner.lessor.commission
+
+        amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
         discount_amount = 0
 
         # Обработка промокода

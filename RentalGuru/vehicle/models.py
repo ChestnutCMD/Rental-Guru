@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
@@ -315,7 +316,12 @@ class RentPrice(models.Model):
     objects = RentPriceManager()
 
     def save(self, *args, **kwargs):
-        commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor') else 10.0
+        # TODO: пересчитать
+        commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner,
+                                                                                            'lessor') else 10.0
+        if hasattr(self.vehicle.owner.lessor, 'franchise') and self.vehicle.owner.lessor.franchise:
+            commission += self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
+
         self.total = (float(self.price) + (float(self.price) * float(commission) / 100)) * (100 - float(self.discount)) / 100
         super().save(*args, **kwargs)
 
