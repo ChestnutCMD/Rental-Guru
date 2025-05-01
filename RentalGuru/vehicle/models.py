@@ -321,10 +321,6 @@ class RentPrice(models.Model):
         if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor'):
             commission = float(self.vehicle.owner.lessor.commission)
 
-            if hasattr(self.vehicle.owner.lessor, 'franchise') and self.vehicle.owner.lessor.franchise:
-                franchise_commission = float(self.vehicle.owner.lessor.franchise.commission)
-                commission += franchise_commission
-
         self.total = (float(self.price) + (float(self.price) * commission / 100)) * (100 - float(self.discount)) / 100
         super().save(*args, **kwargs)
 

@@ -156,10 +156,7 @@ class RequestRent(models.Model):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
 
-        if self.vehicle.owner.lessor.franchise:
-            commission = self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
-        else:
-            commission = self.vehicle.owner.lessor.commission
+        commission = self.vehicle.owner.lessor.commission
 
         amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
         discount_amount = 0
