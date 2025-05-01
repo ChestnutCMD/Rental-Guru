@@ -317,12 +317,15 @@ class RentPrice(models.Model):
 
     def save(self, *args, **kwargs):
         # TODO: пересчитать
-        commission = self.vehicle.owner.lessor.commission if self.vehicle.owner and hasattr(self.vehicle.owner,
-                                                                                            'lessor') else 10.0
-        if hasattr(self.vehicle.owner.lessor, 'franchise') and self.vehicle.owner.lessor.franchise:
-            commission += self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
+        commission = 10.0
+        if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor'):
+            commission = float(self.vehicle.owner.lessor.commission)
 
-        self.total = (float(self.price) + (float(self.price) * float(commission) / 100)) * (100 - float(self.discount)) / 100
+            if hasattr(self.vehicle.owner.lessor, 'franchise') and self.vehicle.owner.lessor.franchise:
+                franchise_commission = float(self.vehicle.owner.lessor.franchise.commission)
+                commission += franchise_commission
+
+        self.total = (float(self.price) + (float(self.price) * commission / 100)) * (100 - float(self.discount)) / 100
         super().save(*args, **kwargs)
 
     def __str__(self):
