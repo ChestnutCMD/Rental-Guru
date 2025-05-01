@@ -59,11 +59,7 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
-            # TODO: пересчитать
-            if self.vehicle.owner.lessor.franchise:
-                commission = self.vehicle.owner.lessor.commission + Decimal(self.vehicle.owner.lessor.franchise.commission)
-            else:
-                commission = self.vehicle.owner.lessor.commission
+            commission = self.vehicle.owner.lessor.commission
 
             amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
 
@@ -113,7 +109,6 @@ class RequestRent(models.Model):
 
         if not rent_price:
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
-        #TODO: пересчитать
         # Вычисление общей стоимости аренды
         total_cost = (rental_days / period_days) * float(rent_price.total)
 
