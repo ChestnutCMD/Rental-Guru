@@ -3,9 +3,11 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
+from django.db.models.functions import Coalesce
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.forms import DecimalField
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -65,7 +67,7 @@ class Franchise(models.Model):
         from vehicle.models import Vehicle
         return Vehicle.objects.filter(
             Q(owner__lessor__franchise=self) | Q(owner=self.director)
-        )
+        ).select_related('owner__lessor__franchise', 'owner__lessor')
 
     def get_total_vehicles(self):
         return self.get_vehicles().count()
@@ -113,15 +115,19 @@ class Franchise(models.Model):
 
     def get_total_revenue(self, period='all', is_previous=False):
         date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+        query = self._get_total_revenue_query()
+
         if date_range == (None, None):
             return self._get_total_revenue_query().aggregate(
-                total_revenue=Sum('total_cost')
+                total_revenue=Sum(F('total_cost') * F('trips__owner__lessor__commission'))
             )['total_revenue'] or Decimal('0.00')
 
         start_date, end_date = date_range
         query = self._get_total_revenue_query()
         query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
-        return query.aggregate(total_revenue=Sum('total_cost'))['total_revenue'] or Decimal('0.00')
+        return query.aggregate(
+                total_revenue=Sum(F('total_cost') * F('trips__owner__lessor__commission'))
+            )['total_revenue'] or Decimal('0.00')
 
     def _get_total_revenue_query(self):
         return Trip.objects.filter(
@@ -129,7 +135,9 @@ class Franchise(models.Model):
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
-        )
+        ).select_related(
+        'trips__owner__lessor'
+    )
 
     def get_total_margin(self, period='all', is_previous=False):
         date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
@@ -198,7 +206,7 @@ class Franchise(models.Model):
         from app.models import User
         return User.objects.filter(
             lessor__franchise=self
-        ).count()
+        ).only('id').count()
 
     def get_statistics(self, period='all'):
         # Текущие значения
