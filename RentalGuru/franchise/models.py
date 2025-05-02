@@ -113,40 +113,46 @@ class Franchise(models.Model):
             return 0 if current_value == 0 else 100
         return ((current_value - previous_value) / previous_value) * 100
 
-    def get_total_revenue(self, period='all', is_previous=False):
-        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
-        query = self._get_total_revenue_query()
-
-        if date_range == (None, None):
-            return self._get_total_revenue_query().aggregate(
-                total_revenue=Sum(F('total_cost') * F('trips__owner__lessor__commission'))
-            )['total_revenue'] or Decimal('0.00')
-
-        start_date, end_date = date_range
-        query = self._get_total_revenue_query()
-        query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
-        return query.aggregate(
-                total_revenue=Sum(F('total_cost') * F('trips__owner__lessor__commission'))
-            )['total_revenue'] or Decimal('0.00')
-
     def _get_total_revenue_query(self):
+        """Получает все завершенные поездки для транспорта франшизы"""
         return Trip.objects.filter(
             content_type__in=ContentType.objects.filter(
                 model__in=['auto', 'bike', 'ship', 'helicopter', 'specialtechnic']),
             object_id__in=self.get_vehicles().values('id'),
             status='finished'
-        ).select_related(
-        'trips__owner__lessor'
-    )
+        )
+
+    def get_total_revenue(self, period='all', is_previous=False):
+        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
+
+        query = self._get_total_revenue_query()
+
+        if date_range != (None, None):
+            start_date, end_date = date_range
+            query = query.filter(end_date__gte=start_date, end_date__lte=end_date)
+
+        trips = query.select_related('content_type').prefetch_related('vehicle__owner__lessor')
+
+        total_revenue = Decimal('0.00')
+        for trip in trips:
+            owner = trip.vehicle.owner
+            try:
+                if hasattr(owner, 'lessor') and owner.lessor:
+                    commission_percent = owner.lessor.commission
+                    trip_revenue = trip.total_cost * (commission_percent / 100)
+                    total_revenue += trip_revenue
+            except Exception:
+                continue
+
+        return total_revenue
 
     def get_total_margin(self, period='all', is_previous=False):
-        date_range = self.get_previous_date_range(period) if is_previous else self.get_date_range(period)
-        if date_range == (None, None):
-            return self.get_total_revenue(period) * (1 - Decimal(self.commission) / 100)
-
-        start_date, end_date = date_range
+        """
+        Рассчитывает общую маржу франшизы за указанный период.
+        Маржа = общая выручка - роялти
+        """
         revenue = self.get_total_revenue(period, is_previous)
-        return revenue * (1 - Decimal(self.commission) / 100)
+        return  revenue * (1 - Decimal(self.commission) / 100)
 
     def get_total_orders(self, period='all'):
         start_date, end_date = self.get_date_range(period)
@@ -163,6 +169,7 @@ class Franchise(models.Model):
         return query.count()
 
     def get_royalty(self, period='all', is_previous=False):
+        """ Роялти """
         revenue = self.get_total_revenue(period, is_previous)
         return (revenue/100) * Decimal(self.commission)
 
