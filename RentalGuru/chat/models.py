@@ -111,9 +111,10 @@ class RequestRent(models.Model):
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
         # Вычисление общей стоимости аренды
         total_cost = (rental_days / period_days) * float(rent_price.total)
-
-        if self.delivery:
-            total_cost += float(self.vehicle.price_delivery)
+        # Добавление стоимости доставки и начисление комиссии на доставку
+        if self.delivery and self.delivery_cost > 0:
+            commission = self.vehicle.owner.lessor.commission
+            total_cost += Decimal(self.vehicle.price_delivery) * (Decimal(1) + commission/Decimal(100))
 
         return total_cost
 
@@ -152,8 +153,8 @@ class RequestRent(models.Model):
         from payment.models import Payment
 
         commission = self.vehicle.owner.lessor.commission
-
         amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
+
         discount_amount = 0
 
         # Обработка промокода
