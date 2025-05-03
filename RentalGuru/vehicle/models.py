@@ -263,6 +263,14 @@ class Vehicle(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         previous_instance = Vehicle.objects.filter(pk=self.pk).first()
+        if self.price_delivery > 0:
+            if previous_instance:
+                if self.price_delivery != previous_instance.price_delivery:
+                    commission = self.owner.lessor.commission
+                    self.price_delivery *= Decimal(1) + Decimal(commission) / Decimal(100)
+            else:
+                commission = self.owner.lessor.commission
+                self.price_delivery *= Decimal(1) + Decimal(commission) / Decimal(100)
 
         super().save(*args, **kwargs)
 
@@ -316,7 +324,6 @@ class RentPrice(models.Model):
     objects = RentPriceManager()
 
     def save(self, *args, **kwargs):
-        # TODO: пересчитать
         commission = 10.0
         if self.vehicle.owner and hasattr(self.vehicle.owner, 'lessor'):
             commission = float(self.vehicle.owner.lessor.commission)
