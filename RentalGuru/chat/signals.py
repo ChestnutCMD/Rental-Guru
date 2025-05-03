@@ -31,7 +31,8 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
         if not Trip.objects.filter(
             object_id=instance.object_id,
             start_date=instance.start_date,
-            end_date=instance.end_date
+            end_date=instance.end_date,
+            status__in=['current', 'started']
         ).exists():
             Trip.objects.create(
                 organizer=instance.organizer,
