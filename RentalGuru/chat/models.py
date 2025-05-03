@@ -114,7 +114,7 @@ class RequestRent(models.Model):
 
         # Добавление стоимости доставки и начисление комиссии на доставку
         if self.delivery and self.delivery_cost > 0:
-            total_cost += Decimal(self.vehicle.price_delivery)
+            total_cost += self.vehicle.price_delivery
 
         return total_cost
 
