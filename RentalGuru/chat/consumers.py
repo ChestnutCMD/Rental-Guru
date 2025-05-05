@@ -625,9 +625,6 @@ class ChatConsumer(BaseChatConsumer):
                 lessor = owner.lessor
                 commission_rate = lessor.commission
 
-                if hasattr(lessor, 'franchise') and lessor.franchise:
-                    commission_rate += lessor.franchise.commission
-
                 amount = Decimal(request_rent.total_cost) / Decimal(100) * Decimal(commission_rate)
                 amount = round(float(amount), 2)
         except Exception as e:
