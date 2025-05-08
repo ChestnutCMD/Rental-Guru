@@ -26,7 +26,7 @@ from .models import VehicleBrand, VehicleModel, Auto, Bike, Ship, Helicopter, Sp
     AutoFeaturesAdditionally, BikeFeaturesAdditionally, ShipFeaturesAdditionally, \
     FeaturesForChildren, FeaturesEquipment, PaymentMethod, AutoFuelType, AutoTransmission, AutoBodyType, \
     BikeTransmission, VehicleClass, VehiclePhoto, VehicleDocument, AutoFeaturesFunctions, BikeFeaturesFunctions, \
-    ShipFeaturesFunctions
+    ShipFeaturesFunctions, ShipType, TechnicType, BikeBodyType
 from .permission import IsAdminOrLessor, IsAdminOrReadOnly, IsAdminOrOwner
 from .serializers.base import VehicleBrandSerializer, VehicleModelSerializer, \
     PaymentMethodSerializer, VehicleClassSerializer, VehicleSerializer, UpdatePhotoOrderSerializer
@@ -34,14 +34,15 @@ from .serializers.auto import AutoGetSerializer, AutoListSerializer, AutoCreateS
     AutoUpdateSerializer, AutoFeaturesAdditionallySerializer, FeaturesForChildrenSerializer, AutoFuelTypeSerializer, \
     AutoTransmissionSerializer, AutoBodyTypeSerializer, AutoFeaturesFunctionsSerializer
 from .serializers.bike import BikeGetSerializer, BikeListSerializer, BikeCreateSerializer, BikeUpdateSerializer, \
-    BikeFeaturesAdditionallySerializer, BikeTransmissionSerializer, BikeFeaturesFunctionsSerializer
+    BikeFeaturesAdditionallySerializer, BikeTransmissionSerializer, BikeFeaturesFunctionsSerializer, \
+    BikeBodyTypeSerializer
 from .serializers.rating import UpdateRatingSerializer
 from .serializers.ship import ShipGetSerializer, ShipListSerializer, ShipCreateSerializer, ShipUpdateSerializer, \
-    ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer, ShipFeaturesFunctionsSerializer
+    ShipFeaturesAdditionallySerializer, FeaturesEquipmentSerializer, ShipFeaturesFunctionsSerializer, ShipTypeSerializer
 from .serializers.helicopter import HelicopterGetSerializer, HelicopterListSerializer, HelicopterCreateSerializer, \
     HelicopterUpdateSerializer
 from .serializers.specialtechnic import SpecialTechnicGetSerializer, SpecialTechnicListSerializer, \
-    SpecialTechnicCreateSerializer, SpecialTechnicUpdateSerializer
+    SpecialTechnicCreateSerializer, SpecialTechnicUpdateSerializer, TechnicTypeSerializer
 from .utils import update_photo_order
 
 
@@ -140,7 +141,8 @@ class BikeViewSet(BaseViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = (Bike.objects.annotate(price=Min('rent_prices__price'))
-                    .select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class', 'city', 'owner__lessor')
+                    .select_related('owner', 'brand', 'model', 'transmission', 'vehicle_class', 'city', 'owner__lessor',
+                                    'body_type')
                     .prefetch_related('payment_method', 'features_functions', 'features_additionally', 'availabilities',
                                       'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
@@ -177,7 +179,7 @@ class ShipViewSet(BaseViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = (Ship.objects.annotate(price=Min('rent_prices__price'))
-                    .select_related('owner', 'brand', 'model', 'vehicle_class', 'city', 'owner__lessor')
+                    .select_related('owner', 'brand', 'model', 'vehicle_class', 'city', 'owner__lessor', 'type_ship')
                     .prefetch_related('payment_method', 'features_functions', 'features_additionally',
                                       'features_equipment', 'availabilities', 'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
@@ -250,7 +252,7 @@ class SpecialTechnicViewSet(BaseViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = (SpecialTechnic.objects.annotate(price=Min('rent_prices__price'))
-                    .select_related('owner', 'brand', 'model', 'city', 'owner__lessor')
+                    .select_related('owner', 'brand', 'model', 'city', 'owner__lessor', 'type_technic')
                     .prefetch_related('payment_method', 'availabilities', 'documents', 'rent_prices', 'photos'))
         if user.is_authenticated:
             if user.role in ['admin', 'manager']:
@@ -483,6 +485,24 @@ class AutoTransmissionListView(ListAPIView):
 class AutoBodyTypeListView(ListAPIView):
     queryset = AutoBodyType.objects.all()
     serializer_class = AutoBodyTypeSerializer
+
+
+@extend_schema(summary="Типы кузова авто", description="Типы кузова")
+class BikeBodyTypeListView(ListAPIView):
+    queryset = BikeBodyType.objects.all()
+    serializer_class = BikeBodyTypeSerializer
+
+
+@extend_schema(summary="Типы кузова авто", description="Типы кузова")
+class ShipTypeListView(ListAPIView):
+    queryset = ShipType.objects.all()
+    serializer_class = ShipTypeSerializer
+
+
+@extend_schema(summary="Типы кузова авто", description="Типы кузова")
+class TechnicTypeListView(ListAPIView):
+    queryset = TechnicType.objects.all()
+    serializer_class = TechnicTypeSerializer
 
 
 @extend_schema(summary="Коробка передач мотоциклов", description="Коробка передач мотоциклов")

@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from vehicle.models import Bike, BikeFeaturesAdditionally, BikeTransmission, VehicleClass, \
-    BikeFeaturesFunctions
+    BikeFeaturesFunctions, BikeBodyType
 from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, BaseVehicleCreateSerializer, \
     BaseVehicleUpdateSerializer, VehicleClassSerializer
 
@@ -13,11 +13,18 @@ class BikeTransmissionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class BikeBodyTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BikeBodyType
+        fields = '__all__'
+
+
 class BikeCreateSerializer(BaseVehicleCreateSerializer):
     features_functions = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesFunctions.objects.all(), required=False)
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all(), required=False)
     transmission = serializers.PrimaryKeyRelatedField(queryset=BikeTransmission.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
+    body_type = serializers.PrimaryKeyRelatedField(queryset=BikeBodyType.objects.all())
 
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = Bike
@@ -62,6 +69,7 @@ class BikeUpdateSerializer(BaseVehicleUpdateSerializer):
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=BikeFeaturesAdditionally.objects.all())
     transmission = serializers.PrimaryKeyRelatedField(queryset=BikeTransmission.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
+    body_type = serializers.PrimaryKeyRelatedField(queryset=BikeBodyType.objects.all())
 
     class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Bike
@@ -79,12 +87,12 @@ class BikeFeaturesFunctionsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
 class BikeGetSerializer(BaseVehicleGetSerializer):
     features_functions = serializers.SerializerMethodField()
     features_additionally = serializers.SerializerMethodField()
     transmission = BikeTransmissionSerializer()
     vehicle_class = VehicleClassSerializer()
+    body_type = BikeBodyTypeSerializer()
 
     class Meta(BaseVehicleGetSerializer.Meta):
         model = Bike
