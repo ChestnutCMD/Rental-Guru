@@ -487,19 +487,19 @@ class AutoBodyTypeListView(ListAPIView):
     serializer_class = AutoBodyTypeSerializer
 
 
-@extend_schema(summary="Типы кузова авто", description="Типы мотоциклов")
+@extend_schema(summary="Типы мотоциклов", description="Типы мотоциклов")
 class BikeBodyTypeListView(ListAPIView):
     queryset = BikeBodyType.objects.all()
     serializer_class = BikeBodyTypeSerializer
 
 
-@extend_schema(summary="Типы кузова авто", description="Типы суден")
+@extend_schema(summary="Типы суден", description="Типы суден")
 class ShipTypeListView(ListAPIView):
     queryset = ShipType.objects.all()
     serializer_class = ShipTypeSerializer
 
 
-@extend_schema(summary="Типы кузова авто", description="Типы спецтехники")
+@extend_schema(summary="Типы спецтехники", description="Типы спецтехники")
 class TechnicTypeListView(ListAPIView):
     queryset = TechnicType.objects.all()
     serializer_class = TechnicTypeSerializer
