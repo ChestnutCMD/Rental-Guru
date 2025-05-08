@@ -3,6 +3,18 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
+def create_default_types(apps, schema_editor):
+    ShipType = apps.get_model('vehicle', 'ShipType')
+    TechnicType = apps.get_model('vehicle', 'TechnicType')
+    Ship = apps.get_model('vehicle', 'Ship')
+    SpecialTechnic = apps.get_model('vehicle', 'SpecialTechnic')
+
+    yacht_type = ShipType.objects.create(title='Яхта', slug='yahta')
+    Ship.objects.all().update(type_ship=yacht_type)
+
+    bulldozer_type = TechnicType.objects.create(title='Бульдозер', slug='buldozer')
+    SpecialTechnic.objects.all().update(type_technic=bulldozer_type)
+
 
 class Migration(migrations.Migration):
 
@@ -45,4 +57,5 @@ class Migration(migrations.Migration):
             name='type_technic',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='vehicle.technictype', verbose_name='Тип судна'),
         ),
+        migrations.RunPython(create_default_types),
     ]

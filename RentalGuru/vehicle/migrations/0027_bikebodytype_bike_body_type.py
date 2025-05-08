@@ -4,6 +4,13 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def create_default_bike_body_type(apps, schema_editor):
+    BikeBodyType = apps.get_model('vehicle', 'BikeBodyType')
+    Bike = apps.get_model('vehicle', 'Bike')
+    scooter = BikeBodyType.objects.create(title='Скутер', slug='skuter')
+    Bike.objects.all().update(body_type=scooter)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -28,4 +35,5 @@ class Migration(migrations.Migration):
             name='body_type',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='vehicle.bikebodytype', verbose_name='Тип мотоцикла'),
         ),
+        migrations.RunPython(create_default_bike_body_type),
     ]

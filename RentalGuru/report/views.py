@@ -141,7 +141,7 @@ class InfluencerReportView(ListAPIView):
             raise
 
 
-@extend_schema(summary="Отчеты. Франшизы", description="Отчеты. Франшизы.")
+@extend_schema(summary="Отчеты. Франшизы", description="Отчеты. Франшизы.", deprecated=True)
 class FranchiseReportView(ListAPIView):
     serializer_class = FranchiseReportSerializer
     filter_backends = [DjangoFilterBackend]
