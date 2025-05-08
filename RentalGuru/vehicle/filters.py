@@ -156,7 +156,7 @@ class BikeFilter(BaseFilter):
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
-    body_type = filters.CharFilter(field_name='body_type__slug', label='Тип мотоцикла')
+    body_type = filters.NumberFilter(field_name='body_type__id', label='Тип мотоцикла')
     features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__id',
         queryset=BikeFeaturesAdditionally.objects.all(),
@@ -188,7 +188,7 @@ class ShipFilter(BaseFilter):
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     grot = filters.CharFilter(field_name='grot', label='Грот')
-    type_ship = filters.CharFilter(field_name='type_ship__slug', label='Тип судна')
+    type_ship = filters.NumberFilter(field_name='type_ship__id', label='Тип судна')
     features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__id',
         queryset=ShipFeaturesAdditionally.objects.all(),
@@ -232,7 +232,7 @@ class HelicopterFilter(BaseFilter):
 class SpecialTechnicFilter(BaseFilter):
     engine_power = filters.RangeFilter(field_name='engine_power', label='Мощность двигателя, л.с.')
     operating_weight = filters.RangeFilter(field_name='operating_weight', label='Эксплутационная масса, кг')
-    type_technic = filters.CharFilter(field_name='type_technic__slug', label='Тип судна')
+    type_technic = filters.NumberFilter(field_name='type_technic__id', label='Тип судна')
 
     class Meta:
         model = SpecialTechnic
