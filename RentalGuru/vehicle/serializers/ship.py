@@ -55,7 +55,7 @@ class ShipUpdateSerializer(BaseVehicleUpdateSerializer):
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
-    ship_type = serializers.PrimaryKeyRelatedField(queryset=ShipType.objects.all())
+    type_ship = serializers.PrimaryKeyRelatedField(queryset=ShipType.objects.all())
 
     class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Ship
@@ -84,7 +84,7 @@ class ShipGetSerializer(BaseVehicleGetSerializer):
     features_additionally = serializers.SerializerMethodField()
     features_equipment = serializers.SerializerMethodField()
     vehicle_class = VehicleClassSerializer()
-    ship_type = ShipTypeSerializer()
+    type_ship = ShipTypeSerializer()
 
     class Meta(BaseVehicleGetSerializer.Meta):
         model = Ship
