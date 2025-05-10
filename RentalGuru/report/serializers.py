@@ -387,7 +387,7 @@ class FranchiseReportSerializerV2(serializers.ModelSerializer):
         canceled_amount = float(canceled_amount) if canceled_amount else 0.00
 
         # Комиссия франшизы
-        franchise_commission = float((Decimal(str(completed_amount)) * obj.commission) / 100)
+        franchise_commission = float((Decimal(str(total_commission)) * obj.commission) / 100)
 
         return {
             'completed_orders_amount': completed_amount,
