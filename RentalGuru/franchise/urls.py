@@ -5,7 +5,7 @@ from .views import VehicleParkViewSet, RequestsByParkView, ChatsByParkView, Fran
     ChatsByFranchiseView, LessorsByFranchiseView, VehiclesByFranchiseView, \
     vehicle_park_statistics, RequestFranchiseCreateView, RequestFranchiseListView, RequestFranchiseDeleteView, \
     CityView, RequestAddLessorViewSet, LessorListView, DeleteLessorFromFranchiseView, LessorStatisticsView, \
-    FranchiseStatisticsView
+    FranchiseStatisticsView, CityRetrieve
 
 router = DefaultRouter()
 router.register(r'vehicle_park', VehicleParkViewSet, basename='vehicle_park')
@@ -30,5 +30,6 @@ urlpatterns = [
     path('request-franchise/create/', RequestFranchiseCreateView.as_view(), name='request-franchise-create'),
     path('request-franchise/', RequestFranchiseListView.as_view(), name='request-franchise-list'),
     path('request-franchise/delete/<int:pk>/', RequestFranchiseDeleteView.as_view(), name='request-franchise-delete'),
-    path('city/', CityView.as_view(), name='city')
+    path('city/', CityView.as_view(), name='city'),
+    path('city/<int:city_id>/', CityRetrieve.as_view(), name='city')
 ]
