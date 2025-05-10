@@ -388,14 +388,19 @@ class FranchiseReportSerializerV2(serializers.ModelSerializer):
 
         # Комиссия франшизы
         franchise_commission = float((Decimal(str(total_commission)) * obj.commission) / 100)
-
+        # Процент отмененных поездок
+        total_trips = canceled_trips.count() + completed_trips.count()
+        percent_canceled_trips = (
+            (canceled_trips.count() / total_trips) * 100 if total_trips > 0 else 0
+        )
         return {
             'completed_orders_amount': completed_amount,
             'lessors_commission': float(total_commission),
             'avg_lessors_commission': avg_commission,
             'canceled_orders_count': canceled_trips.count(),
             'canceled_orders_amount': canceled_amount,
-            'franchise_commission_amount': franchise_commission
+            'franchise_commission_amount': franchise_commission,
+            'percent_canceled_trips': percent_canceled_trips
         }
 
     def get_auto(self, obj):
