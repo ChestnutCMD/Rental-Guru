@@ -17,6 +17,7 @@ def upload_avatar(instance, filename):
 
 class Currency(models.Model):
     code = models.CharField(max_length=3, unique=True, verbose_name="Код валюты")
+    title = models.CharField(max_length=255, null=True, verbose_name='Название')
 
     def __str__(self):
         return self.code

@@ -170,8 +170,12 @@ class RenterDocumentsAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ['code', 'title']
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Lessor, LessorAdmin)
 admin.site.register(Renter, RenterAdmin)
-admin.site.register(Currency)
 admin.site.register(Language)
