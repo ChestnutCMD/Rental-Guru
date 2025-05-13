@@ -362,7 +362,7 @@ HOST_URL = 'https://rentalguru.ru'
 TINYPAY_TERMINAL_KEY = getenv('TINYPAY_TERMINAL_KEY')
 TINYPAY_PASSWORD = getenv('TINYPAY_PASSWORD')
 TINYPAY_API_URL = 'https://securepay.tinkoff.ru/v2/'
-TINYPAY_SUCCESS_URL = 'https://rental-guru.netlify.app/'
+TINYPAY_SUCCESS_URL = 'https://rental-guru.netlify.app/ru/profile?trip=true&success=true'
 TINYPAY_FAIL_URL = 'https://rental-guru.netlify.app/'
 
 # OAuth 2.0
