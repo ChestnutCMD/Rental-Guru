@@ -183,7 +183,6 @@ SPECTACULAR_SETTINGS = {
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://saqartvel.ru',
     'https://rental-guru.netlify.app'
 ]
 CSRF_COOKIE_NAME = 'csrftoken'

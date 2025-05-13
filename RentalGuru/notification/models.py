@@ -7,7 +7,7 @@ from django.utils import timezone
 from pyfcm import FCMNotification
 from django.db import models
 
-from RentalGuru.settings import DEFAULT_FROM_EMAIL, AUTH_USER_MODEL
+from RentalGuru.settings import DEFAULT_FROM_EMAIL, AUTH_USER_MODEL, HOST_URL
 
 
 class Notification(models.Model):
@@ -22,7 +22,7 @@ class Notification(models.Model):
         verbose_name_plural = 'Уведомления'
 
     def get_absolute_url(self):
-        return f'https://saqartvel.ru/notifications/{self.pk}'
+        return f'{HOST_URL}/notifications/{self.pk}'
 
     def send_notification(self):
         if self.user.email_notification:
