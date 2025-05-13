@@ -264,6 +264,10 @@ class TranslationMiddleware(MiddlewareMixin):
                                      'date_joined', 'timestamp',
                                      'email', 'phone', 'http://', 'https://', 'language'])
 
+        # Check if this might be a currency code (3 characters, all uppercase)
+        if len(text) == 3 and text.upper() == text:
+            return False
+
         if len(text.strip()) <= 2:
             return False
 
