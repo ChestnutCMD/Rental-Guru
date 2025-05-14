@@ -17,6 +17,7 @@ def upload_avatar(instance, filename):
 
 class Currency(models.Model):
     code = models.CharField(max_length=3, unique=True, verbose_name="Код валюты")
+    title = models.CharField(max_length=255, null=True, verbose_name='Название')
 
     def __str__(self):
         return self.code
@@ -81,7 +82,7 @@ class Lessor(models.Model):
     super_host = models.BooleanField(default=False, verbose_name='Суперхост')
     count_trip = models.PositiveIntegerField(default=0, verbose_name='Количество поездок')
     average_response_time = models.DurationField(null=True, blank=True, verbose_name='Среднее время ответа')
-    commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия', default=10.0)
+    commission = models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Комиссия', default=20.0)
     influencer = models.ForeignKey(Influencer, null=True, blank=True, on_delete=models.SET_NULL, related_name='lessors',
                                    verbose_name='Инфлюенсер')
     franchise = models.ForeignKey(Franchise, on_delete=models.SET_NULL, null=True, blank=True, related_name='lessors',

@@ -120,6 +120,21 @@ class BikeTransmissionAdmin(BaseType):
     pass
 
 
+@admin.register(BikeBodyType)
+class BikeBodyTypeAdmin(BaseType):
+    pass
+
+
+@admin.register(ShipType)
+class ShipTypeAdmin(BaseType):
+    pass
+
+
+@admin.register(TechnicType)
+class TechnicTypeAdmin(BaseType):
+    pass
+
+
 class FeedbackInline(GenericStackedInline):
     model = Feedback
     extra = 1
@@ -239,7 +254,7 @@ class BikeAdmin(BaseVehicleAdmin):
             'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
-            'fields': ('brand', 'model', 'seats', 'engine_capacity', 'transmission', 'year', 'description',
+            'fields': ('brand', 'model', 'body_type', 'seats', 'engine_capacity', 'transmission', 'year', 'description',
                        'long_distance', 'delivery', 'ensurance', 'vehicle_class', 'acceptable_mileage')
         }),
         ('Особенности', {
@@ -266,7 +281,7 @@ class ShipAdmin(BaseVehicleAdmin):
             'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
-            'fields': ('type_ship', 'brand', 'model', 'year', 'grot', 'length', 'width', 'precipitation', 'seats',
+            'fields': ('brand', 'model', 'type_ship',  'year', 'grot', 'length', 'width', 'precipitation', 'seats',
                        'sleeping_place', 'one_sleeping_place', 'two_sleeping_place', 'toilet', 'engine_capacity',
                        'water_tank', 'fuel_tank', 'description', 'long_distance', 'delivery', 'ensurance',
                        'vehicle_class', 'acceptable_mileage')
@@ -321,7 +336,7 @@ class SpecialTechnicAdmin(BaseVehicleAdmin):
             'fields': ('owner', 'verified')
         }),
         ('Характеристики', {
-            'fields': ('type_technic', 'brand', 'model', 'year', 'engine_power', 'length', 'width', 'high',
+            'fields': ('brand', 'model', 'type_technic', 'year', 'engine_power', 'length', 'width', 'high',
                        'operating_weight', 'description', 'long_distance', 'delivery', 'ensurance')
         }),
         ('Условия аренды', {

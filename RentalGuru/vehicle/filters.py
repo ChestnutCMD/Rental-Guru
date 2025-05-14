@@ -113,53 +113,6 @@ class BaseFilter(filters.FilterSet):
 
         return queryset
 
-    # def filter_by_lat_lon(self, queryset, name, value):
-    #     """
-    #     Фильтрация транспортных средств в заданном радиусе от указанной точки
-    #     с использованием PostgreSQL/PostGIS raw SQL запроса.
-    #     """
-    #     lat = self.data.get('lat')
-    #     lon = self.data.get('lon')
-    #     radius = self.data.get('radius', 5)
-    #
-    #     if not lat or not lon:
-    #         return queryset
-    #
-    #     try:
-    #         lat = float(lat)
-    #         lon = float(lon)
-    #         radius = float(radius)
-    #     except (ValueError, TypeError):
-    #         return queryset
-    #
-    #     model = queryset.model
-    #     table_name = model._meta.db_table
-    #
-    #     if not hasattr(model, 'latitude') or not hasattr(model, 'longitude'):
-    #         return queryset
-    #
-    #     ids = list(queryset.values_list('id', flat=True))
-    #     if not ids:
-    #         return queryset
-    #
-    #     sql = f"""
-    #     SELECT id
-    #     FROM {table_name}
-    #     WHERE id IN %s
-    #     AND ST_DWithin(
-    #         ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
-    #         ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography,
-    #         %s * 1000  /* перевод км в метры */
-    #     )
-    #     """
-    #
-    #     from django.db import connection
-    #     with connection.cursor() as cursor:
-    #         cursor.execute(sql, [tuple(ids), lon, lat, radius])
-    #         filtered_ids = [row[0] for row in cursor.fetchall()]
-    #
-    #     return queryset.filter(id__in=filtered_ids)
-
 
 class AutoFilter(BaseFilter):
 
@@ -203,6 +156,7 @@ class BikeFilter(BaseFilter):
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
     seat_count = filters.RangeFilter(field_name='seat_count', label='Количество мест')
     transmission = filters.CharFilter(field_name='transmission__slug', label='Трансмиссия')
+    body_type = filters.NumberFilter(field_name='body_type__id', label='Тип мотоцикла')
     features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__id',
         queryset=BikeFeaturesAdditionally.objects.all(),
@@ -233,8 +187,8 @@ class ShipFilter(BaseFilter):
     mileage_per_day = filters.RangeFilter(field_name='acceptable_mileage', label='Допустимый пробег/день')
     vehicle_class = filters.CharFilter(field_name='vehicle_class__slug', label='Класс транспорта')
     engine_capacity = filters.RangeFilter(field_name='engine_capacity', label='Объем двигателя')
-    type_ship = filters.CharFilter(field_name='type_ship', label='Тип транспорта')
     grot = filters.CharFilter(field_name='grot', label='Грот')
+    type_ship = filters.NumberFilter(field_name='type_ship__id', label='Тип судна')
     features_additionally = filters.ModelMultipleChoiceFilter(
         field_name='features_additionally__id',
         queryset=ShipFeaturesAdditionally.objects.all(),
@@ -276,9 +230,9 @@ class HelicopterFilter(BaseFilter):
 
 
 class SpecialTechnicFilter(BaseFilter):
-    type_technic = filters.CharFilter(field_name='type_technic', label='Тип техники')
     engine_power = filters.RangeFilter(field_name='engine_power', label='Мощность двигателя, л.с.')
     operating_weight = filters.RangeFilter(field_name='operating_weight', label='Эксплутационная масса, кг')
+    type_technic = filters.NumberFilter(field_name='type_technic__id', label='Тип судна')
 
     class Meta:
         model = SpecialTechnic

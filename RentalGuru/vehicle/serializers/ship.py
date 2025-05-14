@@ -1,9 +1,16 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from vehicle.models import ShipFeaturesAdditionally, FeaturesEquipment, Ship, VehicleClass, ShipFeaturesFunctions
+from vehicle.models import ShipFeaturesAdditionally, FeaturesEquipment, Ship, VehicleClass, ShipFeaturesFunctions, \
+    ShipType
 from vehicle.serializers.base import BaseVehicleGetSerializer, BaseVehicleListSerializer, \
     BaseVehicleCreateSerializer, BaseVehicleUpdateSerializer, VehicleClassSerializer
+
+
+class ShipTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShipType
+        fields = '__all__'
 
 
 class ShipCreateSerializer(BaseVehicleCreateSerializer):
@@ -11,6 +18,7 @@ class ShipCreateSerializer(BaseVehicleCreateSerializer):
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all(), required=False)
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all(), required=False)
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
+    type_ship = serializers.PrimaryKeyRelatedField(queryset=ShipType.objects.all())
 
     class Meta(BaseVehicleCreateSerializer.Meta):
         model = Ship
@@ -47,6 +55,7 @@ class ShipUpdateSerializer(BaseVehicleUpdateSerializer):
     features_additionally = serializers.PrimaryKeyRelatedField(many=True, queryset=ShipFeaturesAdditionally.objects.all())
     features_equipment = serializers.PrimaryKeyRelatedField(many=True, queryset=FeaturesEquipment.objects.all())
     vehicle_class = serializers.PrimaryKeyRelatedField(queryset=VehicleClass.objects.all())
+    type_ship = serializers.PrimaryKeyRelatedField(queryset=ShipType.objects.all())
 
     class Meta(BaseVehicleUpdateSerializer.Meta):
         model = Ship
@@ -75,6 +84,7 @@ class ShipGetSerializer(BaseVehicleGetSerializer):
     features_additionally = serializers.SerializerMethodField()
     features_equipment = serializers.SerializerMethodField()
     vehicle_class = VehicleClassSerializer()
+    type_ship = ShipTypeSerializer()
 
     class Meta(BaseVehicleGetSerializer.Meta):
         model = Ship

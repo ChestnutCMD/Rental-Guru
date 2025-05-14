@@ -444,6 +444,14 @@ class CityView(generics.ListAPIView):
     ).order_by('-finished_trips_count')
 
 
+@extend_schema(summary='Отображение города по ID', description='Отображение города по ID')
+class CityRetrieve(APIView):
+    def get(self, request, city_id):
+        city = get_object_or_404(City, id=city_id)
+        serializer = CitySerializer(city)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @extend_schema(summary="Добавление арендодателей в франшизу", description="""Статусы: \n
                                                                           "'on_consideration', 'На рассмотрении',
         'approved', 'Подтверждено',

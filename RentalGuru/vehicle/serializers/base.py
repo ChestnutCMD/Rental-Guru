@@ -277,10 +277,14 @@ class BaseVehicleGetSerializer(serializers.ModelSerializer):
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelGetSerializer(read_only=True)
     commission = serializers.SerializerMethodField()
+    city_title = serializers.SerializerMethodField()
 
     class Meta:
         fields = '__all__'
         read_only_fields = ['owner', 'average_ratings', 'verified']
+
+    def get_city_title(self, obj):
+        return obj.city.title
 
     def get_commission(self, obj):
         if obj.owner.lessor.franchise:
@@ -319,7 +323,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
-            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city'
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified'
         ]
         read_only_fields = ['average_ratings']
 

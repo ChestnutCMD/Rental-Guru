@@ -538,10 +538,28 @@ class BikeTransmission(models.Model):
         verbose_name_plural = 'Мотоцикл, коробки передач'
 
 
+class BikeBodyType(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Тип мотоцикла')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Мотоцикл, тип'
+        verbose_name_plural = 'Мотоцикл, типы'
+
+
 class Bike(Vehicle):
 
     transmission = models.ForeignKey(BikeTransmission, null=False, on_delete=models.PROTECT, verbose_name='Коробка передач')
     vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT, verbose_name='Класс')
+    body_type = models.ForeignKey(BikeBodyType, null=True, on_delete=models.PROTECT, verbose_name='Тип мотоцикла')
 
     engine_capacity = models.IntegerField(null=True, blank=True, verbose_name='Объем двигателя')
     seats = models.PositiveIntegerField(default=2, verbose_name='Количество мест')
@@ -564,11 +582,28 @@ class Bike(Vehicle):
         verbose_name_plural = 'Мотоциклы'
 
 
+class ShipType(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Тип мотоцикла')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Судно, тип'
+        verbose_name_plural = 'Судно, типы'
+
+
 class Ship(Vehicle):
 
     vehicle_class = models.ForeignKey(VehicleClass, null=False, on_delete=models.PROTECT, verbose_name='Класс')
 
-    type_ship = models.CharField(null=True, blank=True, verbose_name='Тип транспорта')
+    type_ship = models.ForeignKey(ShipType, null=True, on_delete=models.PROTECT, verbose_name='Тип судна')
     grot = models.CharField(null=True, blank=True, verbose_name='Грот')
     length = models.FloatField(null=True, blank=True, verbose_name='Длина, м')
     width = models.FloatField(null=True, blank=True, verbose_name='Ширина, м')
@@ -619,8 +654,25 @@ class Helicopter(Vehicle):
         verbose_name_plural = 'Вертолеты'
 
 
+class TechnicType(models.Model):
+    title = models.CharField(max_length=50, null=False, verbose_name='Тип мотоцикла')
+    slug = models.SlugField(max_length=50, unique=True, blank=True, verbose_name='Слаг')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Спец техника, тип'
+        verbose_name_plural = 'Спец техника, типы'
+
+
 class SpecialTechnic(Vehicle):
-    type_technic = models.CharField(null=True, blank=True, verbose_name='Тип техники')
+    type_technic = models.ForeignKey(TechnicType, null=True, on_delete=models.PROTECT, verbose_name='Тип судна')
     engine_power = models.IntegerField(null=True, blank=True, verbose_name='Мощность двигателя, л.с.')
     length = models.FloatField(null=True, blank=True, verbose_name='Длина, м')
     width = models.FloatField(null=True, blank=True, verbose_name='Ширина, м')

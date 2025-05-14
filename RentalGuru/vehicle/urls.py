@@ -6,7 +6,8 @@ from .views import VehicleBrandViewSet, VehicleModelViewSet, AutoViewSet, BikeVi
     FeaturesForChildrenListView, FeaturesEquipmentListView, PaymentMethodListView, BikeTransmissionListView, \
     AutoTransmissionListView, AutoFuelTypeListView, AutoBodyTypeListView, VehicleClassListView, AllVehiclesListView, \
     VehiclePhotoDeleteView, VehicleSearchViewSet, DeleteVehicleDocumentView, UpdatePhotoOrderView, \
-    AutoFeaturesFunctionsListView, BikeFeaturesFunctionsListView, ShipFeaturesFunctionsListView
+    AutoFeaturesFunctionsListView, BikeFeaturesFunctionsListView, ShipFeaturesFunctionsListView, ShipTypeListView, \
+    TechnicTypeListView, BikeBodyTypeListView
 
 router = DefaultRouter()
 router.register(r'brands', VehicleBrandViewSet)
@@ -35,6 +36,9 @@ urlpatterns = [
     path('auto_fuel_type/', AutoFuelTypeListView.as_view(), name='auto_fuel_type'),
     path('auto_transmission/', AutoTransmissionListView.as_view(), name='auto_transmission'),
     path('auto_body_type/', AutoBodyTypeListView.as_view(), name='auto_body_type'),
+    path('bike_body_type/', BikeBodyTypeListView.as_view(), name='bike_body_type'),
+    path('ship_type/', ShipTypeListView.as_view(), name='ship_body_type'),
+    path('technic_type/', TechnicTypeListView.as_view(), name='technic_body_type'),
     path('vehicle_class/', VehicleClassListView.as_view(), name='vehicle_class'),
 
     path('all_vehicles/', AllVehiclesListView.as_view(), name='all_vehicles'),

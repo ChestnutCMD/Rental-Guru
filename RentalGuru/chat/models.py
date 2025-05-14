@@ -59,9 +59,7 @@ class RequestRent(models.Model):
             chat = Chat.objects.create(request_rent=self)
             chat.participants.add(self.organizer, self.vehicle.owner)
             chat.save()
-            commission = self.vehicle.owner.lessor.commission
-
-            amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
+            amount = self.calculate_amount()
 
             message_content = json.dumps({
                 "status": self.status,
@@ -152,9 +150,7 @@ class RequestRent(models.Model):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
 
-        commission = self.vehicle.owner.lessor.commission
-        amount = Decimal(self.total_cost) / (Decimal(100) + commission) * commission
-
+        amount = self.calculate_amount()
         discount_amount = 0
 
         # Обработка промокода
@@ -185,6 +181,13 @@ class RequestRent(models.Model):
             discount_amount=discount_amount,
             influencer=influencer
         )
+
+    def calculate_amount(self):
+        """ Расчет стоимости суммы к оплате """
+        commission = self.vehicle.owner.lessor.commission
+        if self.on_request:
+            return Decimal(self.total_cost) / Decimal(100) * commission
+        return Decimal(self.total_cost) / (Decimal(100) + commission) * commission
 
     def __str__(self):
         return f'Заявка на аренду №-{self.pk}'
