@@ -28,8 +28,8 @@ class TinkoffAPI:
                    'Amount': amount,
                    'OrderId': order_id,
                    'Description': description,
-                   'SuccessURL': f"{self.success_url}{lang}/profile?trip=true",
-                   'FailURL': f"{self.success_url}{lang}/profile?trip=true",
+                   'SuccessURL': f"{self.success_url}{lang}/profile?trip=true&success=true",
+                   'FailURL': f"{self.success_url}{lang}/profile?trip=true&success=false",
                    'NotificationURL': f'{HOST_URL}/payment/callback/'}
         payload['Token'] = self._generate_token(payload)
         payload['Receipt'] = receipt
