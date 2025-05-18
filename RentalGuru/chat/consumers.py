@@ -455,22 +455,26 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         if not user.is_authenticated or not message_id:
             return
         try:
-            message = await sync_to_async(self.get_messages_objects().objects.get)(id=message_id)
-        except self.get_messages_objects().DoesNotExist:
-            return
-        if message.sender == user.id:
-            return
-        if not message.is_read:
-            message.is_read = True
-            await sync_to_async(message.save)()
+            message = await database_sync_to_async(self.get_messages_objects().objects.get)(id=message_id)
+            if message.sender.id == user.id:
+                return
+            if not message.is_read:
+                message.is_read = True
+                await database_sync_to_async(message.save)()
 
-            # await self.send_json({
-            #     "type": "message_read",
-            #     "message_id": message.id
-            # })
-
-    async def send_json(self, content: dict):
-        await self.send(text_data=json.dumps(content))
+                await self.channel_layer.group_send(
+                    self.chat_group_name,
+                    {
+                        'type': 'message_read',
+                        'message_id': message.id
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error marking message as read: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Failed to mark message as read'
+            }))
 
     def format_message(self, message, user):
         """ Форматирование сообщений """
