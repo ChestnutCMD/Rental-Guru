@@ -541,11 +541,11 @@ class ChatSupportListView(APIView):
             paginated_chats = paginator.paginate_queryset(chats, request)
             if paginated_chats is None:
                 return Response({"detail": "На этой странице нет доступных чатов."}, status=status.HTTP_404_NOT_FOUND)
-            serializer = ChatSupportSerializer(paginated_chats, many=True)
+            serializer = ChatSupportSerializer(paginated_chats, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         else:
             chats = ChatSupport.objects.filter(creator=user)
-            serializer = ChatSupportSerializer(chats, many=True)
+            serializer = ChatSupportSerializer(chats, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
