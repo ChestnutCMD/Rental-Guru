@@ -132,6 +132,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     'type': 'previous_messages',
                     'messages': previous_messages,
                 }))
+            elif data['type'] == "mark_as_read":
+                await self.mark_message_as_read(data)
 
             elif 'message' in data and isinstance(data['message'], str):
                 await self.handle_send_message({'message': data['message']})
@@ -447,6 +449,29 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             'messages': previous_messages
         }, ensure_ascii=False))
 
+    async def mark_message_as_read(self, data):
+        message_id = data.get("message_id")
+        user = self.scope["user"]
+        if not user.is_authenticated or not message_id:
+            return
+        try:
+            message = await sync_to_async(self.get_messages_objects().objects.get)(id=message_id)
+        except self.get_messages_objects().DoesNotExist:
+            return
+        if message.sender == user.id:
+            return
+        if not message.is_read:
+            message.is_read = True
+            await sync_to_async(message.save)()
+
+            # await self.send_json({
+            #     "type": "message_read",
+            #     "message_id": message.id
+            # })
+
+    async def send_json(self, content: dict):
+        await self.send(text_data=json.dumps(content))
+
     def format_message(self, message, user):
         """ Форматирование сообщений """
         return {
@@ -459,7 +484,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             'content': message.content,
             'timestamp': message.timestamp.isoformat(),
             'file': f"{HOST_URL}{message.file.url}" if message.file else None,
-            'deleted': message.deleted
+            'deleted': message.deleted,
+            'is_read': message.is_read
         }
 
     def get_chat_instance(self):
@@ -768,6 +794,9 @@ class ChatConsumer(BaseChatConsumer):
 
     def get_messages_objects(self):
         return Message
+
+    def get_chat_model(self):
+        return Chat
 
     def get_chat_participant_ids(self):
         """ Получение ID организатора и владельца транспортного средства для участников чата """
