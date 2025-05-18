@@ -80,6 +80,7 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 при принятии заявки на аренду 
                                                                                 арендодателем. Чат доступен по адресу:\n 
                     wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Пометить сообщение как прочитанное: {"type": "mark_as_read", "message_id": 82}
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
                     Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }

@@ -295,10 +295,11 @@ class BaseMessageSerializer(serializers.ModelSerializer):
 class ChatSerializer(serializers.ModelSerializer):
     participants = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
+    unread_messages_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ['id', 'request_rent', 'participants', 'last_message']
+        fields = ['id', 'request_rent', 'participants', 'last_message', 'unread_messages_count']
 
     def get_participants(self, obj):
         current_user = self.context['request'].user
@@ -327,6 +328,10 @@ class ChatSerializer(serializers.ModelSerializer):
                 "timestamp": last_message.timestamp
             }
         return None
+
+    def get_unread_messages_count(self, obj):
+        user = self.context['request'].user
+        return obj.messages.filter(is_read=False).exclude(sender=user).count()
 
 
 class MessageSerializer(BaseMessageSerializer):
