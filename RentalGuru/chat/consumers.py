@@ -487,6 +487,13 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                 'message': 'Failed to mark message as read'
             }))
 
+    async def message_read(self, event):
+        """Обработчик для прочитанных сообщений"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_read',
+            'message_id': event['message_id']
+        }, ensure_ascii=False))
+
     def format_message(self, message, user):
         """ Форматирование сообщений """
         return {
