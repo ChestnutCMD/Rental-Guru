@@ -455,13 +455,24 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         if not user.is_authenticated or not message_id:
             return
         try:
-            message = await database_sync_to_async(self.get_messages_objects().objects.get)(id=message_id)
-            if message.sender.id == user.id:
-                return
-            if not message.is_read:
-                message.is_read = True
-                await database_sync_to_async(message.save)()
+            @database_sync_to_async
+            def get_message():
+                return self.get_messages_objects().objects.get(id=message_id)
+            @database_sync_to_async
+            def update_message(message):
+                if message.sender.id == user.id:
+                    return False
 
+                if not message.is_read:
+                    message.is_read = True
+                    message.save()
+                    return True
+                return False
+
+            message = await get_message()
+            updated = await update_message(message)
+
+            if updated:
                 await self.channel_layer.group_send(
                     self.chat_group_name,
                     {
