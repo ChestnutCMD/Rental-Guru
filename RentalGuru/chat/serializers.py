@@ -423,7 +423,7 @@ class ChatSupportSerializer(serializers.ModelSerializer):
 
     def get_unread_messages_count(self, obj):
         user = self.context['request'].user
-        return obj.message_support.filter(is_read=False).exclude(creator=user).count()
+        return obj.message_support.filter(is_read=False).exclude(sender=user).count()
 
 
 class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
