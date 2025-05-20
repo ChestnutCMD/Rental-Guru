@@ -724,9 +724,9 @@ class ChatConsumer(BaseChatConsumer):
         await database_sync_to_async(request_rent.save)()
 
         message_content = (
-            "Статус заявки обновлён на: Принято<br>(Информационное сообщение, отвечать на него не требуется)."
+            "Статус заявки обновлён на: Принято (Информационное сообщение, отвечать на него не требуется)."
             if new_status == 'accept'
-            else "Заявка была отменена клиентом<br>(Информационное сообщение, отвечать на него не требуется)."
+            else "Заявка была отменена клиентом (Информационное сообщение, отвечать на него не требуется)."
         )
         await self.handle_send_message({'message': message_content})
         return True
