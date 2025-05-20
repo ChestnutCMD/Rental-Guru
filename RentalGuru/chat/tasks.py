@@ -9,14 +9,15 @@ from RentalGuru import settings
 
 @shared_task
 def translate_message(message_id, content, dest_language, channel_name):
-    translator = Translator()
     try:
+        print(f"Starting translation: content={content}, dest={dest_language}")
+        translator = Translator()
         translated_content = translator.translate(content, dest=dest_language).text
+        print(f"Translated content: {translated_content}")
     except Exception as e:
         print(f"Error during translation: {e}")
         translated_content = content
 
-    # Отправляем переведенное сообщение обратно через WebSocket
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.send)(
         channel_name,
