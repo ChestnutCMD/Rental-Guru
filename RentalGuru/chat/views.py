@@ -182,7 +182,7 @@ class ChatViewSet(viewsets.ModelViewSet):
             queryset = Chat.objects.filter(participants=user)
         queryset = queryset.annotate(
             last_message_timestamp=Max('messages__timestamp')
-        ).order_by('last_message_timestamp')
+        ).order_by('-last_message_timestamp')
         return queryset.distinct()
 
     def get_permissions(self):
