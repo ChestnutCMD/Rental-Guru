@@ -1,6 +1,6 @@
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery
+from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, permissions, status, filters
@@ -180,7 +180,9 @@ class ChatViewSet(viewsets.ModelViewSet):
         # 3. Обычный пользователь (только его чаты)
         else:
             queryset = Chat.objects.filter(participants=user)
-
+        queryset = queryset.annotate(
+            last_message_timestamp=Max('messages__timestamp')
+        ).order_by('last_message_timestamp')
         return queryset.distinct()
 
     def get_permissions(self):
