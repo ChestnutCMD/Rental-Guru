@@ -699,38 +699,35 @@ class ChatConsumer(BaseChatConsumer):
         return vehicle.availabilities.filter(on_request=True).exists()
 
     async def handle_request_rent_status_update(self, update_data):
-        """ Обновление статуса заявки на аренду от арендатора """
+        """Обновляет статус заявки на аренду (только организатор может обновлять)."""
         user = self.scope['user']
         chat = await database_sync_to_async(self.get_chat_instance)()
-        request_rent = chat.request_rent
+        if not chat or not chat.request_rent:
+            return False
 
+        request_rent = chat.request_rent
         is_organizer = await database_sync_to_async(lambda: user == request_rent.organizer)()
         if not is_organizer:
             return False
 
         new_status = update_data.get('status')
-        valid_statuses = ['accept', 'denied']
-        if new_status not in valid_statuses:
+        if new_status not in {'accept', 'denied'}:
             return False
 
         if new_status == 'accept':
-            fields_valid = await self.check_request_rent_fields(request_rent)
-            if not fields_valid:
+            if not await self.check_request_rent_fields(request_rent):
                 return False
+            vehicle_owner = await database_sync_to_async(lambda: request_rent.vehicle.owner)()
+            await self.create_notification(vehicle_owner, "Статус заявки обновлён на: Принято")
 
         request_rent.status = new_status
         await database_sync_to_async(request_rent.save)()
 
-        if new_status == 'accept':
-            vehicle_owner = await database_sync_to_async(lambda: request_rent.vehicle.owner)()
-            await self.create_notification(vehicle_owner, "Статус вашей заявки на аренду был принят.")
-
-        status_display = {
-            'accept': 'Принято',
-            'denied': 'Отклонено'
-        }
-        message_content = (f"Статус заявки обновлён на: {status_display.get(new_status, new_status)}"
-                           f"(Информационное сообщение, отвечать на него не требуется).")
+        message_content = (
+            "Статус заявки обновлён на: Принято\n(Информационное сообщение, отвечать на него не требуется)."
+            if new_status == 'accept'
+            else "Заявка была отменена клиентом\n(Информационное сообщение, отвечать на него не требуется)."
+        )
         await self.handle_send_message({'message': message_content})
         return True
 
