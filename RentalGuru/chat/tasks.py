@@ -1,10 +1,8 @@
-import traceback
-
 from celery import shared_task
 from django.core.mail import send_mail
-from googletrans import Translator
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from deep_translator import GoogleTranslator
 
 from RentalGuru import settings
 
@@ -12,13 +10,12 @@ from RentalGuru import settings
 @shared_task
 def translate_message(message_id, content, dest_language, channel_name):
     try:
-        translator = Translator()
-        translated_content = translator.translate(content, dest=dest_language).text
+        translated_content = GoogleTranslator(source='auto', target=dest_language).translate(content)
     except Exception as e:
         print(f"Error during translation: {e}")
-        traceback.print_exc()
         translated_content = content
 
+    # отправка через channels
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.send)(
         channel_name,
