@@ -557,7 +557,7 @@ class ChatConsumer(BaseChatConsumer):
             if success:
                 await self.send(text_data=json.dumps({
                     'type': 'status_update_success',
-                    'message': f"Статус заявки обновлён на: {new_status} (Информационное сообщение, отвечать на него не требуется)."
+                    'message':  f"Status updated to {new_status}."
                 }))
             else:
                 await self.send(text_data=json.dumps({
@@ -729,7 +729,8 @@ class ChatConsumer(BaseChatConsumer):
             'accept': 'Принято',
             'denied': 'Отклонено'
         }
-        message_content = f"Статус заявки был обновлён на: **{status_display.get(new_status, new_status)}**."
+        message_content = (f"Статус заявки обновлён на: {status_display.get(new_status, new_status)}"
+                           f"(Информационное сообщение, отвечать на него не требуется).")
         await self.handle_send_message({'message': message_content})
         return True
 
