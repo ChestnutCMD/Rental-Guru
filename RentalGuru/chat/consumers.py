@@ -8,7 +8,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.utils import timezone
-from googletrans import Translator
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -30,7 +29,6 @@ TRANSACTION_MESSAGE_PATTERN = re.compile(
     r'"deposit_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery"\s*:\s*(true|false)'
 )
 
-translator = Translator()
 logger = logging.getLogger(__name__)
 
 
