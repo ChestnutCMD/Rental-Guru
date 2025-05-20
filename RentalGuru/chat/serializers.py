@@ -315,7 +315,7 @@ class ChatSerializer(serializers.ModelSerializer):
         ]
 
     def get_last_message(self, obj):
-        last_message = obj.messages.order_by('-timestamp').first()
+        last_message = obj.messages.filter(deleted=False).order_by('-timestamp').first()
         if last_message:
             return {
                 "id": last_message.id,
@@ -407,7 +407,7 @@ class ChatSupportSerializer(serializers.ModelSerializer):
         fields = ['id', 'creator', 'issues', 'messages', 'last_message', 'unread_messages_count']
 
     def get_last_message(self, obj):
-        last_message = obj.message_support.order_by('-timestamp').first()
+        last_message = obj.message_support.filter(deleted=False).order_by('-timestamp').first()
         if last_message:
             return {
                 "id": last_message.id,
