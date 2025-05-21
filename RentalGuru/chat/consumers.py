@@ -441,11 +441,29 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         return message_data_list
 
     async def send_previous_messages(self):
-        previous_messages = await self.get_previous_messages()
+        first_message = await self.get_first_message()
+        initial_messages = []
+        if first_message:
+            initial_messages = [first_message]
+
         await self.send(text_data=json.dumps({
-            'type': 'previous_messages',
-            'messages': previous_messages
+            'type': 'first_message',
+            'messages': initial_messages
         }, ensure_ascii=False))
+
+    @database_sync_to_async
+    def get_first_message(self):
+        """Получение только самого первого сообщения в чате"""
+        chat = self.get_chat_instance()
+        user = self.scope['user']
+        messages_queryset = self.get_messages_queryset(chat)
+        messages_queryset = messages_queryset.filter(deleted=False)
+        first_message = messages_queryset.order_by('timestamp').first()
+
+        if first_message:
+            message_data = self.format_message(first_message, first_message.sender)
+            return message_data
+        return None
 
     async def mark_message_as_read(self, data):
         message_id = data.get("message_id")
