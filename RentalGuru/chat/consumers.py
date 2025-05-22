@@ -607,6 +607,10 @@ class ChatConsumer(BaseChatConsumer):
         chat = await database_sync_to_async(self.get_chat_instance)()
         request_rent = chat.request_rent
 
+        current_status = await database_sync_to_async(lambda: request_rent.status)()
+        if current_status == 'accept':
+            return False
+
         vehicle_data = await self.get_vehicle_data(request_rent, user)
 
         if not vehicle_data['is_valid']:
