@@ -722,11 +722,11 @@ class ChatConsumer(BaseChatConsumer):
             return False
 
         request_rent = chat.request_rent
-
-        request_rent = await database_sync_to_async(lambda: chat.request_rent)()
-        if request_rent.status == 'accept':
+        # проверка текущего статуса заявки
+        current_status = await database_sync_to_async(lambda: request_rent.status)()
+        if current_status == 'accept':
             return False
-
+        # является ли пользователь организатором
         is_organizer = await database_sync_to_async(lambda: user == request_rent.organizer)()
         if not is_organizer:
             return False
