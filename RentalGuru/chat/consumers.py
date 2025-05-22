@@ -722,7 +722,8 @@ class ChatConsumer(BaseChatConsumer):
             return False
 
         request_rent = chat.request_rent
-        if request_rent.status == 'accept':
+        old_status = await database_sync_to_async(request_rent.status)()
+        if old_status == 'accept':
             return False
 
         is_organizer = await database_sync_to_async(lambda: user == request_rent.organizer)()
