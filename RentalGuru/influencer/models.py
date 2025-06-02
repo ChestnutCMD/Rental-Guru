@@ -174,7 +174,7 @@ class QRCode(models.Model):
 
     def generate_referral_link(self):
         """Генерация реферальной ссылки на основе канала и инфлюенсера."""
-        base_url = getattr(settings, "HOST_URL", "http://localhost:8000") + "/app/users/"
+        base_url = getattr(settings, "FRONT_URL", "http://localhost:8000") + "/"
         query_params = {
             "ref": self.influencer.referral_code,
             "code": ''.join(random.choices(string.ascii_letters + string.digits, k=8))
