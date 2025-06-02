@@ -8,7 +8,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.utils import timezone
-from googletrans import Translator
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -30,7 +29,6 @@ TRANSACTION_MESSAGE_PATTERN = re.compile(
     r'"deposit_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery_cost"\s*:\s*\d+(\.\d+)?\s*,\s*"delivery"\s*:\s*(true|false)'
 )
 
-translator = Translator()
 logger = logging.getLogger(__name__)
 
 
@@ -132,6 +130,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
                     'type': 'previous_messages',
                     'messages': previous_messages,
                 }))
+            elif data['type'] == "mark_as_read":
+                await self.mark_message_as_read(data)
 
             elif 'message' in data and isinstance(data['message'], str):
                 await self.handle_send_message({'message': data['message']})
@@ -441,10 +441,73 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         return message_data_list
 
     async def send_previous_messages(self):
-        previous_messages = await self.get_previous_messages()
+        first_message = await self.get_first_message()
+        initial_messages = []
+        if first_message:
+            initial_messages = [first_message]
+
         await self.send(text_data=json.dumps({
-            'type': 'previous_messages',
-            'messages': previous_messages
+            'type': 'first_message',
+            'messages': initial_messages
+        }, ensure_ascii=False))
+
+    @database_sync_to_async
+    def get_first_message(self):
+        """Получение только самого первого сообщения в чате"""
+        chat = self.get_chat_instance()
+        user = self.scope['user']
+        messages_queryset = self.get_messages_queryset(chat)
+        messages_queryset = messages_queryset.filter(deleted=False)
+        first_message = messages_queryset.order_by('timestamp').first()
+
+        if first_message:
+            message_data = self.format_message(first_message, first_message.sender)
+            return message_data
+        return None
+
+    async def mark_message_as_read(self, data):
+        message_id = data.get("message_id")
+        user = self.scope["user"]
+        if not user.is_authenticated or not message_id:
+            return
+        try:
+            @database_sync_to_async
+            def get_message():
+                return self.get_messages_objects().objects.get(id=message_id)
+            @database_sync_to_async
+            def update_message(message):
+                if message.sender.id == user.id:
+                    return False
+
+                if not message.is_read:
+                    message.is_read = True
+                    message.save()
+                    return True
+                return False
+
+            message = await get_message()
+            updated = await update_message(message)
+
+            if updated:
+                await self.channel_layer.group_send(
+                    self.chat_group_name,
+                    {
+                        'type': 'message_read',
+                        'message_id': message.id
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error marking message as read: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Failed to mark message as read'
+            }))
+
+    async def message_read(self, event):
+        """Обработчик для прочитанных сообщений"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_read',
+            'message_id': event['message_id']
         }, ensure_ascii=False))
 
     def format_message(self, message, user):
@@ -459,7 +522,8 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             'content': message.content,
             'timestamp': message.timestamp.isoformat(),
             'file': f"{HOST_URL}{message.file.url}" if message.file else None,
-            'deleted': message.deleted
+            'deleted': message.deleted,
+            'is_read': message.is_read
         }
 
     def get_chat_instance(self):
@@ -509,7 +573,7 @@ class ChatConsumer(BaseChatConsumer):
             if success:
                 await self.send(text_data=json.dumps({
                     'type': 'status_update_success',
-                    'message': f"Status updated to {new_status}."
+                    'message':  f"Status updated to {new_status}."
                 }))
             else:
                 await self.send(text_data=json.dumps({
@@ -542,6 +606,10 @@ class ChatConsumer(BaseChatConsumer):
         user = self.scope['user']
         chat = await database_sync_to_async(self.get_chat_instance)()
         request_rent = chat.request_rent
+
+        current_status = await database_sync_to_async(lambda: request_rent.status)()
+        if current_status == 'accept':
+            return False
 
         vehicle_data = await self.get_vehicle_data(request_rent, user)
 
@@ -651,37 +719,40 @@ class ChatConsumer(BaseChatConsumer):
         return vehicle.availabilities.filter(on_request=True).exists()
 
     async def handle_request_rent_status_update(self, update_data):
-        """ Обновление статуса заявки на аренду от арендатора """
+        """Обновляет статус заявки на аренду (только организатор может обновлять)."""
         user = self.scope['user']
         chat = await database_sync_to_async(self.get_chat_instance)()
-        request_rent = chat.request_rent
+        if not chat or not chat.request_rent:
+            return False
 
+        request_rent = chat.request_rent
+        # проверка текущего статуса заявки
+        current_status = await database_sync_to_async(lambda: request_rent.status)()
+        if current_status == 'accept':
+            return False
+        # является ли пользователь организатором
         is_organizer = await database_sync_to_async(lambda: user == request_rent.organizer)()
         if not is_organizer:
             return False
 
         new_status = update_data.get('status')
-        valid_statuses = ['accept', 'denied']
-        if new_status not in valid_statuses:
+        if new_status not in {'accept', 'denied'}:
             return False
 
         if new_status == 'accept':
-            fields_valid = await self.check_request_rent_fields(request_rent)
-            if not fields_valid:
+            if not await self.check_request_rent_fields(request_rent):
                 return False
+            vehicle_owner = await database_sync_to_async(lambda: request_rent.vehicle.owner)()
+            await self.create_notification(vehicle_owner, "Статус заявки обновлён на: Принято")
 
         request_rent.status = new_status
         await database_sync_to_async(request_rent.save)()
 
-        if new_status == 'accept':
-            vehicle_owner = await database_sync_to_async(lambda: request_rent.vehicle.owner)()
-            await self.create_notification(vehicle_owner, "Статус вашей заявки на аренду был принят.")
-
-        status_display = {
-            'accept': 'Принято',
-            'denied': 'Отклонено'
-        }
-        message_content = f"Статус заявки был обновлён на: **{status_display.get(new_status, new_status)}**."
+        message_content = (
+            "Статус заявки обновлён на: Принято (Информационное сообщение, отвечать на него не требуется)."
+            if new_status == 'accept'
+            else "Заявка была отменена клиентом (Информационное сообщение, отвечать на него не требуется)."
+        )
         await self.handle_send_message({'message': message_content})
         return True
 
@@ -768,6 +839,9 @@ class ChatConsumer(BaseChatConsumer):
 
     def get_messages_objects(self):
         return Message
+
+    def get_chat_model(self):
+        return Chat
 
     def get_chat_participant_ids(self):
         """ Получение ID организатора и владельца транспортного средства для участников чата """

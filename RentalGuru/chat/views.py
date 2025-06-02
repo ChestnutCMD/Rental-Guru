@@ -1,6 +1,6 @@
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery
+from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, permissions, status, filters
@@ -80,6 +80,7 @@ class TripViewSet(viewsets.ModelViewSet):
                                                                                 при принятии заявки на аренду 
                                                                                 арендодателем. Чат доступен по адресу:\n 
                     wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Пометить сообщение как прочитанное: {"type": "mark_as_read", "message_id": 82}
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
                     Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
@@ -179,7 +180,9 @@ class ChatViewSet(viewsets.ModelViewSet):
         # 3. Обычный пользователь (только его чаты)
         else:
             queryset = Chat.objects.filter(participants=user)
-
+        queryset = queryset.annotate(
+            last_message_timestamp=Max('messages__timestamp')
+        ).order_by('-last_message_timestamp')
         return queryset.distinct()
 
     def get_permissions(self):
@@ -540,11 +543,11 @@ class ChatSupportListView(APIView):
             paginated_chats = paginator.paginate_queryset(chats, request)
             if paginated_chats is None:
                 return Response({"detail": "На этой странице нет доступных чатов."}, status=status.HTTP_404_NOT_FOUND)
-            serializer = ChatSupportSerializer(paginated_chats, many=True)
+            serializer = ChatSupportSerializer(paginated_chats, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         else:
             chats = ChatSupport.objects.filter(creator=user)
-            serializer = ChatSupportSerializer(chats, many=True)
+            serializer = ChatSupportSerializer(chats, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 

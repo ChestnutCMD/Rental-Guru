@@ -287,6 +287,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
     file = models.FileField(upload_to=file_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
+    is_read = models.BooleanField(default=False, verbose_name='Прочитано')
 
     class Meta:
         verbose_name = 'Сообщение'
@@ -353,6 +354,7 @@ class MessageSupport(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
     file = models.FileField(upload_to=file_support_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
+    is_read = models.BooleanField(default=False, verbose_name='Прочитано')
 
     class Meta:
         verbose_name = 'Сообщение чата техподдержки'

@@ -24,7 +24,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from RentalGuru import settings
 from RentalGuru.settings import redis_1
-from chat.models import Trip
+from chat.models import Trip, RequestRent
 from influencer.models import Influencer, RegistrationSource, ReferralLink, QRCode, PromoCode, UsedPromoCode
 from manager.permissions import ManagerObjectPermission
 from notification.models import Notification, FCMToken
@@ -503,20 +503,24 @@ class BecomeLessorView(APIView):
 
     def post(self, request):
         user = request.user
-        if not user.is_authenticated:
-            return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
             renter = Renter.objects.get(user=user)
         except Renter.DoesNotExist:
-            return Response({"detail": "User is not a Renter"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Пользователь не является арендатором"}, status=status.HTTP_400_BAD_REQUEST)
 
-        renter.delete()
+        if Trip.objects.filter(organizer=user, status__in=['started', 'current']).exists():
+            return Response({"detail": "Остались незавершенные поездки"}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = BecomeLessorSerializer(data=request.data)
         if serializer.is_valid():
+            renter.delete()
+            Trip.objects.filter(organizer=user).delete()
+            RequestRent.objects.filter(organizer=user).delete()
+
             Lessor.objects.create(user=user, **serializer.validated_data)
             return Response({"detail": "Пользователь был успешно переведен в арендодателя"}, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

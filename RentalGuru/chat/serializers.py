@@ -295,10 +295,11 @@ class BaseMessageSerializer(serializers.ModelSerializer):
 class ChatSerializer(serializers.ModelSerializer):
     participants = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
+    unread_messages_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ['id', 'request_rent', 'participants', 'last_message']
+        fields = ['id', 'request_rent', 'participants', 'last_message', 'unread_messages_count']
 
     def get_participants(self, obj):
         current_user = self.context['request'].user
@@ -314,7 +315,7 @@ class ChatSerializer(serializers.ModelSerializer):
         ]
 
     def get_last_message(self, obj):
-        last_message = obj.messages.order_by('-timestamp').first()
+        last_message = obj.messages.filter(deleted=False).order_by('-timestamp').first()
         if last_message:
             return {
                 "id": last_message.id,
@@ -327,6 +328,10 @@ class ChatSerializer(serializers.ModelSerializer):
                 "timestamp": last_message.timestamp
             }
         return None
+
+    def get_unread_messages_count(self, obj):
+        user = self.context['request'].user
+        return obj.messages.filter(is_read=False, deleted=False).exclude(sender=user).count()
 
 
 class MessageSerializer(BaseMessageSerializer):
@@ -395,13 +400,14 @@ class ChatSupportSerializer(serializers.ModelSerializer):
     issues = IssueSupportSerializer(many=True, read_only=True)
     messages = MessageSupportSerializer(many=True, read_only=True)
     last_message = serializers.SerializerMethodField()
+    unread_messages_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatSupport
-        fields = ['id', 'creator', 'issues', 'messages', 'last_message']
+        fields = ['id', 'creator', 'issues', 'messages', 'last_message', 'unread_messages_count']
 
     def get_last_message(self, obj):
-        last_message = obj.message_support.order_by('-timestamp').first()
+        last_message = obj.message_support.filter(deleted=False).order_by('-timestamp').first()
         if last_message:
             return {
                 "id": last_message.id,
@@ -414,6 +420,10 @@ class ChatSupportSerializer(serializers.ModelSerializer):
                 "timestamp": last_message.timestamp
             }
         return None
+
+    def get_unread_messages_count(self, obj):
+        user = self.context['request'].user
+        return obj.message_support.filter(is_read=False, deleted=False).exclude(sender=user).count()
 
 
 class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
