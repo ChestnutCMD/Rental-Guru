@@ -357,7 +357,7 @@ DEFAULT_FROM_EMAIL = getenv('EMAIL_HOST_USER')
 
 # Host name
 HOST_URL = 'https://rentalguru.ru'
-
+FRONT_URL = 'https://rental-guru.netlify.app'
 # Payments
 TINYPAY_TERMINAL_KEY = getenv('TINYPAY_TERMINAL_KEY')
 TINYPAY_PASSWORD = getenv('TINYPAY_PASSWORD')

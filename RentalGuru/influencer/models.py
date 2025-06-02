@@ -128,7 +128,7 @@ class ReferralLink(models.Model):
         super().save(*args, **kwargs)
 
     def generate_referral_link(self):
-        base_url = f"{settings.HOST_URL}/app/users/"
+        base_url = f"{settings.FRONT_URL}"
         random_code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         return f"{base_url}?ref={self.influencer.referral_code}&code={random_code}"
 
