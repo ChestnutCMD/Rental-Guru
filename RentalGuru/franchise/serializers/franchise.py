@@ -6,6 +6,7 @@ from chat.models import RequestRent
 from franchise.add_lessor import RequestAddLessor
 from franchise.models import Franchise, VehiclePark, Category, RequestFranchise, City, FranchiseDocuments
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleSerializer
+from manager.utils import generate_secure_password
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -136,7 +137,7 @@ class FranchiseCreateSerializer(serializers.ModelSerializer):
         if not country:
             raise serializers.ValidationError({"country": "Поле country обязательно для заполнения."})
 
-        password = User.objects.make_random_password()
+        password = generate_secure_password()
         with transaction.atomic():
             user = User.objects.create_user(
                 email=email,

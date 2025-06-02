@@ -1,5 +1,3 @@
-import random
-
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -7,6 +5,7 @@ from rest_framework import serializers
 from app.models import User
 from franchise.models import Franchise
 from manager.models import ManagerPermission, Manager, ManagerDocuments
+from manager.utils import generate_secure_password
 from notification.models import Notification
 
 
@@ -161,10 +160,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
 
-        password = User.objects.make_random_password()
-        digit = random.choice('0123456789')
-        position = random.randint(0, len(password))
-        password = password[:position] + digit + password[position:]
+        password = generate_secure_password()
 
         user = User.objects.create_user(
             email=email,
@@ -183,7 +179,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         else:
             manager = Manager.objects.create(user=user)
 
-        content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}."
+        content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}"
         Notification.objects.create(user=user, content=content)
         return manager
 

@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 from chat.models import Trip, RequestRent
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, BankDetails, Organization, \
     InfluencerDocuments, PromoCode, RegistrationSource, RequestWithdraw
+from manager.utils import generate_secure_password
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -85,10 +86,7 @@ class InfluencerSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже зарегистрирован."})
 
-        password = User.objects.make_random_password()
-        digit = random.choice('0123456789')
-        position = random.randint(0, len(password))
-        password = password[:position] + digit + password[position:]
+        password = generate_secure_password()
 
         user = User.objects.create_user(
             email=email,
