@@ -238,8 +238,8 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         # documents_data = validated_data.pop('documents', [])
         prices_data = validated_data.pop('rent_prices', [])
         photos_data = validated_data.pop('photos', [])
-        min_rent_day = validated_data.pop('min_rent_day', '')
-        max_rent_day = validated_data.pop('max_rent_day', '')
+        min_rent_day = validated_data.get('min_rent_day', '')
+        max_rent_day = validated_data.get('max_rent_day', '')
         if min_rent_day > max_rent_day:
             raise serializers.ValidationError(f"Минимальное количество дней для аренды должно быть меньше "
                                               f"максимального количества дней. min_rent_day = {min_rent_day}, "
