@@ -594,6 +594,8 @@ class ChatConsumer(BaseChatConsumer):
 
             if lessor.average_response_time is None:
                 lessor.average_response_time = response_time
+            elif lessor.count_trip == 0:
+                lessor.average_response_time = response_time # Тут бы придумать что-то другое, но и так сойдет
             else:
                 total_response_time = lessor.average_response_time * lessor.count_trip
                 total_response_time += response_time
