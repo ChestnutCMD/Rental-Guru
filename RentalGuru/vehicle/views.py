@@ -116,9 +116,11 @@ class AutoViewSet(BaseViewSet):
                 if is_lessor:
                     queryset = queryset.filter(owner=user)
                 elif is_renter:
-                    queryset = queryset.filter(verified=True)
+                    # queryset = queryset.filter(verified=True)
+                    pass
         else:
-            queryset = queryset.filter(verified=True)
+            # queryset = queryset.filter(verified=True)
+            pass
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -154,9 +156,11 @@ class BikeViewSet(BaseViewSet):
                 if is_lessor:
                     queryset = queryset.filter(owner=user)
                 elif is_renter:
-                    queryset = queryset.filter(verified=True)
+                    # queryset = queryset.filter(verified=True)
+                    pass
         else:
-            queryset = queryset.filter(verified=True)
+            # queryset = queryset.filter(verified=True)
+            pass
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -191,9 +195,11 @@ class ShipViewSet(BaseViewSet):
                 if is_lessor:
                     queryset = queryset.filter(owner=user)
                 elif is_renter:
-                    queryset = queryset.filter(verified=True)
+                    # queryset = queryset.filter(verified=True)
+                    pass
         else:
-            queryset = queryset.filter(verified=True)
+            # queryset = queryset.filter(verified=True)
+            pass
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -227,9 +233,11 @@ class HelicopterViewSet(BaseViewSet):
                 if is_lessor:
                     queryset = queryset.filter(owner=user)
                 elif is_renter:
-                    queryset = queryset.filter(verified=True)
+                    # queryset = queryset.filter(verified=True)
+                    pass
         else:
-            queryset = queryset.filter(verified=True)
+            # queryset = queryset.filter(verified=True)
+            pass
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -263,9 +271,11 @@ class SpecialTechnicViewSet(BaseViewSet):
                 if is_lessor:
                     queryset = queryset.filter(owner=user)
                 elif is_renter:
-                    queryset = queryset.filter(verified=True)
+                    # queryset = queryset.filter(verified=True)
+                    pass
         else:
-            queryset = queryset.filter(verified=True)
+            # queryset = queryset.filter(verified=True)
+            pass
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -587,11 +597,13 @@ class AllVehiclesListView(ListAPIView):
             # Фильтрация по пользователю
             if user.is_authenticated:
                 if hasattr(user, 'renter'):
-                    base_qs = base_qs.filter(verified=True)
+                    # base_qs = base_qs.filter(verified=True)
+                    pass
                 elif hasattr(user, 'lessor'):
                     base_qs = base_qs.filter(owner=user)
             else:
-                base_qs = base_qs.filter(verified=True)
+                # base_qs = base_qs.filter(verified=True)
+                pass
 
             # Фильтрация по lessor_id
             lessor_id = request.GET.get("lessor_id")
@@ -707,7 +719,7 @@ class VehicleSearchViewSet(viewsets.ViewSet):
         else:
             vehicle_query = Q(brand__in=matching_brands)
 
-        vehicle_query &= Q(verified=True)
+        # vehicle_query &= Q(verified=True)
 
         vehicle_type_mapping = {
             'auto': Auto,
