@@ -1,4 +1,6 @@
 from datetime import datetime
+from decimal import Decimal
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery, Max
 from django_filters.rest_framework import DjangoFilterBackend
@@ -340,6 +342,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         # Проверка - сдается ли транспорт только верифицированным пользователям
         # if vehicle_instance.drivers_only_verified and not request.user.renter.verification:
         #     raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
+
+        # Проверка рейтинга арендатора
+        if vehicle_instance.drivers_rating > Decimal(request.user.renter.get_average_rating()):
+            raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
 
         if availabilities.filter(on_request=True).exists():
             request_start_date = None
