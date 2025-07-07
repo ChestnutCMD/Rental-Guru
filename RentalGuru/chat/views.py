@@ -345,7 +345,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         # Проверка рейтинга арендатора
         if vehicle_instance.drivers_rating > Decimal(request.user.renter.get_average_rating()):
-            raise DRFValidationError(f"Транспортное средство с идентификатором {object_id} не существует.")
+            raise DRFValidationError(f"Низкий рейтинг арендатора для данного транспорта")
 
         if availabilities.filter(on_request=True).exists():
             request_start_date = None
