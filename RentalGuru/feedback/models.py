@@ -7,7 +7,7 @@ from app.models import Renter
 
 class Feedback(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
-    content = models.CharField(max_length=255, verbose_name='Отзыв', null=True)
+    content = models.CharField(max_length=255, verbose_name='Отзыв', null=True, blank=True)
     answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={
@@ -27,7 +27,7 @@ class Feedback(models.Model):
 class FeedbackRenter(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='given_feedbacks', verbose_name='Арендодатель')
     renter = models.ForeignKey(Renter, on_delete=models.CASCADE, related_name='received_feedbacks', verbose_name='Арендатор')
-    content = models.CharField(max_length=255, null=True, verbose_name='Отзыв')
+    content = models.CharField(max_length=255, null=True, blank=True, verbose_name='Отзыв')
     answer = models.CharField(max_length=255, verbose_name='Ответ', null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время')
 
