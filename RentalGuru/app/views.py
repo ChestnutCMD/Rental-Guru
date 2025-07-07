@@ -467,7 +467,7 @@ class UpdateRatingView(APIView):
     def post(self, request, renter_id):
         renter = get_object_or_404(Renter.objects.select_related('user'), id=renter_id)
         owner = request.user
-        trips = Trip.objects.filter(organizer=renter.user, end_date__lt=now()).select_related(
+        trips = Trip.objects.filter(organizer=renter.user).select_related(
             'content_type').prefetch_related('vehicle')
         is_owner = any(trip.vehicle.owner == owner for trip in trips)
 

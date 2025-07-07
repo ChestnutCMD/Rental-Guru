@@ -146,6 +146,11 @@ class TripSerializer(serializers.ModelSerializer):
 
         # Завершение поездки
         if previous_status != 'finished' and new_status == 'finished':
+
+            # Проверка доступа
+            if request.user != instance.organizer and request.user.role not in ['admin', 'manager']:
+                raise serializers.ValidationError({"detail": "Вы не можете завершить поездку."})
+
             Notification.objects.create(
                 user=instance.organizer,
                 content=f"Поездка c транспортом {instance.vehicle} была завершена. Оцените вашу поездку"
