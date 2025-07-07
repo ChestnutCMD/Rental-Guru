@@ -11,10 +11,10 @@ class CityAdmin(admin.ModelAdmin):
     ordering = ('title',)
 
 
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-    ordering = ('name',)
+# class CategoryAdmin(admin.ModelAdmin):
+#     list_display = ('name',)
+#     search_fields = ('name',)
+#     ordering = ('name',)
 
 
 # class VehicleAdmin(admin.ModelAdmin):
@@ -70,10 +70,10 @@ class FranchiseAdmin(admin.ModelAdmin):
         ]
 
 
-class VehicleParkAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner', 'franchise')
-    list_filter = ('owner', 'franchise')
-    search_fields = ('name', 'owner__email', 'franchise__name')
+# class VehicleParkAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'owner', 'franchise')
+#     list_filter = ('owner', 'franchise')
+#     search_fields = ('name', 'owner__email', 'franchise__name')
 
 
 class RequestFranchiseAdmin(admin.ModelAdmin):
@@ -81,8 +81,8 @@ class RequestFranchiseAdmin(admin.ModelAdmin):
     search_fields = ('name', 'telephone', 'email', 'city')
 
 
-admin.site.register(Category, CategoryAdmin)
+# admin.site.register(Category, CategoryAdmin)
 admin.site.register(Franchise, FranchiseAdmin)
-admin.site.register(VehiclePark, VehicleParkAdmin)
+# admin.site.register(VehiclePark, VehicleParkAdmin)
 admin.site.register(RequestFranchise, RequestFranchiseAdmin)
 admin.site.register(City, CityAdmin)
