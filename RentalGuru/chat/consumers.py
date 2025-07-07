@@ -43,7 +43,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         query_params = dict(x.split('=') for x in self.scope['query_string'].decode().split('&'))
         token = query_params.get('token')
-        self.language = query_params.get('lang', 'ru')
+        self.language = query_params.get('lang', 'ru').lower()
 
         try:
             UntypedToken(token)
