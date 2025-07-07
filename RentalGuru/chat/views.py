@@ -344,7 +344,7 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         #     raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
         # Проверка рейтинга арендатора
-        if vehicle_instance.drivers_rating > Decimal(request.user.renter.get_average_rating()):
+        if vehicle_instance.drivers_rating > Decimal(request.user.renter.get_average_rating()) and request.user.renter.get_average_rating() != 0:
             raise DRFValidationError(f"Низкий рейтинг арендатора для данного транспорта")
 
         if availabilities.filter(on_request=True).exists():
