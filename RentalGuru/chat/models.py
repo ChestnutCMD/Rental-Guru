@@ -288,6 +288,7 @@ class Message(models.Model):
     file = models.FileField(upload_to=file_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
+    language = models.CharField(max_length=10, default='ru')
 
     class Meta:
         verbose_name = 'Сообщение'
@@ -355,6 +356,7 @@ class MessageSupport(models.Model):
     file = models.FileField(upload_to=file_support_chat_upload_to, blank=True, null=True, verbose_name='Файл')
     deleted = models.BooleanField(default=False, verbose_name='Удалено')
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
+    language = models.CharField(max_length=10, default='ru')
 
     class Meta:
         verbose_name = 'Сообщение чата техподдержки'

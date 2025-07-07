@@ -213,10 +213,10 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
 
         try:
             # Сохранение сообщения
-            message = await self.save_message(user, message_content, file)
+            message = await self.save_message(user, message_content, file, self.language)
             message_data = self.format_message(message, user)
 
-            # Create notifications for offline users
+            # Уведомления для оффлайн пользователей
             await self.notify_offline_users(user.id)
 
             # Отправление сообщения всем участникам чата
@@ -232,7 +232,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             if not TRANSACTION_MESSAGE_PATTERN.search(json.dumps(message_data)):
                 if self.chat_group_name in BaseChatConsumer.language_preferences:
                     for channel, lang in BaseChatConsumer.language_preferences[self.chat_group_name].items():
-                        if lang != 'original' and channel != self.channel_name:
+                        if lang != 'original' and lang != self.language and channel != self.channel_name:
                             translate_message.delay(message.id, message_content, lang, channel)
 
             return True
@@ -329,9 +329,9 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
         return messages
 
     @database_sync_to_async
-    def save_message(self, user, message_content, file=None):
+    def save_message(self, user, message_content, file=None, language='ru'):
         chat = self.get_chat_instance()
-        message = self.create_message_instance(chat, user, message_content, file)
+        message = self.create_message_instance(chat, user, message_content, file, language)
         return message
 
     @database_sync_to_async
@@ -532,7 +532,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
     def get_chat_model(self):
         raise NotImplementedError
 
-    def create_message_instance(self, chat, user, message_content, file):
+    def create_message_instance(self, chat, user, message_content, file, language='ru'):
         raise NotImplementedError
 
     def get_messages_queryset(self, chat):
@@ -800,8 +800,8 @@ class ChatConsumer(BaseChatConsumer):
             'id', 'request_rent__id', 'request_rent__organizer__id', 'request_rent__content_type__id', 'request_rent__object_id'
         ).get(id=self.chat_id)
 
-    def create_message_instance(self, chat, user, message_content, file):
-        return Message.objects.create(chat=chat, sender=user, content=message_content, file=file)
+    def create_message_instance(self, chat, user, message_content, file, language):
+        return Message.objects.create(chat=chat, sender=user, content=message_content, file=file, language=language)
 
     def get_messages_queryset(self, chat):
         return chat.messages.order_by('timestamp').select_related(
@@ -872,8 +872,8 @@ class ChatSupportConsumer(BaseChatConsumer):
     def get_messages_objects(self):
         return MessageSupport
 
-    def create_message_instance(self, chat, user, message_content, file):
-        return MessageSupport.objects.create(chat=chat, sender=user, content=message_content, file=file)
+    def create_message_instance(self, chat, user, message_content, file, language):
+        return MessageSupport.objects.create(chat=chat, sender=user, content=message_content, file=file, language=language)
 
     def get_messages_queryset(self, chat):
         return chat.message_support.select_related('sender').order_by('timestamp')
