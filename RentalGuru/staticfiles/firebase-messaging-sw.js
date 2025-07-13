@@ -1,21 +1,30 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// firebase-messaging-sw.js
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js');
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBBecGpIXjG5gEdk7KbpxUd-kAZM0a_Hes",
-  authDomain: "rental-guru-6ed62.firebaseapp.com",
-  projectId: "rental-guru-6ed62",
-  storageBucket: "rental-guru-6ed62.appspot.com",
-  messagingSenderId: "120690662784",
-  appId: "1:120690662784:web:bc8ab9e83770e472aeb565",
-  measurementId: "G-7XY2SZNXZW"
+  apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
+  authDomain: "rental-guru-465d7.firebaseapp.com",
+  projectId: "rental-guru-465d7",
+  storageBucket: "rental-guru-465d7.firebasestorage.app",
+  messagingSenderId: "274995950667",
+  appId: "1:274995950667:web:e3872098a2b49116acc9ce",
+  measurementId: "G-K2WEZKWG2W"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage(function (payload) {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: '/firebase-logo.png' // путь к иконке
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
