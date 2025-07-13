@@ -232,6 +232,16 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'chat': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
@@ -244,7 +254,6 @@ LOGGING = {
         },
     },
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
