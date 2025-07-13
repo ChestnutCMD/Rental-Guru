@@ -1,7 +1,6 @@
 // firebase-messaging-sw.js
-
-importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getMessaging } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-sw.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
@@ -13,17 +12,16 @@ const firebaseConfig = {
   measurementId: "G-K2WEZKWG2W"
 };
 
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(function (payload) {
+// background handler
+messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/firebase-logo.png' // путь к иконке
+    icon: '/firebase-logo.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
