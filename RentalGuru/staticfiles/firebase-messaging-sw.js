@@ -1,10 +1,13 @@
 // firebase-messaging-sw.js
 // Production-ready Service Worker для Firebase Cloud Messaging
 
+console.log('[firebase-messaging-sw.js] Начинаем загрузку Service Worker');
+
 // Проверяем доступность importScripts
 if (typeof importScripts === 'function') {
     try {
-        // Импортируем Firebase SDK
+        console.log('[firebase-messaging-sw.js] Загружаем Firebase SDK...');
+        // Импортируем Firebase SDK (используем compat версию)
         importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js');
         importScripts('https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js');
 
