@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase FCM Token Test</title>
+    <title>Service Worker Debug</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,115 +11,156 @@
             margin: 0 auto;
             padding: 20px;
         }
+        .debug-section {
+            background-color: #f4f4f4;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
         button {
             background-color: #4CAF50;
             border: none;
             color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
+            padding: 10px 20px;
+            margin: 5px;
             cursor: pointer;
             border-radius: 4px;
         }
-        button:hover {
-            background-color: #45a049;
-        }
-        #token {
-            background-color: #f4f4f4;
+        pre {
+            background-color: #f0f0f0;
             padding: 10px;
             border-radius: 4px;
-            word-break: break-all;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-        }
-        .success {
-            color: green;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-    <h1>Firebase FCM Token Test</h1>
-    <button id="get-token">Get FCM Token</button>
-    <p id="token"></p>
+    <h1>Service Worker Debug</h1>
 
-    <!-- Firebase App (the core Firebase SDK) - обновлена версия -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-    <!-- Firebase Messaging -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
+    <div class="debug-section">
+        <h3>1. Проверка доступности Service Worker файла</h3>
+        <button onclick="checkServiceWorkerFile()">Проверить файл SW</button>
+        <div id="sw-file-check"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. Проверка содержимого Service Worker</h3>
+        <button onclick="fetchServiceWorkerContent()">Загрузить содержимое SW</button>
+        <div id="sw-content"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. Регистрация Service Worker</h3>
+        <button onclick="registerServiceWorker()">Зарегистрировать SW</button>
+        <div id="sw-registration"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>4. Проверка поддержки HTTPS</h3>
+        <button onclick="checkHTTPS()">Проверить HTTPS</button>
+        <div id="https-check"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>5. Проверка заголовков</h3>
+        <button onclick="checkHeaders()">Проверить заголовки</button>
+        <div id="headers-check"></div>
+    </div>
 
     <script>
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-              apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
-              authDomain: "rental-guru-465d7.firebaseapp.com",
-              projectId: "rental-guru-465d7",
-              storageBucket: "rental-guru-465d7.firebasestorage.app",
-              messagingSenderId: "274995950667",
-              appId: "1:274995950667:web:e3872098a2b49116acc9ce",
-              measurementId: "G-K2WEZKWG2W"
-            };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // Retrieve Firebase Messaging object
-        const messaging = firebase.messaging();
-
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            // Убираем type: 'module' для совместимости с compat версией
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then((registration) => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-
-                    document.getElementById('get-token').addEventListener('click', async () => {
-                        try {
-                            const permission = await Notification.requestPermission();
-                            if (permission === 'granted') {
-                                const token = await messaging.getToken({
-                                    vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
-                                    serviceWorkerRegistration: registration
-                                });
-                                if (token) {
-                                    console.log('FCM Token:', token);
-                                    document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
-                                } else {
-                                    console.error('No registration token available. Request permission to generate one.');
-                                    document.getElementById('token').innerHTML = '<span class="error">No registration token available. Request permission to generate one.</span>';
-                                }
-                            } else {
-                                console.error('Notification permission not granted');
-                                document.getElementById('token').innerHTML = '<span class="error">Notification permission not granted</span>';
-                            }
-                        } catch (error) {
-                            console.error('Error getting FCM token:', error);
-                            document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error + '</span>';
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error('Service Worker registration failed:', error);
-                    document.getElementById('token').innerHTML = '<span class="error">Service Worker registration failed: ' + error + '</span>';
-                });
-        } else {
-            document.getElementById('token').innerHTML = '<span class="error">Service Worker not supported in this browser</span>';
+        async function checkServiceWorkerFile() {
+            const resultDiv = document.getElementById('sw-file-check');
+            try {
+                const response = await fetch('/firebase-messaging-sw.js');
+                if (response.ok) {
+                    resultDiv.innerHTML = `<span class="success">✓ Файл доступен (${response.status})</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ Файл недоступен (${response.status})</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Ошибка загрузки: ${error.message}</span>`;
+            }
         }
 
-        // Handle incoming messages (optional)
-        messaging.onMessage((payload) => {
-            console.log('Message received. ', payload);
-            // Customize your notification here
-            if (payload.notification) {
-                new Notification(payload.notification.title, {
-                    body: payload.notification.body,
-                    icon: payload.notification.icon || '/firebase-logo.png'
-                });
+        async function fetchServiceWorkerContent() {
+            const resultDiv = document.getElementById('sw-content');
+            try {
+                const response = await fetch('/firebase-messaging-sw.js');
+                if (response.ok) {
+                    const content = await response.text();
+                    resultDiv.innerHTML = `<span class="success">✓ Содержимое загружено (${content.length} символов)</span>
+                                         <pre>${content.substring(0, 500)}${content.length > 500 ? '...' : ''}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ Не удалось загрузить содержимое (${response.status})</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Ошибка: ${error.message}</span>`;
             }
+        }
+
+        async function registerServiceWorker() {
+            const resultDiv = document.getElementById('sw-registration');
+
+            if (!('serviceWorker' in navigator)) {
+                resultDiv.innerHTML = '<span class="error">✗ Service Worker не поддерживается</span>';
+                return;
+            }
+
+            try {
+                resultDiv.innerHTML = '<span class="info">⏳ Регистрация...</span>';
+
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+                resultDiv.innerHTML = `<span class="success">✓ Service Worker зарегистрирован</span>
+                                     <br>Scope: ${registration.scope}
+                                     <br>State: ${registration.active?.state || 'installing'}`;
+
+                // Проверяем на ошибки
+                registration.addEventListener('error', (error) => {
+                    resultDiv.innerHTML += `<br><span class="error">Ошибка SW: ${error.message}</span>`;
+                });
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Ошибка регистрации: ${error.message}</span>`;
+                console.error('SW registration error:', error);
+            }
+        }
+
+        function checkHTTPS() {
+            const resultDiv = document.getElementById('https-check');
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+
+            if (protocol === 'https:' || hostname === 'localhost' || hostname === '127.0.0.1') {
+                resultDiv.innerHTML = `<span class="success">✓ HTTPS поддерживается (${protocol})</span>`;
+            } else {
+                resultDiv.innerHTML = `<span class="error">✗ HTTPS требуется для Service Worker (текущий: ${protocol})</span>`;
+            }
+        }
+
+        async function checkHeaders() {
+            const resultDiv = document.getElementById('headers-check');
+            try {
+                const response = await fetch('/firebase-messaging-sw.js');
+                const headers = {};
+                for (let [key, value] of response.headers.entries()) {
+                    headers[key] = value;
+                }
+
+                resultDiv.innerHTML = `<span class="info">Заголовки ответа:</span>
+                                     <pre>${JSON.stringify(headers, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Ошибка получения заголовков: ${error.message}</span>`;
+            }
+        }
+
+        // Автоматическая проверка при загрузке страницы
+        window.addEventListener('load', () => {
+            checkHTTPS();
+            checkServiceWorkerFile();
         });
     </script>
 </body>
