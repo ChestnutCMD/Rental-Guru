@@ -74,36 +74,51 @@ def send_email_notification(notification_id):
 
 @shared_task
 def send_web_push_notification(user_id, notification_body, notification_url):
+    from google.oauth2 import service_account
+    from google.auth.transport.requests import Request
+    import requests
+    import json
+
     User = apps.get_model(AUTH_USER_MODEL)
     user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
     tokens = user.fcmtoken_set.values_list('token', flat=True)
-    push_service = FCMNotification(service_account_file=os.getenv('SERVICE_ACCOUNT_FILE'),
-                                   project_id=os.getenv('PROJECT_ID'))
-    notification_title = 'Rental-Guru'
-    notification_image = 'logo.png'
 
-    data_payload = {
-        "click_action": "FLUTTER_NOTIFICATION_CLICK",
-        "url": notification_url
+    credentials = service_account.Credentials.from_service_account_file(
+        os.getenv("SERVICE_ACCOUNT_FILE"),
+        scopes=["https://www.googleapis.com/auth/firebase.messaging"],
+    )
+    credentials.refresh(Request())
+    access_token = credentials.token
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json; UTF-8",
     }
 
-    for token in tokens:
-        result = push_service.notify(
-            fcm_token=token,
-            notification_title=notification_title,
-            notification_body=notification_body,
-            notification_image=notification_image,
-            data_payload=data_payload
-        )
+    url = f"https://fcm.googleapis.com/v1/projects/{os.getenv('PROJECT_ID')}/messages:send"
 
-        # Обработка результата
-        if 'failure' in result and result['failure'] > 0:
-            for result_token, result_data in zip(result['results'], tokens):
-                if 'error' in result_data:
-                    error = result_data['error']
-                    if error in ['InvalidRegistration', 'NotRegistered']:
-                        # Удаление недействительных токенов
-                        FCMToken.objects.filter(token=result_token).delete()
+    for token in tokens:
+        message = {
+            "message": {
+                "token": token,
+                "notification": {
+                    "title": "Rental-Guru",
+                    "body": notification_body
+                },
+                "data": {
+                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
+                    "url": notification_url or ""
+                }
+            }
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(message))
+        if response.status_code == 403:
+            # Логируем и удаляем невалидные токены
+            FCMToken.objects.filter(token=token).delete()
+        elif response.status_code != 200:
+            raise Exception(f"Failed to send: {response.status_code} {response.text}")
+
     return "Push notifications sent"
 
 
