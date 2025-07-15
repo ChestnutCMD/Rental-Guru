@@ -4,13 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firebase FCM Token Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #token {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
 </head>
 <body>
     <h1>Firebase FCM Token Test</h1>
     <button id="get-token">Get FCM Token</button>
     <p id="token"></p>
 
-    <!-- Firebase App (the core Firebase SDK) -->
+    <!-- Firebase App (the core Firebase SDK) - обновлена версия -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
     <!-- Firebase Messaging -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
@@ -35,8 +72,8 @@
 
         // Register service worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-  type: 'module'})
+            // Убираем type: 'module' для совместимости с compat версией
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
                 .then((registration) => {
                     console.log('Service Worker registered with scope:', registration.scope);
 
@@ -44,33 +81,45 @@
                         try {
                             const permission = await Notification.requestPermission();
                             if (permission === 'granted') {
-                                const token = await messaging.getToken({ vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk', serviceWorkerRegistration: registration });
+                                const token = await messaging.getToken({
+                                    vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
+                                    serviceWorkerRegistration: registration
+                                });
                                 if (token) {
                                     console.log('FCM Token:', token);
-                                    document.getElementById('token').innerText = 'FCM Token: ' + token;
+                                    document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
                                 } else {
                                     console.error('No registration token available. Request permission to generate one.');
-                                    document.getElementById('token').innerText = 'No registration token available. Request permission to generate one.';
+                                    document.getElementById('token').innerHTML = '<span class="error">No registration token available. Request permission to generate one.</span>';
                                 }
                             } else {
                                 console.error('Notification permission not granted');
-                                document.getElementById('token').innerText = 'Notification permission not granted';
+                                document.getElementById('token').innerHTML = '<span class="error">Notification permission not granted</span>';
                             }
                         } catch (error) {
                             console.error('Error getting FCM token:', error);
-                            document.getElementById('token').innerText = 'Error getting FCM token: ' + error;
+                            document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error + '</span>';
                         }
                     });
                 })
                 .catch((error) => {
                     console.error('Service Worker registration failed:', error);
+                    document.getElementById('token').innerHTML = '<span class="error">Service Worker registration failed: ' + error + '</span>';
                 });
+        } else {
+            document.getElementById('token').innerHTML = '<span class="error">Service Worker not supported in this browser</span>';
         }
 
         // Handle incoming messages (optional)
         messaging.onMessage((payload) => {
             console.log('Message received. ', payload);
             // Customize your notification here
+            if (payload.notification) {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: payload.notification.icon || '/firebase-logo.png'
+                });
+            }
         });
     </script>
 </body>

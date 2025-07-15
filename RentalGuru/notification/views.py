@@ -1,7 +1,8 @@
 import os
 
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import render
+from django.views.decorators.cache import cache_control
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -42,6 +43,32 @@ def get_fcm_token(request):
     return render(request, 'test_push.html')
 
 
+@cache_control(max_age=3600)
 def firebase_messaging_sw(request):
-    path = os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js')
-    return FileResponse(open(path, 'rb'), content_type='application/javascript')
+    """
+    Обслуживание Service Worker для Firebase
+    """
+    try:
+        path = os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js')
+        if os.path.exists(path):
+            response = FileResponse(
+                open(path, 'rb'),
+                content_type='application/javascript'
+            )
+            # Добавляем заголовки для Service Worker
+            response['Service-Worker-Allowed'] = '/'
+            response['Cache-Control'] = 'max-age=3600'
+            return response
+        else:
+            # Если файл не найден, возвращаем 404
+            return HttpResponse(
+                "Service Worker file not found",
+                status=404,
+                content_type='text/plain'
+            )
+    except Exception as e:
+        return HttpResponse(
+            f"Error serving Service Worker: {str(e)}",
+            status=500,
+            content_type='text/plain'
+        )
