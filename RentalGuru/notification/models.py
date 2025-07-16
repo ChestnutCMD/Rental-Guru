@@ -79,27 +79,38 @@ def send_email_notification(notification_id):
 
 @shared_task
 def send_web_push_notification(user_id, notification_body, notification_url=None):
-    User = apps.get_model(AUTH_USER_MODEL)
-    user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
-    tokens = list(user.fcmtoken_set.values_list('token', flat=True))
+    User = apps.get_model(settings.AUTH_USER_MODEL)
+
+    try:
+        user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
+        tokens = list(user.fcmtoken_set.values_list('token', flat=True))
+    except User.DoesNotExist:
+        return f"User with id {user_id} not found"
 
     if not tokens:
         return "No FCM tokens for user"
 
     # Получаем access_token через сервисный аккаунт
-    credentials = service_account.Credentials.from_service_account_file(
-        os.getenv("SERVICE_ACCOUNT_FILE"),
-        scopes=["https://www.googleapis.com/auth/firebase.messaging"],
-    )
-    credentials.refresh(Request())
-    access_token = credentials.token
+    try:
+        credentials = service_account.Credentials.from_service_account_file(
+            os.getenv("SERVICE_ACCOUNT_FILE"),
+            scopes=["https://www.googleapis.com/auth/firebase.messaging"],
+        )
+        credentials.refresh(Request())
+        access_token = credentials.token
+    except Exception as e:
+        return f"Failed to get access token: {str(e)}"
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json; UTF-8",
+        "Content-Type": "application/json; charset=UTF-8",
     }
 
-    fcm_url = f"https://fcm.googleapis.com/v1/projects/{os.getenv('PROJECT_ID')}/messages:send"
+    project_id = os.getenv('PROJECT_ID', 'rental-guru-465d7')
+    fcm_url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+
+    successful_sends = 0
+    failed_sends = 0
 
     for token in tokens:
         message = {
@@ -109,34 +120,69 @@ def send_web_push_notification(user_id, notification_body, notification_url=None
                     "title": "Rental-Guru",
                     "body": notification_body
                 },
-                "data": {
-                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                    "url": notification_url or ""
-                },
                 "webpush": {
                     "headers": {
-                        "Urgency": "high"
+                        "Urgency": "high",
+                        "TTL": "86400"  # 24 часа
                     },
                     "notification": {
+                        "title": "Rental-Guru",
+                        "body": notification_body,
                         "icon": "https://rentalguru.ru/static/firebase-logo.png",
-                        "click_action": notification_url or "https://rentalguru.ru"
+                        "badge": "https://rentalguru.ru/static/firebase-logo.png",
+                        "click_action": notification_url or "https://rentalguru.ru",
+                        "requireInteraction": True,
+                        "actions": [
+                            {
+                                "action": "open",
+                                "title": "Открыть"
+                            }
+                        ]
+                    },
+                    "data": {
+                        "url": notification_url or "https://rentalguru.ru"
                     }
                 }
             }
         }
 
-        response = requests.post(fcm_url, headers=headers, data=json.dumps(message))
+        try:
+            response = requests.post(fcm_url, headers=headers, json=message, timeout=30)
 
-        if response.status_code == 403:
-            # Удаляем невалидный токен
-            FCMToken.objects.filter(token=token).delete()
-        elif response.status_code == 400 and "unregistered" in response.text:
-            FCMToken.objects.filter(token=token).delete()
-        elif not response.ok:
-            raise Exception(f"Failed to send notification: {response.status_code} {response.text}")
+            if response.status_code == 200:
+                successful_sends += 1
+            elif response.status_code == 404:
+                # Токен не найден - удаляем его
+                from notification.models import FCMToken
+                FCMToken.objects.filter(token=token).delete()
+                print(f"Deleted invalid token: {token[:20]}...")
+            elif response.status_code == 400:
+                response_data = response.json()
+                error_code = response_data.get('error', {}).get('details', [{}])[0].get('errorCode', '')
 
-    return "Push notifications sent"
+                if error_code in ['UNREGISTERED', 'INVALID_ARGUMENT']:
+                    # Токен недействителен - удаляем его
+                    from notification.models import FCMToken
+                    FCMToken.objects.filter(token=token).delete()
+                    print(f"Deleted unregistered token: {token[:20]}...")
+                else:
+                    failed_sends += 1
+                    print(f"Failed to send to token {token[:20]}...: {response.text}")
+            else:
+                failed_sends += 1
+                print(f"Failed to send notification to {token[:20]}...: {response.status_code} {response.text}")
 
+        except requests.exceptions.Timeout:
+            failed_sends += 1
+            print(f"Timeout sending to token {token[:20]}...")
+        except requests.exceptions.RequestException as e:
+            failed_sends += 1
+            print(f"Request error sending to token {token[:20]}...: {str(e)}")
+        except Exception as e:
+            failed_sends += 1
+            print(f"Unexpected error sending to token {token[:20]}...: {str(e)}")
+
+    return f"Push notifications sent: {successful_sends} successful, {failed_sends} failed"
 
 @shared_task
 def remove_old_tokens():

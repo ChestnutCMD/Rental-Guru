@@ -40,82 +40,134 @@
         .success {
             color: green;
         }
+        .debug {
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <h1>Firebase FCM Token Test</h1>
     <button id="get-token">Get FCM Token</button>
+    <button id="test-notification">Test Notification</button>
     <p id="token"></p>
+    <div id="debug"></div>
 
-    <!-- Firebase App (используем модульную версию) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
-              apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
-              authDomain: "rental-guru-465d7.firebaseapp.com",
-              projectId: "rental-guru-465d7",
-              storageBucket: "rental-guru-465d7.firebasestorage.app",
-              messagingSenderId: "274995950667",
-              appId: "1:274995950667:web:e3872098a2b49116acc9ce",
-              measurementId: "G-K2WEZKWG2W"
-            };
+            apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
+            authDomain: "rental-guru-465d7.firebaseapp.com",
+            projectId: "rental-guru-465d7",
+            storageBucket: "rental-guru-465d7.firebasestorage.app",
+            messagingSenderId: "274995950667",
+            appId: "1:274995950667:web:e3872098a2b49116acc9ce",
+            measurementId: "G-K2WEZKWG2W"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const messaging = getMessaging(app);
 
+        // Debug info
+        const debugDiv = document.getElementById('debug');
+        function addDebugInfo(message) {
+            debugDiv.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+        }
+
+        addDebugInfo(`Browser: ${navigator.userAgent}`);
+        addDebugInfo(`Service Worker support: ${('serviceWorker' in navigator)}`);
+        addDebugInfo(`Notification support: ${('Notification' in window)}`);
+
         // Register service worker
         if ('serviceWorker' in navigator) {
-            // ВАЖНО: добавляем type: 'module' для поддержки ES6 модулей
-            navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                type: 'module'
-            })
-                .then((registration) => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-
-                    document.getElementById('get-token').addEventListener('click', async () => {
-                        try {
-                            const permission = await Notification.requestPermission();
-                            if (permission === 'granted') {
-                                const token = await getToken(messaging, {
-                                    vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
-                                    serviceWorkerRegistration: registration
-                                });
-                                if (token) {
-                                    console.log('FCM Token:', token);
-                                    document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
-                                } else {
-                                    console.error('No registration token available. Request permission to generate one.');
-                                    document.getElementById('token').innerHTML = '<span class="error">No registration token available. Request permission to generate one.</span>';
-                                }
-                            } else {
-                                console.error('Notification permission not granted');
-                                document.getElementById('token').innerHTML = '<span class="error">Notification permission not granted</span>';
-                            }
-                        } catch (error) {
-                            console.error('Error getting FCM token:', error);
-                            document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error + '</span>';
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error('Service Worker registration failed:', error);
-                    document.getElementById('token').innerHTML = '<span class="error">Service Worker registration failed: ' + error + '</span>';
+            try {
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    type: 'module',
+                    scope: '/'
                 });
+
+                addDebugInfo(`Service Worker registered: ${registration.scope}`);
+
+                // Ждем пока service worker станет активным
+                await navigator.serviceWorker.ready;
+                addDebugInfo('Service Worker ready');
+
+                document.getElementById('get-token').addEventListener('click', async () => {
+                    try {
+                        addDebugInfo('Requesting notification permission...');
+
+                        const permission = await Notification.requestPermission();
+                        addDebugInfo(`Permission result: ${permission}`);
+
+                        if (permission === 'granted') {
+                            addDebugInfo('Getting FCM token...');
+
+                            const token = await getToken(messaging, {
+                                vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
+                                serviceWorkerRegistration: registration
+                            });
+
+                            if (token) {
+                                console.log('FCM Token:', token);
+                                document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
+                                addDebugInfo('FCM Token received successfully');
+                            } else {
+                                console.error('No registration token available');
+                                document.getElementById('token').innerHTML = '<span class="error">No registration token available</span>';
+                                addDebugInfo('No registration token available');
+                            }
+                        } else {
+                            console.error('Notification permission not granted');
+                            document.getElementById('token').innerHTML = '<span class="error">Notification permission not granted</span>';
+                            addDebugInfo('Notification permission denied');
+                        }
+                    } catch (error) {
+                        console.error('Error getting FCM token:', error);
+                        document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error.message + '</span>';
+                        addDebugInfo(`Error: ${error.message}`);
+                    }
+                });
+
+                // Test notification button
+                document.getElementById('test-notification').addEventListener('click', () => {
+                    if (Notification.permission === 'granted') {
+                        new Notification('Test Notification', {
+                            body: 'Это тестовое уведомление',
+                            icon: 'https://rentalguru.ru/static/firebase-logo.png'
+                        });
+                        addDebugInfo('Test notification sent');
+                    } else {
+                        addDebugInfo('Notification permission not granted');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Service Worker registration failed:', error);
+                document.getElementById('token').innerHTML = '<span class="error">Service Worker registration failed: ' + error.message + '</span>';
+                addDebugInfo(`SW registration error: ${error.message}`);
+            }
         } else {
             document.getElementById('token').innerHTML = '<span class="error">Service Worker not supported in this browser</span>';
+            addDebugInfo('Service Worker not supported');
         }
 
         // Handle incoming messages
         onMessage(messaging, (payload) => {
-            console.log('Message received. ', payload);
+            console.log('Message received: ', payload);
+            addDebugInfo('Message received from FCM');
+
             if (payload.notification) {
                 new Notification(payload.notification.title, {
                     body: payload.notification.body,
-                    icon: payload.notification.icon || '/firebase-logo.png'
+                    icon: payload.notification.icon || 'https://rentalguru.ru/static/firebase-logo.png'
                 });
             }
         });
