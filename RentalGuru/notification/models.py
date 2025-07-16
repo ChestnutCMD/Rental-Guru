@@ -12,6 +12,7 @@ from google.oauth2 import service_account
 from pyfcm import FCMNotification
 from django.db import models
 
+from RentalGuru import settings
 from RentalGuru.settings import DEFAULT_FROM_EMAIL, AUTH_USER_MODEL, HOST_URL
 
 
