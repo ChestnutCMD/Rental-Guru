@@ -1,9 +1,14 @@
+import json
 import os
 from datetime import timedelta
+
+import requests
 from celery import shared_task
 from django.apps import apps
 from django.core.mail import send_mail
 from django.utils import timezone
+from google.auth.transport import Request
+from google.oauth2 import service_account
 from pyfcm import FCMNotification
 from django.db import models
 
@@ -73,16 +78,15 @@ def send_email_notification(notification_id):
 
 
 @shared_task
-def send_web_push_notification(user_id, notification_body, notification_url):
-    from google.oauth2 import service_account
-    from google.auth.transport.requests import Request
-    import requests
-    import json
-
+def send_web_push_notification(user_id, notification_body, notification_url=None):
     User = apps.get_model(AUTH_USER_MODEL)
     user = User.objects.prefetch_related('fcmtoken_set').get(id=user_id)
-    tokens = user.fcmtoken_set.values_list('token', flat=True)
+    tokens = list(user.fcmtoken_set.values_list('token', flat=True))
 
+    if not tokens:
+        return "No FCM tokens for user"
+
+    # Получаем access_token через сервисный аккаунт
     credentials = service_account.Credentials.from_service_account_file(
         os.getenv("SERVICE_ACCOUNT_FILE"),
         scopes=["https://www.googleapis.com/auth/firebase.messaging"],
@@ -95,7 +99,7 @@ def send_web_push_notification(user_id, notification_body, notification_url):
         "Content-Type": "application/json; UTF-8",
     }
 
-    url = f"https://fcm.googleapis.com/v1/projects/{os.getenv('PROJECT_ID')}/messages:send"
+    fcm_url = f"https://fcm.googleapis.com/v1/projects/{os.getenv('PROJECT_ID')}/messages:send"
 
     for token in tokens:
         message = {
@@ -108,16 +112,28 @@ def send_web_push_notification(user_id, notification_body, notification_url):
                 "data": {
                     "click_action": "FLUTTER_NOTIFICATION_CLICK",
                     "url": notification_url or ""
+                },
+                "webpush": {
+                    "headers": {
+                        "Urgency": "high"
+                    },
+                    "notification": {
+                        "icon": "https://rentalguru.ru/static/firebase-logo.png",
+                        "click_action": notification_url or "https://rentalguru.ru"
+                    }
                 }
             }
         }
 
-        response = requests.post(url, headers=headers, data=json.dumps(message))
+        response = requests.post(fcm_url, headers=headers, data=json.dumps(message))
+
         if response.status_code == 403:
-            # Логируем и удаляем невалидные токены
+            # Удаляем невалидный токен
             FCMToken.objects.filter(token=token).delete()
-        elif response.status_code != 200:
-            raise Exception(f"Failed to send: {response.status_code} {response.text}")
+        elif response.status_code == 400 and "unregistered" in response.text:
+            FCMToken.objects.filter(token=token).delete()
+        elif not response.ok:
+            raise Exception(f"Failed to send notification: {response.status_code} {response.text}")
 
     return "Push notifications sent"
 
