@@ -46,6 +46,85 @@ def get_fcm_token(request):
     return render(request, 'test_push.html')
 
 
+logger = logging.getLogger(__name__)
+
+
+@require_http_methods(["GET"])
+@cache_control(max_age=0, must_revalidate=True)
 def firebase_messaging_sw(request):
-    path = os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js')
-    return FileResponse(open(path, 'rb'), content_type='application/javascript')
+    """
+    Обслуживание Service Worker для Firebase
+    """
+    try:
+        possible_paths = [
+            os.path.join(settings.STATIC_ROOT, 'firebase-messaging-sw.js'),
+            os.path.join(settings.BASE_DIR, 'static', 'firebase-messaging-sw.js'),
+            os.path.join(settings.BASE_DIR, 'staticfiles', 'firebase-messaging-sw.js'),
+        ]
+
+        sw_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                sw_path = path
+                break
+
+        if sw_path:
+            logger.info(f"Service Worker найден по пути: {sw_path}")
+
+            with open(sw_path, 'rb') as f:
+                content = f.read()
+
+            response = HttpResponse(content, content_type='application/javascript')
+
+            response['Service-Worker-Allowed'] = '/'
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+
+            if hasattr(settings, 'CORS_ALLOW_ALL_ORIGINS') and settings.CORS_ALLOW_ALL_ORIGINS:
+                response['Access-Control-Allow-Origin'] = '*'
+
+            return response
+        else:
+            logger.error(f"Service Worker не найден. Проверенные пути: {possible_paths}")
+
+            fallback_sw = """
+// Fallback Service Worker
+console.log('Fallback Service Worker загружен');
+
+self.addEventListener('install', function(event) {
+    console.log('Fallback Service Worker установлен');
+    event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', function(event) {
+    console.log('Fallback Service Worker активирован');
+    event.waitUntil(self.clients.claim());
+});
+"""
+            response = HttpResponse(fallback_sw, content_type='application/javascript')
+            response['Service-Worker-Allowed'] = '/'
+            response['Cache-Control'] = 'no-cache'
+            return response
+
+    except Exception as e:
+        logger.error(f"Ошибка при обслуживании Service Worker: {str(e)}")
+
+        error_sw = f"""
+// Error Service Worker
+console.error('Ошибка загрузки Service Worker: {str(e)}');
+
+self.addEventListener('install', function(event) {{
+    console.log('Error Service Worker установлен');
+    event.waitUntil(self.skipWaiting());
+}});
+
+self.addEventListener('activate', function(event) {{
+    console.log('Error Service Worker активирован');
+    event.waitUntil(self.clients.claim());
+}});
+"""
+        response = HttpResponse(error_sw, content_type='application/javascript')
+        response['Service-Worker-Allowed'] = '/'
+        response['Cache-Control'] = 'no-cache'
+        return response
