@@ -7,7 +7,7 @@ from celery import shared_task
 from django.apps import apps
 from django.core.mail import send_mail
 from django.utils import timezone
-from google.auth.transport import Request
+from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from pyfcm import FCMNotification
 from django.db import models
