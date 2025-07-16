@@ -84,7 +84,7 @@ def send_web_push_notification(user_id, notification_body, notification_url):
     tokens = user.fcmtoken_set.values_list('token', flat=True)
 
     credentials = service_account.Credentials.from_service_account_file(
-        os.getenv("SERVICE_ACCOUNT_FILE"),
+        '../rental-guru-firebase.json',
         scopes=["https://www.googleapis.com/auth/firebase.messaging"],
     )
     credentials.refresh(Request())
