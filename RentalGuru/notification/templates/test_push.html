@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Domain Check</title>
+    <title>Firebase FCM Token Test - Edge Compatible</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,70 +11,77 @@
             margin: 0 auto;
             padding: 20px;
         }
-        .info {
-            background-color: #e8f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .error {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .success {
-            background-color: #e8f5e8;
-            color: #2e7d32;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
         button {
             background-color: #4CAF50;
             border: none;
             color: white;
-            padding: 10px 20px;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
             cursor: pointer;
             border-radius: 4px;
-            margin: 5px;
         }
-        pre {
-            background-color: #f5f5f5;
+        button:hover {
+            background-color: #45a049;
+        }
+        #token {
+            background-color: #f4f4f4;
             padding: 10px;
             border-radius: 4px;
-            overflow-x: auto;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .debug {
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Firebase Domain & Configuration Check</h1>
+    <h1>Firebase FCM Token Test - Edge Compatible</h1>
 
-    <div class="info">
-        <h3>Текущая информация:</h3>
-        <p><strong>Домен:</strong> <span id="current-domain"></span></p>
-        <p><strong>Протокол:</strong> <span id="current-protocol"></span></p>
-        <p><strong>Порт:</strong> <span id="current-port"></span></p>
-        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
-    </div>
+    <div id="browser-info"></div>
 
-    <button onclick="checkFirebaseConfig()">Проверить Firebase конфигурацию</button>
-    <button onclick="checkServiceWorker()">Проверить Service Worker</button>
-    <button onclick="checkPermissions()">Проверить разрешения</button>
+    <button id="get-token">Get FCM Token</button>
+    <button id="test-notification">Test Notification</button>
+    <button id="clear-cache">Clear Cache & Retry</button>
 
-    <div id="results"></div>
+    <p id="token"></p>
+    <div id="debug"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
-        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging.js";
+    <script>
+        // Определяем браузер
+        const isEdge = navigator.userAgent.indexOf('Edg') !== -1;
+        const isChrome = navigator.userAgent.indexOf('Chrome') !== -1 && !isEdge;
 
-        // Заполняем базовую информацию
-        document.getElementById('current-domain').textContent = window.location.hostname;
-        document.getElementById('current-protocol').textContent = window.location.protocol;
-        document.getElementById('current-port').textContent = window.location.port || 'default';
-        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('browser-info').innerHTML = `
+            <div class="debug">
+                <strong>Браузер:</strong> ${isEdge ? 'Microsoft Edge' : isChrome ? 'Google Chrome' : 'Other'}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}
+            </div>
+        `;
 
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
             authDomain: "rental-guru-465d7.firebaseapp.com",
@@ -85,125 +92,201 @@
             measurementId: "G-K2WEZKWG2W"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const messaging = getMessaging(app);
+        // Debug info
+        const debugDiv = document.getElementById('debug');
+        function addDebugInfo(message) {
+            debugDiv.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+        }
 
-        window.checkFirebaseConfig = function() {
-            const results = document.getElementById('results');
-
-            let html = '<div class="info"><h3>Firebase Configuration:</h3><pre>';
-            html += JSON.stringify(firebaseConfig, null, 2);
-            html += '</pre></div>';
-
-            // Проверка соответствия домена
-            const currentDomain = window.location.hostname;
-            const authDomain = firebaseConfig.authDomain;
-
-            if (currentDomain === 'rentalguru.ru' || currentDomain === 'localhost') {
-                html += '<div class="success">✓ Домен выглядит корректно</div>';
-            } else {
-                html += '<div class="error">⚠ Текущий домен может не совпадать с настройками Firebase</div>';
-            }
-
-            // Проверка HTTPS
-            if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
-                html += '<div class="success">✓ Использует HTTPS или localhost</div>';
-            } else {
-                html += '<div class="error">⚠ Требуется HTTPS для работы FCM</div>';
-            }
-
-            results.innerHTML = html;
-        };
-
-        window.checkServiceWorker = async function() {
-            const results = document.getElementById('results');
-            let html = '<div class="info"><h3>Service Worker Check:</h3>';
-
+        // Функция для очистки кеша
+        async function clearServiceWorkerCache() {
             if ('serviceWorker' in navigator) {
                 try {
                     const registrations = await navigator.serviceWorker.getRegistrations();
-                    html += `<p>Найдено Service Worker регистраций: ${registrations.length}</p>`;
-
-                    registrations.forEach((reg, index) => {
-                        html += `<p>Регистрация ${index + 1}: ${reg.scope}</p>`;
-                        html += `<p>Активный: ${reg.active ? 'Да' : 'Нет'}</p>`;
-                        html += `<p>Ожидающий: ${reg.waiting ? 'Да' : 'Нет'}</p>`;
-                    });
-
-                    // Проверка доступности firebase-messaging-sw.js
-                    try {
-                        const response = await fetch('/firebase-messaging-sw.js');
-                        if (response.ok) {
-                            html += '<div class="success">✓ firebase-messaging-sw.js доступен</div>';
-                        } else {
-                            html += `<div class="error">⚠ firebase-messaging-sw.js недоступен: ${response.status}</div>`;
-                        }
-                    } catch (error) {
-                        html += `<div class="error">⚠ Ошибка загрузки firebase-messaging-sw.js: ${error.message}</div>`;
+                    for (const registration of registrations) {
+                        await registration.unregister();
                     }
-
+                    addDebugInfo('Service Worker cache cleared');
                 } catch (error) {
-                    html += `<div class="error">Ошибка проверки Service Worker: ${error.message}</div>`;
+                    addDebugInfo(`Error clearing cache: ${error.message}`);
                 }
-            } else {
-                html += '<div class="error">Service Worker не поддерживается в этом браузере</div>';
+            }
+        }
+
+        // Специальная логика для Edge
+        async function registerServiceWorkerForEdge() {
+            if (!('serviceWorker' in navigator)) {
+                throw new Error('Service Worker not supported');
             }
 
-            html += '</div>';
-            results.innerHTML = html;
-        };
+            try {
+                // Для Edge не используем type: 'module'
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    scope: '/'
+                });
 
-        window.checkPermissions = async function() {
-            const results = document.getElementById('results');
-            let html = '<div class="info"><h3>Permissions Check:</h3>';
+                // Ждем пока SW станет активным
+                if (registration.installing) {
+                    await new Promise((resolve) => {
+                        registration.installing.addEventListener('statechange', () => {
+                            if (registration.installing.state === 'activated') {
+                                resolve();
+                            }
+                        });
+                    });
+                } else if (registration.waiting) {
+                    await new Promise((resolve) => {
+                        registration.waiting.addEventListener('statechange', () => {
+                            if (registration.waiting.state === 'activated') {
+                                resolve();
+                            }
+                        });
+                    });
+                }
 
-            // Проверка разрешений на уведомления
-            if ('Notification' in window) {
-                html += `<p>Notification permission: ${Notification.permission}</p>`;
+                await navigator.serviceWorker.ready;
+                addDebugInfo('Service Worker registered successfully for Edge');
+                return registration;
+            } catch (error) {
+                addDebugInfo(`Service Worker registration failed: ${error.message}`);
+                throw error;
+            }
+        }
 
-                if (Notification.permission === 'default') {
-                    html += '<p>Попытка запросить разрешение...</p>';
-                    try {
-                        const permission = await Notification.requestPermission();
-                        html += `<p>Новое разрешение: ${permission}</p>`;
-                    } catch (error) {
-                        html += `<div class="error">Ошибка запроса разрешения: ${error.message}</div>`;
+        // Функция для получения токена
+        async function getFCMToken() {
+            try {
+                addDebugInfo('Starting FCM token request...');
+
+                // Проверяем разрешения
+                const permission = await Notification.requestPermission();
+                addDebugInfo(`Permission result: ${permission}`);
+
+                if (permission !== 'granted') {
+                    throw new Error('Notification permission not granted');
+                }
+
+                let registration;
+
+                if (isEdge) {
+                    addDebugInfo('Using Edge-specific registration');
+                    registration = await registerServiceWorkerForEdge();
+                } else {
+                    addDebugInfo('Using standard registration');
+                    registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                        type: 'module',
+                        scope: '/'
+                    });
+                    await navigator.serviceWorker.ready;
+                }
+
+                // Загружаем Firebase SDK
+                if (typeof firebase === 'undefined') {
+                    // Используем compat версию для Edge
+                    await loadFirebaseSDK();
+                }
+
+                // Инициализируем Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                const messaging = firebase.messaging();
+
+                // Получаем токен
+                const token = await messaging.getToken({
+                    vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
+                    serviceWorkerRegistration: registration
+                });
+
+                if (token) {
+                    console.log('FCM Token:', token);
+                    document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
+                    addDebugInfo('FCM Token received successfully');
+                } else {
+                    throw new Error('No registration token available');
+                }
+
+                // Обработка сообщений
+                messaging.onMessage((payload) => {
+                    console.log('Message received: ', payload);
+                    addDebugInfo('Message received from FCM');
+
+                    if (payload.notification) {
+                        new Notification(payload.notification.title, {
+                            body: payload.notification.body,
+                            icon: payload.notification.icon || 'https://rentalguru.ru/static/firebase-logo.png'
+                        });
                     }
-                }
-            } else {
-                html += '<div class="error">Notification API не поддерживается</div>';
-            }
+                });
 
-            // Попытка получить FCM токен
+            } catch (error) {
+                console.error('Error getting FCM token:', error);
+                document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error.message + '</span>';
+                addDebugInfo(`Error: ${error.message}`);
+
+                // Специальные советы для Edge
+                if (isEdge && error.message.includes('permission denied')) {
+                    document.getElementById('token').innerHTML += `
+                        <div class="warning">
+                            <strong>Совет для Edge:</strong><br>
+                            1. Убедитесь, что уведомления включены в настройках Edge<br>
+                            2. Очистите кеш браузера и попробуйте снова<br>
+                            3. Попробуйте перезапустить браузер<br>
+                            4. Проверьте настройки безопасности Edge
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Загрузка Firebase SDK
+        function loadFirebaseSDK() {
+            return new Promise((resolve, reject) => {
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js';
+                script1.onload = () => {
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js';
+                    script2.onload = resolve;
+                    script2.onerror = reject;
+                    document.head.appendChild(script2);
+                };
+                script1.onerror = reject;
+                document.head.appendChild(script1);
+            });
+        }
+
+        // Event listeners
+        document.getElementById('get-token').addEventListener('click', getFCMToken);
+
+        document.getElementById('test-notification').addEventListener('click', () => {
             if (Notification.permission === 'granted') {
-                try {
-                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                        type: 'module'
-                    });
-
-                    const token = await getToken(messaging, {
-                        vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
-                        serviceWorkerRegistration: registration
-                    });
-
-                    if (token) {
-                        html += '<div class="success">✓ FCM токен получен успешно</div>';
-                        html += `<p>Токен: ${token.substring(0, 50)}...</p>`;
-                    } else {
-                        html += '<div class="error">⚠ FCM токен не получен</div>';
-                    }
-                } catch (error) {
-                    html += `<div class="error">Ошибка получения FCM токена: ${error.message}</div>`;
-                }
+                new Notification('Test Notification', {
+                    body: 'Это тестовое уведомление',
+                    icon: 'https://rentalguru.ru/static/firebase-logo.png'
+                });
+                addDebugInfo('Test notification sent');
+            } else {
+                addDebugInfo('Notification permission not granted');
             }
+        });
 
-            html += '</div>';
-            results.innerHTML = html;
-        };
+        document.getElementById('clear-cache').addEventListener('click', async () => {
+            await clearServiceWorkerCache();
+            location.reload();
+        });
 
-        // Автоматическая проверка при загрузке
-        window.addEventListener('load', () => {
-            checkFirebaseConfig();
+        // Инициализация
+        addDebugInfo(`Service Worker support: ${('serviceWorker' in navigator)}`);
+        addDebugInfo(`Notification support: ${('Notification' in window)}`);
+        addDebugInfo(`Current permission: ${Notification.permission}`);
+
+        // Автоматическая загрузка Firebase SDK
+        loadFirebaseSDK().then(() => {
+            addDebugInfo('Firebase SDK loaded successfully');
+        }).catch(error => {
+            addDebugInfo(`Failed to load Firebase SDK: ${error.message}`);
         });
     </script>
 </body>
