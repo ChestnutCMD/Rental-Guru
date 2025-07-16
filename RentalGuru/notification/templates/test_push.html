@@ -1,166 +1,130 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FCM Test - RentalGuru</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-    button { padding: 10px 15px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #3367d6; }
-    pre { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }
-    .error { color: #d32f2f; }
-    .success { color: #388e3c; }
-  </style>
+  <!-- ... (остальные мета-теги и стили остаются без изменений) ... -->
 </head>
 <body>
-  <h1>Тестирование FCM в Edge</h1>
-  <p>Статус: <span id="status">Готово к работе</span></p>
-
-  <button id="request-permission">Разрешить уведомления</button>
-  <button id="get-token">Получить FCM токен</button>
-
-  <h2>Токен:</h2>
-  <pre id="token-output">Токен появится здесь...</pre>
-
-  <h2>Логи:</h2>
-  <pre id="logs"></pre>
-
-  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
+  <!-- ... (остальная разметка без изменений) ... -->
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
-      authDomain: "rental-guru-465d7.firebaseapp.com",
-      projectId: "rental-guru-465d7",
-      storageBucket: "rental-guru-465d7.appspot.com",
-      messagingSenderId: "274995950667",
-      appId: "1:274995950667:web:e3872098a2b49116acc9ce",
-      measurementId: "G-K2WEZKWG2W"
-    };
+    // ... (конфиг Firebase и инициализация без изменений) ...
 
-    // Инициализация Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging(app);
-    const vapidKey = 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk';
+    // Новая функция проверки состояния уведомлений
+    async function checkNotificationPermission() {
+      if (Notification.permission === 'granted') {
+        return true;
+      }
 
-    // Элементы DOM
-    const statusEl = document.getElementById('status');
-    const tokenOutputEl = document.getElementById('token-output');
-    const logsEl = document.getElementById('logs');
-
-    // Логирование
-    function log(message, isError = false) {
-      const timestamp = new Date().toLocaleTimeString();
-      const logEntry = document.createElement('div');
-      logEntry.innerHTML = `[${timestamp}] ${message}`;
-      logEntry.className = isError ? 'error' : '';
-      logsEl.appendChild(logEntry);
-      logsEl.scrollTop = logsEl.scrollHeight;
-      console.log(message);
-    }
-
-    // Проверка поддержки Service Worker и Push API
-    function checkBrowserSupport() {
-      if (!('serviceWorker' in navigator)) {
-        log('Браузер не поддерживает Service Workers', true);
+      // Edge часто не показывает запрос, если ранее было отклонено
+      if (Notification.permission === 'denied') {
+        log('Разрешение было ранее отклонено. Очистите настройки сайта в Edge.', true);
+        statusEl.textContent = 'Разрешение отклонено. Очистите настройки сайта.';
         return false;
       }
 
-      if (!('PushManager' in window)) {
-        log('Браузер не поддерживает Push API', true);
-        return false;
+      // Специальная обработка для Edge
+      const isEdge = navigator.userAgent.includes('Edg/');
+      if (isEdge) {
+        log('Обнаружен браузер Edge. Применяем специальную обработку...');
+
+        // В Edge сначала нужно открыть запрос разрешения отдельно
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          log('Разрешение не получено в Edge', true);
+          return false;
+        }
+
+        // Даем время браузеру обработать разрешение
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       return true;
     }
 
-    // Регистрация Service Worker
-    async function registerServiceWorker() {
-      try {
-        log('Попытка регистрации Service Worker...');
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-          scope: '/'
-        });
-
-        log(`Service Worker зарегистрирован для scope: ${registration.scope}`);
-        return registration;
-      } catch (error) {
-        log(`Ошибка регистрации Service Worker: ${error.message}`, true);
-        throw error;
-      }
-    }
-
-    // Запрос разрешения на уведомления
-    async function requestNotificationPermission() {
-      try {
-        log('Запрос разрешения на уведомления...');
-        const permission = await Notification.requestPermission();
-
-        if (permission === 'granted') {
-          log('Разрешение на уведомления получено');
-          statusEl.textContent = 'Уведомления разрешены';
-          return true;
-        } else {
-          log('Пользователь отклонил разрешение на уведомления', true);
-          statusEl.textContent = 'Уведомления не разрешены';
-          return false;
-        }
-      } catch (error) {
-        log(`Ошибка запроса разрешения: ${error.message}`, true);
-        throw error;
-      }
-    }
-
-    // Получение FCM токена
+    // Обновленная функция получения токена
     async function getFCMToken() {
       try {
-        if (!(await requestNotificationPermission())) return;
+        // Проверяем поддержку браузера
+        if (!checkBrowserSupport()) return;
+
+        // Проверяем разрешения (с учетом особенностей Edge)
+        if (!(await checkNotificationPermission())) return;
+
+        log('Регистрация Service Worker...');
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/',
+          updateViaCache: 'none' // Важно для Edge
+        });
+
+        // Ждем активации Service Worker (особенно важно для Edge)
+        await new Promise((resolve, reject) => {
+          if (registration.active) {
+            resolve();
+          } else {
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'activated') {
+                  resolve();
+                }
+              });
+            });
+
+            // Таймаут для Edge
+            setTimeout(() => {
+              if (registration.active) {
+                resolve();
+              } else {
+                reject(new Error('Service Worker не активировался вовремя'));
+              }
+            }, 3000);
+          }
+        });
 
         log('Получение FCM токена...');
-        const registration = await registerServiceWorker();
-
         const token = await messaging.getToken({
           vapidKey: vapidKey,
           serviceWorkerRegistration: registration
         });
 
-        if (token) {
-          log('FCM токен успешно получен');
-          tokenOutputEl.textContent = token;
-          return token;
-        } else {
-          log('Не удалось получить FCM токен', true);
-          return null;
+        if (!token) {
+          throw new Error('Токен не получен (пустой ответ)');
         }
+
+        log('FCM токен успешно получен');
+        tokenOutputEl.textContent = token;
+        return token;
       } catch (error) {
-        log(`Ошибка получения токена: ${error.message}`, true);
-        throw error;
+        log(`Ошибка: ${error.message}`, true);
+
+        // Специальная обработка для Edge
+        if (error.message.includes('permission denied') ||
+            error.message.includes('no active Service Worker')) {
+          log('Попробуйте: 1) Открыть обычное окно (не приватное) 2) Очистить разрешения для сайта 3) Проверить блокировку трекеров', true);
+        }
+
+        return null;
       }
     }
 
-    // Обработка входящих сообщений
-    messaging.onMessage((payload) => {
-      log(`Получено сообщение: ${payload.notification?.title || 'Без заголовка'}`);
-      new Notification(payload.notification.title, {
-        body: payload.notification.body,
-        icon: payload.notification.icon
-      });
-    });
-
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', () => {
-      if (!checkBrowserSupport()) {
-        statusEl.textContent = 'Браузер не поддерживает необходимые функции';
-        statusEl.className = 'error';
-        return;
+      // ... (остальная инициализация без изменений) ...
+
+      // Для Edge добавляем проверку приватного режима
+      const isPrivateMode = () => {
+        try {
+          localStorage.setItem('test', 'test');
+          localStorage.removeItem('test');
+          return false;
+        } catch (e) {
+          return true;
+        }
+      };
+
+      if (isPrivateMode()) {
+        log('Внимание: Приватный режим может ограничивать работу уведомлений', true);
       }
-
-      document.getElementById('request-permission').addEventListener('click', requestNotificationPermission);
-      document.getElementById('get-token').addEventListener('click', getFCMToken);
-
-      log('Приложение инициализировано. Нажмите "Разрешить уведомления", затем "Получить FCM токен"');
     });
   </script>
 </body>
