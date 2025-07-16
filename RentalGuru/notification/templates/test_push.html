@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase FCM Token Test</title>
+    <title>Firebase Domain Check</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,57 +11,70 @@
             margin: 0 auto;
             padding: 20px;
         }
+        .info {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
         button {
             background-color: #4CAF50;
             border: none;
             color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
+            padding: 10px 20px;
             cursor: pointer;
             border-radius: 4px;
+            margin: 5px;
         }
-        button:hover {
-            background-color: #45a049;
-        }
-        #token {
-            background-color: #f4f4f4;
+        pre {
+            background-color: #f5f5f5;
             padding: 10px;
             border-radius: 4px;
-            word-break: break-all;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-        }
-        .success {
-            color: green;
-        }
-        .debug {
-            background-color: #e8f4f8;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-            font-family: monospace;
-            font-size: 12px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-    <h1>Firebase FCM Token Test</h1>
-    <button id="get-token">Get FCM Token</button>
-    <button id="test-notification">Test Notification</button>
-    <p id="token"></p>
-    <div id="debug"></div>
+    <h1>Firebase Domain & Configuration Check</h1>
+
+    <div class="info">
+        <h3>Текущая информация:</h3>
+        <p><strong>Домен:</strong> <span id="current-domain"></span></p>
+        <p><strong>Протокол:</strong> <span id="current-protocol"></span></p>
+        <p><strong>Порт:</strong> <span id="current-port"></span></p>
+        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+    </div>
+
+    <button onclick="checkFirebaseConfig()">Проверить Firebase конфигурацию</button>
+    <button onclick="checkServiceWorker()">Проверить Service Worker</button>
+    <button onclick="checkPermissions()">Проверить разрешения</button>
+
+    <div id="results"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
-        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging.js";
 
-        // Your web app's Firebase configuration
+        // Заполняем базовую информацию
+        document.getElementById('current-domain').textContent = window.location.hostname;
+        document.getElementById('current-protocol').textContent = window.location.protocol;
+        document.getElementById('current-port').textContent = window.location.port || 'default';
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+
         const firebaseConfig = {
             apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
             authDomain: "rental-guru-465d7.firebaseapp.com",
@@ -72,104 +85,125 @@
             measurementId: "G-K2WEZKWG2W"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const messaging = getMessaging(app);
 
-        // Debug info
-        const debugDiv = document.getElementById('debug');
-        function addDebugInfo(message) {
-            debugDiv.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
-        }
+        window.checkFirebaseConfig = function() {
+            const results = document.getElementById('results');
 
-        addDebugInfo(`Browser: ${navigator.userAgent}`);
-        addDebugInfo(`Service Worker support: ${('serviceWorker' in navigator)}`);
-        addDebugInfo(`Notification support: ${('Notification' in window)}`);
+            let html = '<div class="info"><h3>Firebase Configuration:</h3><pre>';
+            html += JSON.stringify(firebaseConfig, null, 2);
+            html += '</pre></div>';
 
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                    type: 'module',
-                    scope: '/'
-                });
+            // Проверка соответствия домена
+            const currentDomain = window.location.hostname;
+            const authDomain = firebaseConfig.authDomain;
 
-                addDebugInfo(`Service Worker registered: ${registration.scope}`);
+            if (currentDomain === 'rentalguru.ru' || currentDomain === 'localhost') {
+                html += '<div class="success">✓ Домен выглядит корректно</div>';
+            } else {
+                html += '<div class="error">⚠ Текущий домен может не совпадать с настройками Firebase</div>';
+            }
 
-                // Ждем пока service worker станет активным
-                await navigator.serviceWorker.ready;
-                addDebugInfo('Service Worker ready');
+            // Проверка HTTPS
+            if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+                html += '<div class="success">✓ Использует HTTPS или localhost</div>';
+            } else {
+                html += '<div class="error">⚠ Требуется HTTPS для работы FCM</div>';
+            }
 
-                document.getElementById('get-token').addEventListener('click', async () => {
+            results.innerHTML = html;
+        };
+
+        window.checkServiceWorker = async function() {
+            const results = document.getElementById('results');
+            let html = '<div class="info"><h3>Service Worker Check:</h3>';
+
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    html += `<p>Найдено Service Worker регистраций: ${registrations.length}</p>`;
+
+                    registrations.forEach((reg, index) => {
+                        html += `<p>Регистрация ${index + 1}: ${reg.scope}</p>`;
+                        html += `<p>Активный: ${reg.active ? 'Да' : 'Нет'}</p>`;
+                        html += `<p>Ожидающий: ${reg.waiting ? 'Да' : 'Нет'}</p>`;
+                    });
+
+                    // Проверка доступности firebase-messaging-sw.js
                     try {
-                        addDebugInfo('Requesting notification permission...');
-
-                        const permission = await Notification.requestPermission();
-                        addDebugInfo(`Permission result: ${permission}`);
-
-                        if (permission === 'granted') {
-                            addDebugInfo('Getting FCM token...');
-
-                            const token = await getToken(messaging, {
-                                vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
-                                serviceWorkerRegistration: registration
-                            });
-
-                            if (token) {
-                                console.log('FCM Token:', token);
-                                document.getElementById('token').innerHTML = '<span class="success">FCM Token получен успешно:</span><br>' + token;
-                                addDebugInfo('FCM Token received successfully');
-                            } else {
-                                console.error('No registration token available');
-                                document.getElementById('token').innerHTML = '<span class="error">No registration token available</span>';
-                                addDebugInfo('No registration token available');
-                            }
+                        const response = await fetch('/firebase-messaging-sw.js');
+                        if (response.ok) {
+                            html += '<div class="success">✓ firebase-messaging-sw.js доступен</div>';
                         } else {
-                            console.error('Notification permission not granted');
-                            document.getElementById('token').innerHTML = '<span class="error">Notification permission not granted</span>';
-                            addDebugInfo('Notification permission denied');
+                            html += `<div class="error">⚠ firebase-messaging-sw.js недоступен: ${response.status}</div>`;
                         }
                     } catch (error) {
-                        console.error('Error getting FCM token:', error);
-                        document.getElementById('token').innerHTML = '<span class="error">Error getting FCM token: ' + error.message + '</span>';
-                        addDebugInfo(`Error: ${error.message}`);
+                        html += `<div class="error">⚠ Ошибка загрузки firebase-messaging-sw.js: ${error.message}</div>`;
                     }
-                });
 
-                // Test notification button
-                document.getElementById('test-notification').addEventListener('click', () => {
-                    if (Notification.permission === 'granted') {
-                        new Notification('Test Notification', {
-                            body: 'Это тестовое уведомление',
-                            icon: 'https://rentalguru.ru/static/firebase-logo.png'
-                        });
-                        addDebugInfo('Test notification sent');
+                } catch (error) {
+                    html += `<div class="error">Ошибка проверки Service Worker: ${error.message}</div>`;
+                }
+            } else {
+                html += '<div class="error">Service Worker не поддерживается в этом браузере</div>';
+            }
+
+            html += '</div>';
+            results.innerHTML = html;
+        };
+
+        window.checkPermissions = async function() {
+            const results = document.getElementById('results');
+            let html = '<div class="info"><h3>Permissions Check:</h3>';
+
+            // Проверка разрешений на уведомления
+            if ('Notification' in window) {
+                html += `<p>Notification permission: ${Notification.permission}</p>`;
+
+                if (Notification.permission === 'default') {
+                    html += '<p>Попытка запросить разрешение...</p>';
+                    try {
+                        const permission = await Notification.requestPermission();
+                        html += `<p>Новое разрешение: ${permission}</p>`;
+                    } catch (error) {
+                        html += `<div class="error">Ошибка запроса разрешения: ${error.message}</div>`;
+                    }
+                }
+            } else {
+                html += '<div class="error">Notification API не поддерживается</div>';
+            }
+
+            // Попытка получить FCM токен
+            if (Notification.permission === 'granted') {
+                try {
+                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                        type: 'module'
+                    });
+
+                    const token = await getToken(messaging, {
+                        vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
+                        serviceWorkerRegistration: registration
+                    });
+
+                    if (token) {
+                        html += '<div class="success">✓ FCM токен получен успешно</div>';
+                        html += `<p>Токен: ${token.substring(0, 50)}...</p>`;
                     } else {
-                        addDebugInfo('Notification permission not granted');
+                        html += '<div class="error">⚠ FCM токен не получен</div>';
                     }
-                });
-
-            } catch (error) {
-                console.error('Service Worker registration failed:', error);
-                document.getElementById('token').innerHTML = '<span class="error">Service Worker registration failed: ' + error.message + '</span>';
-                addDebugInfo(`SW registration error: ${error.message}`);
+                } catch (error) {
+                    html += `<div class="error">Ошибка получения FCM токена: ${error.message}</div>`;
+                }
             }
-        } else {
-            document.getElementById('token').innerHTML = '<span class="error">Service Worker not supported in this browser</span>';
-            addDebugInfo('Service Worker not supported');
-        }
 
-        // Handle incoming messages
-        onMessage(messaging, (payload) => {
-            console.log('Message received: ', payload);
-            addDebugInfo('Message received from FCM');
+            html += '</div>';
+            results.innerHTML = html;
+        };
 
-            if (payload.notification) {
-                new Notification(payload.notification.title, {
-                    body: payload.notification.body,
-                    icon: payload.notification.icon || 'https://rentalguru.ru/static/firebase-logo.png'
-                });
-            }
+        // Автоматическая проверка при загрузке
+        window.addEventListener('load', () => {
+            checkFirebaseConfig();
         });
     </script>
 </body>
