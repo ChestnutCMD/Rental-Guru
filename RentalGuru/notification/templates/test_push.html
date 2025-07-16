@@ -2,15 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FCM Test - RentalGuru</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    button { padding: 10px 15px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #3367d6; }
+    pre { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }
+    .error { color: #d32f2f; }
+    .success { color: #388e3c; }
+  </style>
 </head>
 <body>
-  <h1>Получение FCM токена</h1>
-  <button id="get-token">Получить токен</button>
-  <pre id="output"></pre>
+  <h1>Тестирование FCM в Edge</h1>
+  <p>Статус: <span id="status">Готово к работе</span></p>
+
+  <button id="request-permission">Разрешить уведомления</button>
+  <button id="get-token">Получить FCM токен</button>
+
+  <h2>Токен:</h2>
+  <pre id="token-output">Токен появится здесь...</pre>
+
+  <h2>Логи:</h2>
+  <pre id="logs"></pre>
 
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-messaging-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAVFtJ9isbDXFaLbmJJcDdpMA8jsl_ZyOU",
@@ -22,35 +40,127 @@
       measurementId: "G-K2WEZKWG2W"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
+    // Инициализация Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging(app);
+    const vapidKey = 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk';
 
-    async function requestPermissionAndGetToken() {
+    // Элементы DOM
+    const statusEl = document.getElementById('status');
+    const tokenOutputEl = document.getElementById('token-output');
+    const logsEl = document.getElementById('logs');
+
+    // Логирование
+    function log(message, isError = false) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement('div');
+      logEntry.innerHTML = `[${timestamp}] ${message}`;
+      logEntry.className = isError ? 'error' : '';
+      logsEl.appendChild(logEntry);
+      logsEl.scrollTop = logsEl.scrollHeight;
+      console.log(message);
+    }
+
+    // Проверка поддержки Service Worker и Push API
+    function checkBrowserSupport() {
+      if (!('serviceWorker' in navigator)) {
+        log('Браузер не поддерживает Service Workers', true);
+        return false;
+      }
+
+      if (!('PushManager' in window)) {
+        log('Браузер не поддерживает Push API', true);
+        return false;
+      }
+
+      return true;
+    }
+
+    // Регистрация Service Worker
+    async function registerServiceWorker() {
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          document.getElementById('output').textContent = 'Уведомления не разрешены пользователем.';
-          return;
-        }
-
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        const token = await messaging.getToken({
-          vapidKey: 'BKKf7beRVHddoNDzr3XwDSNyJyZD_cD3_IrvANTsxLv3rA068b4vfy81JWbwUv4Iaz5DSXQ5ufKqa9J49pSablk',
-          serviceWorkerRegistration: registration
+        log('Попытка регистрации Service Worker...');
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/'
         });
 
-        document.getElementById('output').textContent = 'FCM токен:\n' + token;
-      } catch (err) {
-        console.error('Ошибка получения токена:', err);
-        document.getElementById('output').textContent = 'Ошибка: ' + err.message;
+        log(`Service Worker зарегистрирован для scope: ${registration.scope}`);
+        return registration;
+      } catch (error) {
+        log(`Ошибка регистрации Service Worker: ${error.message}`, true);
+        throw error;
       }
     }
 
-    document.getElementById('get-token').addEventListener('click', requestPermissionAndGetToken);
+    // Запрос разрешения на уведомления
+    async function requestNotificationPermission() {
+      try {
+        log('Запрос разрешения на уведомления...');
+        const permission = await Notification.requestPermission();
 
-    messaging.onMessage(payload => {
-      console.log('FCM сообщение получено:', payload);
-      alert(`Уведомление: ${payload.notification?.title}\n${payload.notification?.body}`);
+        if (permission === 'granted') {
+          log('Разрешение на уведомления получено');
+          statusEl.textContent = 'Уведомления разрешены';
+          return true;
+        } else {
+          log('Пользователь отклонил разрешение на уведомления', true);
+          statusEl.textContent = 'Уведомления не разрешены';
+          return false;
+        }
+      } catch (error) {
+        log(`Ошибка запроса разрешения: ${error.message}`, true);
+        throw error;
+      }
+    }
+
+    // Получение FCM токена
+    async function getFCMToken() {
+      try {
+        if (!(await requestNotificationPermission())) return;
+
+        log('Получение FCM токена...');
+        const registration = await registerServiceWorker();
+
+        const token = await messaging.getToken({
+          vapidKey: vapidKey,
+          serviceWorkerRegistration: registration
+        });
+
+        if (token) {
+          log('FCM токен успешно получен');
+          tokenOutputEl.textContent = token;
+          return token;
+        } else {
+          log('Не удалось получить FCM токен', true);
+          return null;
+        }
+      } catch (error) {
+        log(`Ошибка получения токена: ${error.message}`, true);
+        throw error;
+      }
+    }
+
+    // Обработка входящих сообщений
+    messaging.onMessage((payload) => {
+      log(`Получено сообщение: ${payload.notification?.title || 'Без заголовка'}`);
+      new Notification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: payload.notification.icon
+      });
+    });
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkBrowserSupport()) {
+        statusEl.textContent = 'Браузер не поддерживает необходимые функции';
+        statusEl.className = 'error';
+        return;
+      }
+
+      document.getElementById('request-permission').addEventListener('click', requestNotificationPermission);
+      document.getElementById('get-token').addEventListener('click', getFCMToken);
+
+      log('Приложение инициализировано. Нажмите "Разрешить уведомления", затем "Получить FCM токен"');
     });
   </script>
 </body>
