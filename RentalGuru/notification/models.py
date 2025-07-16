@@ -107,7 +107,7 @@ def send_web_push_notification(user_id, notification_body, notification_url=None
         "Content-Type": "application/json; charset=UTF-8",
     }
 
-    project_id = os.getenv('PROJECT_ID', 'rental-guru-6ed62')
+    project_id = os.getenv('PROJECT_ID', 'rental-guru-465d7')
     fcm_url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
 
     successful_sends = 0
