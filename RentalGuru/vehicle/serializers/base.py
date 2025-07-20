@@ -148,7 +148,67 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
         read_only_fields = ['owner', 'ratings', 'average_ratings', 'count_trip']
 
     def update(self, instance, validated_data):
-        instance.verified = False
+        # поля, которые можно изменять БЕЗ сброса verified
+        safe_fields = [
+            'long_distance',
+            'delivery',
+            'ensurance',
+            'price_delivery',
+            'payment_method',
+            'drivers_rating',
+            'acceptable_mileage',
+            'drivers_age',
+            'drivers_experience'
+        ]
+
+        should_reset_verified = False
+
+        for field, new_value in validated_data.items():
+            if field in ['availabilities', 'rent_prices', 'photos']:
+                continue
+
+            if field not in safe_fields:
+                old_value = getattr(instance, field, None)
+                if old_value != new_value:
+                    should_reset_verified = True
+                    break
+
+        if not should_reset_verified:
+            availabilities_data = validated_data.get('availabilities', [])
+            if availabilities_data:
+                current_availabilities = list(instance.availabilities.values(
+                    'start_date', 'end_date', 'on_request'
+                ))
+
+                new_availabilities = []
+                for avail in availabilities_data:
+                    new_availabilities.append({
+                        'start_date': avail.get('start_date'),
+                        'end_date': avail.get('end_date'),
+                        'on_request': avail.get('on_request', False)
+                    })
+
+                if current_availabilities != new_availabilities:
+                    should_reset_verified = True
+
+            if not should_reset_verified:
+                prices_data = validated_data.get('rent_prices', [])
+                if prices_data:
+                    current_prices = list(instance.rent_prices.values('name', 'price', 'discount'))
+                    new_prices = []
+                    for price in prices_data:
+                        new_prices.append({
+                            'name': price.get('name'),
+                            'price': price.get('price'),
+                            'discount': price.get('discount', 0)
+                        })
+
+                    if current_prices != new_prices:
+                        should_reset_verified = True
+
+        if should_reset_verified:
+            instance.verified = False
+
         availabilities_data = validated_data.pop('availabilities', [])
         # documents_data = validated_data.pop('documents', [])
         prices_data = validated_data.pop('rent_prices', [])

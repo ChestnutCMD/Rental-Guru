@@ -83,7 +83,7 @@ class BaseViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         instance = serializer.save()
-        if 'verified' in serializer.validated_data and not self.request.user.role == 'admin':
+        if 'verified' in serializer.validated_data and not self.request.user.role in ['admin', 'manager']:
             instance.verified = False
             instance.save()
 
