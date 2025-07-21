@@ -97,7 +97,7 @@ class TripSerializer(serializers.ModelSerializer):
 
                     Notification.objects.create(
                         user=instance.organizer,
-                        content=f"Поездка c транспортом {instance.vehicle} была отменена. Будет произведен возврат средств в количестве {payment.amount} р."
+                        content=f"Поездка c транспортом {instance.vehicle} была отменена. Будет произведен возврат средств в размере {payment.amount} р."
                     )
 
             else:

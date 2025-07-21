@@ -263,6 +263,7 @@ class Vehicle(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         previous_instance = Vehicle.objects.filter(pk=self.pk).first()
+        # Комиссия на доставку
         if self.price_delivery > 0:
             if previous_instance:
                 if self.price_delivery != previous_instance.price_delivery:
@@ -273,7 +274,7 @@ class Vehicle(PolymorphicModel):
                 self.price_delivery *= Decimal(1) + Decimal(commission) / Decimal(100)
 
         super().save(*args, **kwargs)
-
+        # Отправка уведомления на регистрацию
         if previous_instance and not previous_instance.verified and self.verified:
             real_instance_class = self.get_real_instance_class()
             model_name = real_instance_class.__name__.lower()
