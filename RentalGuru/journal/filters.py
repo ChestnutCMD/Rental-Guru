@@ -1,6 +1,4 @@
-import logging
 from datetime import timedelta
-
 import django_filters
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -9,22 +7,26 @@ from django.utils import timezone
 from chat.models import Trip
 from vehicle.models import Vehicle
 
-logger = logging.getLogger(__name__)
 
 
 class TripFilter(django_filters.FilterSet):
-    period = django_filters.ChoiceFilter(choices=[('day', 'День'),
-                                                  ('week', 'Неделя'),
-                                                  ('month', 'Месяц'),
-                                                  ('quarter', 'Квартал'),
-                                                  ('year', 'Год')],
-                                         method='filter_by_period')
+    period = django_filters.ChoiceFilter(
+        choices=[
+            ('day', 'День'),
+            ('week', 'Неделя'),
+            ('month', 'Месяц'),
+            ('quarter', 'Квартал'),
+            ('year', 'Год')
+        ],
+        method='filter_by_period'
+    )
     type = django_filters.CharFilter(method='filter_by_type')
     lessor_id = django_filters.NumberFilter(method='filter_by_owner')
+    city_id = django_filters.NumberFilter(method='filter_by_city')
 
     class Meta:
         model = Trip
-        fields = ['status', 'period', 'type', 'lessor_id']
+        fields = ['status', 'period', 'type', 'lessor_id', 'city_id']
 
     def filter_by_period(self, queryset, name, value):
         today = timezone.localdate()
@@ -52,4 +54,8 @@ class TripFilter(django_filters.FilterSet):
 
     def filter_by_owner(self, queryset, name, value):
         vehicles = Vehicle.objects.filter(owner__lessor=value)
+        return queryset.filter(object_id__in=vehicles.values_list('id', flat=True))
+
+    def filter_by_city(self, queryset, name, value):
+        vehicles = Vehicle.objects.filter(city_id=value)
         return queryset.filter(object_id__in=vehicles.values_list('id', flat=True))

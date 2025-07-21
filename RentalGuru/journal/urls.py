@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import TripByFranchiseView
+from .views import TripByCityView
 
 urlpatterns = [
-    path('<int:franchise_id>/', TripByFranchiseView.as_view(), name='journal'),
+    path('', TripByCityView.as_view(), name='journal'),
 ]
