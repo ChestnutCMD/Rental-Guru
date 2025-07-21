@@ -20,7 +20,7 @@ from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdmi
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
     InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer, RequestWithdrawListSerializer, \
-    RequestWithdrawCreateSerializer
+    RequestWithdrawCreateSerializer, PromoCodeSimpleSerializer
 from manager.permissions import ManagerObjectPermission
 from payment.models import Payment
 from vehicle.models import Vehicle
@@ -293,6 +293,27 @@ class ApplyPromoCodeView(APIView):
         promo_code.save()
 
         return Response({'message': 'Промокод успешно применен.'})
+
+@extend_schema(
+    summary='Вывод промокода по названию',
+    description='Вывод промокода по названию',
+    parameters=[
+        OpenApiParameter(
+            name="title",
+            description="Название промокода",
+            type=str,
+            required=True, )
+    ]
+)
+class PromoCodeByTitleAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        title = request.query_params.get('title')
+        if not title:
+            return Response({'detail': 'title is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        promo = get_object_or_404(PromoCode, title=title)
+        serializer = PromoCodeSimpleSerializer(promo)
+        return Response(serializer.data)
 
 
 @extend_schema(summary='Заявки на вывод стредств', description='Вывод средств')

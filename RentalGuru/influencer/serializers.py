@@ -501,6 +501,12 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         return (turnover * commission) / 100
 
 
+class PromoCodeSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoCode
+        fields = ['title', 'type', 'total', 'expiration_date', 'created_at']
+
+
 class WithdrawInfluencerSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
