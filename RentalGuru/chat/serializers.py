@@ -406,10 +406,11 @@ class ChatSupportSerializer(serializers.ModelSerializer):
     messages = MessageSupportSerializer(many=True, read_only=True)
     last_message = serializers.SerializerMethodField()
     unread_messages_count = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatSupport
-        fields = ['id', 'creator', 'issues', 'messages', 'last_message', 'unread_messages_count']
+        fields = ['id', 'creator', 'role', 'issues', 'messages', 'last_message', 'unread_messages_count']
 
     def get_last_message(self, obj):
         last_message = obj.message_support.filter(deleted=False).order_by('-timestamp').first()
@@ -430,6 +431,19 @@ class ChatSupportSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         return obj.message_support.filter(is_read=False, deleted=False).exclude(sender=user).count()
 
+    def get_role(self, obj):
+        user = obj.creator
+
+        # проверяем связанные объекты
+        if hasattr(user, 'lessor') and user.lessor is not None:
+            return 'lessor'
+        if hasattr(user, 'renter') and user.renter is not None:
+            return 'renter'
+        if hasattr(user, 'influencer') and user.influencer is not None:
+            return 'influencer'
+        if hasattr(user, 'franchise') and user.franchise is not None:
+            return 'franchise'
+        return None
 
 class ChatSupportRetrieveSerializer(serializers.ModelSerializer):
     last_issue = serializers.SerializerMethodField()

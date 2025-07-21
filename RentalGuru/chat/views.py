@@ -544,7 +544,13 @@ class ChatSupportListView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.role in ['admin', 'manager']:
-            chats = ChatSupport.objects.all()
+            chats = ChatSupport.objects.select_related(
+                                                        'creator',
+                                                        'creator__lessor',
+                                                        'creator__renter',
+                                                        'creator__influencer',
+                                                        'creator__franchise'
+                                                    ).all()
             paginator = ChatSupportPagination()
             paginated_chats = paginator.paginate_queryset(chats, request)
             if paginated_chats is None:
@@ -552,7 +558,13 @@ class ChatSupportListView(APIView):
             serializer = ChatSupportSerializer(paginated_chats, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         else:
-            chats = ChatSupport.objects.filter(creator=user)
+            chats = ChatSupport.objects.select_related(
+                                                        'creator',
+                                                        'creator__lessor',
+                                                        'creator__renter',
+                                                        'creator__influencer',
+                                                        'creator__franchise'
+                                                    ).filter(creator=user)
             serializer = ChatSupportSerializer(chats, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
