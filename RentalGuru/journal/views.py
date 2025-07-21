@@ -24,35 +24,28 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
         })
 
 
-@extend_schema(summary="Журнал аренды",
-               description="Журнал аренды",
-               parameters=[
-                   OpenApiParameter("status", str, OpenApiParameter.QUERY, description="Статус поездки"),
-                   OpenApiParameter("period", str, OpenApiParameter.QUERY, description="Период", enum=['day', 'week', 'month', 'quarter', 'year']),
-                   OpenApiParameter("type", str, OpenApiParameter.QUERY, description="Тип"),
-                   OpenApiParameter("lessor_id", int, OpenApiParameter.QUERY, description="ID арендодателя"),
-                   OpenApiParameter("city_id", int, OpenApiParameter.QUERY, description="ID города"),
-               ]
-               )
-
-class TripByCityView(ListAPIView):
+class BaseTripView(ListAPIView):
     permission_classes = [IsAuthenticated, IsAdminManagerOrFranchiseOwner]
     serializer_class = TripSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = TripFilter
     pagination_class = CustomLimitOffsetPagination
 
+    statuses = []  # задаётся в наследниках
+
     def get_queryset(self):
         user = self.request.user
 
+        base_qs = Trip.objects.filter(
+            status__in=self.statuses
+        ).select_related(
+            'organizer', 'content_type', 'chat'
+        ).prefetch_related(
+            'organizer__renter'
+        )
+
         if user.role in ['admin', 'manager']:
-            return Trip.objects.filter(
-                status__in=['finished',  'canceled']
-            ).select_related(
-                'organizer', 'content_type', 'chat'
-            ).prefetch_related(
-                'organizer__renter'
-            )
+            return base_qs
 
         try:
             franchise = Franchise.objects.get(director=user)
@@ -63,24 +56,16 @@ class TripByCityView(ListAPIView):
             Q(owner__lessor__franchise=franchise) | Q(owner=franchise.director)
         )
 
-        trips = Trip.objects.filter(
-            object_id__in=vehicles.values_list('id', flat=True),
-            status='finished'
-        ).select_related(
-            'organizer', 'content_type', 'chat'
-        ).prefetch_related(
-            'organizer__renter'
-        )
-
-        return trips
+        return base_qs.filter(object_id__in=vehicles.values_list('id', flat=True))
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-
         queryset = self.get_queryset()
+        vehicle_ids = queryset.values_list('object_id', flat=True)
+
         vehicles_map = {
             v.id: v for v in Vehicle.objects.filter(
-                id__in=queryset.values_list('object_id', flat=True)
+                id__in=vehicle_ids
             ).select_related('owner', 'owner__lessor')
         }
 
@@ -98,16 +83,12 @@ class TripByCityView(ListAPIView):
             queryset=queryset,
             request=request
         )
-        filtered_queryset_for_counts = count_filter.qs
+        filtered_qs_for_counts = count_filter.qs
 
-        type_counts = filtered_queryset_for_counts.values('content_type__model').annotate(
+        type_counts = filtered_qs_for_counts.values('content_type__model').annotate(
             count=Count('content_type__model')
         )
-
-        counts_dict = {
-            item['content_type__model']: item['count']
-            for item in type_counts
-        }
+        counts_dict = {item['content_type__model']: item['count'] for item in type_counts}
 
         counts = {
             'auto': counts_dict.get('auto', 0),
@@ -117,19 +98,47 @@ class TripByCityView(ListAPIView):
             'specialtechnic': counts_dict.get('specialtechnic', 0)
         }
 
-        filtered_queryset = self.filter_queryset(queryset)
+        filtered_qs = self.filter_queryset(queryset)
 
-        page = self.paginate_queryset(filtered_queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response_data = {
-                'counts': counts,
-                'data': serializer.data
-            }
-            return self.get_paginated_response(response_data)
+        page = self.paginate_queryset(filtered_qs)
+        serializer = self.get_serializer(page if page is not None else filtered_qs, many=True)
 
-        serializer = self.get_serializer(filtered_queryset, many=True)
-        return Response({
+        response_data = {
             'counts': counts,
             'data': serializer.data
-        })
+        }
+
+        if page is not None:
+            return self.get_paginated_response(response_data)
+
+        return Response(response_data)
+
+
+@extend_schema(
+    summary="Журнал аренды",
+    description="Журнал аренды",
+    parameters=[
+        OpenApiParameter("status", str, OpenApiParameter.QUERY, description="Статус поездки", enum=['finished', 'canceled']),
+        OpenApiParameter("period", str, OpenApiParameter.QUERY, description="Период", enum=['day', 'week', 'month', 'quarter', 'year']),
+        OpenApiParameter("type", str, OpenApiParameter.QUERY, description="Тип"),
+        OpenApiParameter("lessor_id", int, OpenApiParameter.QUERY, description="ID арендодателя"),
+        OpenApiParameter("city_id", int, OpenApiParameter.QUERY, description="ID города"),
+    ]
+)
+class TripByCityView(BaseTripView):
+    statuses = ['finished', 'canceled']
+
+
+@extend_schema(
+    summary="Аренда и заказы",
+    description="Аренда и заказы",
+    parameters=[
+        OpenApiParameter("status", str, OpenApiParameter.QUERY, description="Статус поездки", enum=['current', 'started']),
+        OpenApiParameter("period", str, OpenApiParameter.QUERY, description="Период", enum=['day', 'week', 'month', 'quarter', 'year']),
+        OpenApiParameter("type", str, OpenApiParameter.QUERY, description="Тип"),
+        OpenApiParameter("lessor_id", int, OpenApiParameter.QUERY, description="ID арендодателя"),
+        OpenApiParameter("city_id", int, OpenApiParameter.QUERY, description="ID города"),
+    ]
+)
+class CurrentTripByCityView(BaseTripView):
+    statuses = ['current', 'started']
