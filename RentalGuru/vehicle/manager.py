@@ -11,7 +11,7 @@ class RentPriceManager(models.Manager):
                 if obj.vehicle.owner and hasattr(obj.vehicle.owner, 'lessor')
                 else 20.0
             )
-            obj.total = (Decimal(obj.price) / (100 - commission) * commission + Decimal(obj.price)*
+            obj.total = ((Decimal(obj.price) / (100 - commission) * commission + Decimal(obj.price))*
                         (100 - Decimal(obj.discount)) / 100
             )
         return super().bulk_create(objs, *args, **kwargs)
