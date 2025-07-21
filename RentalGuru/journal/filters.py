@@ -18,11 +18,27 @@ class TripFilter(django_filters.FilterSet):
             ('quarter', 'Квартал'),
             ('year', 'Год')
         ],
-        method='filter_by_period'
+        method='filter_by_period',
+        label='Период',
+        help_text='Фильтрация по периоду: день, неделя, месяц, квартал, год'
     )
-    type = django_filters.CharFilter(method='filter_by_type')
-    lessor_id = django_filters.NumberFilter(method='filter_by_owner')
-    city_id = django_filters.NumberFilter(method='filter_by_city')
+    type = django_filters.CharFilter(
+        method='filter_by_type',
+        label='Тип',
+        help_text='Тип транспортного средства: auto, bike, ship и т.д.'
+    )
+
+    lessor_id = django_filters.NumberFilter(
+        method='filter_by_owner',
+        label='ID арендодателя',
+        help_text='Фильтрация по арендодателю'
+    )
+
+    city_id = django_filters.NumberFilter(
+        method='filter_by_city',
+        label='ID города',
+        help_text='Фильтрация по городу'
+    )
 
     class Meta:
         model = Trip
