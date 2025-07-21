@@ -28,7 +28,7 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
                description="Журнал аренды",
                parameters=[
                    OpenApiParameter("status", str, OpenApiParameter.QUERY, description="Статус поездки"),
-                   OpenApiParameter("period", str, OpenApiParameter.QUERY, description="Период"),
+                   OpenApiParameter("period", str, OpenApiParameter.QUERY, description="Период", enum=['day', 'week', 'month', 'quarter', 'year']),
                    OpenApiParameter("type", str, OpenApiParameter.QUERY, description="Тип"),
                    OpenApiParameter("lessor_id", int, OpenApiParameter.QUERY, description="ID арендодателя"),
                    OpenApiParameter("city_id", int, OpenApiParameter.QUERY, description="ID города"),
