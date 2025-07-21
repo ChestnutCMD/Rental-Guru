@@ -209,6 +209,10 @@ LOGGING = {
             'format': '{levelname} {asctime} {name} {message}',
             'style': '{',
         },
+        'with_path': {
+            'format': '{levelname} {asctime} {name} {message} path={pathname}:{lineno}',
+            'style': '{',
+        },
     },
     'handlers': {
         'console': {
@@ -218,6 +222,12 @@ LOGGING = {
         'file': {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'info.log'),
+            'formatter': 'verbose',
+            'level': 'INFO',
+        },
+        'requests': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'requests.log'),
             'formatter': 'verbose',
             'level': 'INFO',
         },
@@ -233,7 +243,7 @@ LOGGING = {
             'propagate': True,
         },
         'django.request': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'requests'],
             'level': 'INFO',
             'propagate': False,
         },

@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 from django.db.models import Max
@@ -147,9 +148,15 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
         fields = '__all__'
         read_only_fields = ['owner', 'ratings', 'average_ratings', 'count_trip']
 
+    def to_internal_value(self, data):
+        internal_value = super().to_internal_value(data)
+        internal_value.pop('verified', None)
+        return internal_value
+
     def update(self, instance, validated_data):
-        # поля, которые можно изменять БЕЗ сброса verified
-        safe_fields = [
+        original_verified = instance.verified
+
+        safe_fields = {
             'long_distance',
             'delivery',
             'ensurance',
@@ -158,94 +165,83 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
             'drivers_rating',
             'acceptable_mileage',
             'drivers_age',
-            'drivers_experience'
-        ]
+            'drivers_experience',
+            'rent_prices',
+            'availabilities',
+            'price_deposit',
+            'drivers_only_verified'
+        }
 
         should_reset_verified = False
 
+        prices_data = validated_data.pop('rent_prices', None)
+        availabilities_data = validated_data.pop('availabilities', None)
+        photos_data = validated_data.pop('photos', None)
+
         for field, new_value in validated_data.items():
-            if field in ['availabilities', 'rent_prices', 'photos']:
+            if field in safe_fields:
                 continue
+            old_value = getattr(instance, field, None)
+            if old_value != new_value:
+                should_reset_verified = True
+                break
 
-            if field not in safe_fields:
-                old_value = getattr(instance, field, None)
-                if old_value != new_value:
-                    should_reset_verified = True
-                    break
+        if prices_data:
+            if isinstance(prices_data, str):
+                try:
+                    prices_data = json.loads(prices_data)
+                except json.JSONDecodeError:
+                    prices_data = []
 
-        if not should_reset_verified:
-            availabilities_data = validated_data.get('availabilities', [])
-            if availabilities_data:
-                current_availabilities = list(instance.availabilities.values(
-                    'start_date', 'end_date', 'on_request'
-                ))
+            new_prices_set = {
+                (p.get('name'), Decimal(str(p.get('price'))), Decimal(str(p.get('discount', 0))))
+                for p in prices_data
+            }
+            current_prices_set = {
+                (p['name'], p['price'], p['discount'])
+                for p in instance.rent_prices.values('name', 'price', 'discount')
+            }
 
-                new_availabilities = []
-                for avail in availabilities_data:
-                    new_availabilities.append({
-                        'start_date': avail.get('start_date'),
-                        'end_date': avail.get('end_date'),
-                        'on_request': avail.get('on_request', False)
-                    })
-
-                if current_availabilities != new_availabilities:
-                    should_reset_verified = True
-
-            if not should_reset_verified:
-                prices_data = validated_data.get('rent_prices', [])
-                if prices_data:
-                    current_prices = list(instance.rent_prices.values('name', 'price', 'discount'))
-                    new_prices = []
-                    for price in prices_data:
-                        new_prices.append({
-                            'name': price.get('name'),
-                            'price': price.get('price'),
-                            'discount': price.get('discount', 0)
-                        })
-
-                    if current_prices != new_prices:
-                        should_reset_verified = True
+        if availabilities_data:
+            if isinstance(availabilities_data, str):
+                try:
+                    availabilities_data = json.loads(availabilities_data)
+                except json.JSONDecodeError:
+                    availabilities_data = []
 
         if should_reset_verified:
             instance.verified = False
-
-        availabilities_data = validated_data.pop('availabilities', [])
-        # documents_data = validated_data.pop('documents', [])
-        prices_data = validated_data.pop('rent_prices', [])
-        photos_data = validated_data.pop('photos', [])
+        else:
+            instance.verified = original_verified
 
         instance = super().update(instance, validated_data)
 
-        if availabilities_data:
+        if prices_data is not None:
+            instance.rent_prices.all().delete()
+            RentPrice.objects.bulk_create([
+                RentPrice(
+                    vehicle=instance,
+                    name=p['name'],
+                    price=Decimal(str(p['price'])),
+                    discount=Decimal(str(p.get('discount', 0)))
+                )
+                for p in prices_data
+            ])
+
+        if availabilities_data is not None:
             instance.availabilities.all().delete()
             Availability.objects.bulk_create([
                 Availability(vehicle=instance, **availability_data)
                 for availability_data in availabilities_data
             ])
 
-        # if documents_data:
-        #     VehicleDocument.objects.bulk_create([
-        #         VehicleDocument(vehicle=instance, **document_data)
-        #         for document_data in documents_data
-        #     ])
-
-        if prices_data:
-            instance.rent_prices.all().delete()
-            RentPrice.objects.bulk_create([
-                RentPrice(vehicle=instance, **price_data)
-                for price_data in prices_data
-            ])
-
-        if photos_data:
+        if photos_data is not None:
             existing_max_order = VehiclePhoto.objects.filter(vehicle=instance).aggregate(Max('order'))['order__max'] or 0
             new_photos = []
-
             for i, photo_data in enumerate(photos_data):
                 if 'order' not in photo_data or photo_data['order'] is None:
                     photo_data['order'] = existing_max_order + i + 1
-
                 new_photos.append(VehiclePhoto(vehicle=instance, **photo_data))
-
             VehiclePhoto.objects.bulk_create(new_photos)
 
         return instance

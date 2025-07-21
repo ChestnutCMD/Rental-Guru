@@ -23,6 +23,11 @@ class BaseType(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+@admin.register(VehicleCategory)
+class VehicleCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+
 @admin.register(AutoFeaturesFunctions)
 class AutoFeaturesFunctionsAdmin(BaseFeatures):
     pass
