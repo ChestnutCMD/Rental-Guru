@@ -16,7 +16,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 import json
 
 from RentalGuru.settings import HOST_URL
-from chat.models import MessageSupport, ChatSupport, Message, Chat
+from chat.models import MessageSupport, ChatSupport, Message, Chat, IssueSupport
 from manager.permissions import WebSocketPermissionChecker
 from notification.models import Notification
 from .tasks import translate_message
@@ -864,6 +864,43 @@ class ChatConsumer(BaseChatConsumer):
 
 class ChatSupportConsumer(BaseChatConsumer):
     """ Чат техподдержки """
+
+    async def connect(self):
+        # Вызываем родительский метод connect
+        await super().connect()
+
+        # Отправляем последнюю причину обращения после успешного подключения
+        await self.send_last_issue()
+
+    async def send_last_issue(self):
+        """Отправка последней причины обращения в чат"""
+        last_issue_data = await self.get_last_issue()
+        if last_issue_data:
+            await self.send(text_data=json.dumps({
+                'type': 'last_issue',
+                'last_issue': last_issue_data
+            }, ensure_ascii=False))
+
+    @database_sync_to_async
+    def get_last_issue(self):
+        """Получение последней причины обращения для текущего чата"""
+        try:
+            chat = self.get_chat_instance()
+            last_issue = IssueSupport.objects.filter(
+                chat=chat
+            ).select_related('topic').order_by('-created_at').first()
+
+            if last_issue:
+                return {
+                    "topic": last_issue.topic.name,
+                    "description": last_issue.description or "",
+                    "created_at": last_issue.created_at.isoformat()
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting last issue: {str(e)}")
+            return None
+
     def get_chat_instance(self):
         return self.get_chat_model().objects.select_related('creator').get(id=self.chat_id)
 
@@ -874,7 +911,8 @@ class ChatSupportConsumer(BaseChatConsumer):
         return MessageSupport
 
     def create_message_instance(self, chat, user, message_content, file, language):
-        return MessageSupport.objects.create(chat=chat, sender=user, content=message_content, file=file, language=language)
+        return MessageSupport.objects.create(chat=chat, sender=user, content=message_content, file=file,
+                                             language=language)
 
     def get_messages_queryset(self, chat):
         return chat.message_support.select_related('sender').order_by('timestamp')
