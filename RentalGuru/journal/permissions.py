@@ -8,13 +8,4 @@ class IsAdminManagerOrFranchiseOwner(permissions.BasePermission):
         if request.user.role in ['admin', 'manager']:
             return True
 
-        franchise_id = view.kwargs.get('franchise_id')
-        if not franchise_id:
-            return False
-
-        try:
-            franchise = Franchise.objects.get(id=franchise_id)
-        except Franchise.DoesNotExist:
-            return False
-
-        return request.user == franchise.director
+        return Franchise.objects.filter(director=request.user).exists()
