@@ -2,7 +2,7 @@ from datetime import date
 
 from rest_framework import permissions
 
-from manager.permissions import ManagerObjectPermission
+from manager.permissions import ManagerObjectPermission, ChatsAccess
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
 from .models import Trip, Chat, Message
 
@@ -26,11 +26,17 @@ class IsAdminOrOwner(ManagerObjectPermission):
         return False
 
 
-class IsParticipantOrAdmin(ManagerObjectPermission):
+class UpdateTripPermission(permissions.BasePermission):
+    """
+    Права доступа для обновления поездок: пользователи с истекшими поездками могут обновлять только поле 'review'.
+    """
+
     def has_object_permission(self, request, view, obj):
-        if super().has_object_permission(request, view, obj):
-            return True
-        return request.user in obj.participants.all()
+        today = date.today()
+        if obj.end_date < today and request.method in ['PUT', 'PATCH']:
+            allowed_fields = {'review'}
+            return allowed_fields.issuperset(set(request.data.keys()))
+        return True
 
 
 class IsChatCreatorOrAdmin(ManagerObjectPermission):
@@ -46,6 +52,18 @@ class IsChatCreatorOrAdmin(ManagerObjectPermission):
         if super().has_object_permission(request, view, obj):
             return True
         return obj.creator == request.user
+
+
+# Новые permissions для менеджеров с типами доступа
+class ChatsPermission(ChatsAccess):
+    """Permission для доступа к чатам"""
+    
+    def has_object_permission(self, request, view, obj):
+        # Сначала проверяем базовые права доступа
+        if not self.has_permission(request, view):
+            return False
+        # Если права есть, применяем стандартную логику
+        return ManagerObjectPermission().has_object_permission(request, view, obj)
 
 
 class IsOrganizerAndEndDateToday(permissions.BasePermission):

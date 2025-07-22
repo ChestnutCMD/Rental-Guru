@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from chat.models import Trip
 from franchise.models import Franchise
 from journal.filters import TripFilter
-from journal.permissions import IsAdminManagerOrFranchiseOwner
+from journal.permissions import IsAdminManagerOrFranchiseOwner, RentOrdersPermission, RentJournalPermission
 from journal.serializers import TripSerializer
 from vehicle.models import Vehicle
 
@@ -126,6 +126,7 @@ class BaseTripView(ListAPIView):
     ]
 )
 class TripByCityView(BaseTripView):
+    permission_classes = [RentJournalPermission, IsAdminManagerOrFranchiseOwner]
     statuses = ['finished', 'canceled']
 
 
@@ -141,4 +142,5 @@ class TripByCityView(BaseTripView):
     ]
 )
 class CurrentTripByCityView(BaseTripView):
+    permission_classes = [RentOrdersPermission, IsAdminManagerOrFranchiseOwner]
     statuses = ['current', 'started']

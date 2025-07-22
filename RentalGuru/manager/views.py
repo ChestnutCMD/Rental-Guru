@@ -6,63 +6,25 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from franchise.models import Franchise
-from manager.filters import ManagerPermissionFilter
-from manager.models import ManagerPermission, Manager
-from manager.permissions import IsAdminOrSelf, IsAdminOrDirector, IsAdmin
-from manager.serializers import ManagerPermissionSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
+from manager.models import AccessType, Manager
+from manager.permissions import IsAdminOrSelf, IsAdminOrDirector, IsAdmin, StaffAccess
+from manager.serializers import AccessTypeSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
     ManagerListSerializer, ManagerCreateSerializer
 
 
 @extend_schema(
-        summary="Управление доступами для менеджеров",
-        description="CRUD доступа для менеджеров"
+        summary="Типы доступов для менеджеров",
+        description="Получение списка доступных типов доступов"
     )
-class ManagerPermissionViewSet(ModelViewSet):
-    queryset = ManagerPermission.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminOrDirector]
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ManagerPermissionFilter
-    serializer_class = ManagerPermissionSerializer
-
-
-@extend_schema(
-        summary="Список моделей для настройки доступа",
-        description="Список моделей для настройки доступа"
-    )
-class AvailableModelsView(APIView):
-    """
-    Эндпоинт для получения списка доступных моделей.
-    """
+class AccessTypeViewSet(ReadOnlyModelViewSet):
+    """ViewSet для получения списка типов доступов"""
+    queryset = AccessType.objects.all()
     permission_classes = [IsAuthenticated]
+    serializer_class = AccessTypeSerializer
 
-    def get(self, request, *args, **kwargs):
-        predefined_ids = [15, 19, 20, 30, 35, 36, 37, 41, 43, 46, 47, 52, 67, 68, 70, 84]
-
-        is_director = Franchise.objects.filter(director=request.user).exists()
-
-        is_manager_with_franchise = (
-                hasattr(request.user, 'manager') and request.user.manager.franchise
-        )
-
-        if is_director or is_manager_with_franchise:
-            content_types = ContentType.objects.filter(id__in=predefined_ids)
-        elif request.user.role in ['admin', 'manager']:
-            content_types = ContentType.objects.all().order_by('id')[14:]
-        else:
-            content_types = ContentType.objects.none()
-        models = [
-            {
-                "id": content_type.id,
-                "app_label": content_type.app_label,
-                "model": content_type.model,
-                "name": content_type.name,
-            }
-            for content_type in content_types
-        ]
-        return Response(models)
 
 
 @extend_schema(
@@ -70,8 +32,8 @@ class AvailableModelsView(APIView):
         description="CRUD для менеджеров"
     )
 class ManagerViewSet(ModelViewSet):
-    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('permissions').all()
-    permission_classes = [IsAuthenticated, IsAdminOrSelf]
+    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types').all()
+    permission_classes = [StaffAccess, IsAdminOrSelf]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -88,7 +50,7 @@ class ManagerViewSet(ModelViewSet):
         return super().get_permissions()
 
     def destroy(self, request, *args, **kwargs):
-        """Удаление инфлюенсера и связанного пользователя."""
+        """Удаление менеджера и связанного пользователя."""
         instance = self.get_object()
 
         with transaction.atomic():

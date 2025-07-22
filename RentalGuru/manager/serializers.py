@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from app.models import User
 from franchise.models import Franchise
-from manager.models import ManagerPermission, Manager, ManagerDocuments
+from manager.models import AccessType, Manager, ManagerDocuments
 from manager.utils import generate_secure_password
 from notification.models import Notification
 
@@ -15,68 +15,16 @@ class ManagerDocumentSerializer(serializers.ModelSerializer):
         fields = ['number', 'photo']
 
 
-class ManagerPermissionSerializer(serializers.ModelSerializer):
-    """Сериализатор для работы с доступами"""
-    model_name = serializers.SerializerMethodField()
-    object_display = serializers.SerializerMethodField()
-    content_type = serializers.PrimaryKeyRelatedField(
-        queryset=ContentType.objects.all(),
-        required=False
-    )
-    object_id = serializers.IntegerField(required=False, allow_null=True)
-    is_global = serializers.BooleanField(default=False)
-    manager = serializers.PrimaryKeyRelatedField(
-        queryset=Manager.objects.all(),
-        required=False
-    )
-    permission_type = serializers.ChoiceField(
-        choices=[
-            ('read', 'Чтение'),
-            ('edit', 'Редактирование'),
-            ('delete', 'Удаление'),
-        ],
-        required=False
-    )
-
+class AccessTypeSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с типами доступа"""
+    display_name = serializers.SerializerMethodField()
+    
     class Meta:
-        model = ManagerPermission
-        fields = ['id', 'manager', 'content_type', 'object_id', 'model_name', 'object_display', 'permission_type', 'is_global']
-
-    def to_internal_value(self, data):
-        """Обработка данных перед валидацией"""
-        data = data.copy()
-        if data.get('is_global', False):
-            data['object_id'] = None
-        return super().to_internal_value(data)
-
-    def validate(self, attrs):
-        """Общая валидация для создания и обновления"""
-        instance = self.instance
-
-        is_global = attrs.get('is_global', instance.is_global if instance else False)
-        content_type = attrs.get('content_type', instance.content_type if instance else None)
-        object_id = attrs.get('object_id', instance.object_id if instance else None)
-
-        if not instance:
-            if not content_type:
-                raise serializers.ValidationError({"content_type": "content_type обязателен при создании."})
-            if not attrs.get('manager'):
-                raise serializers.ValidationError({"manager": "manager обязателен при создании."})
-            if 'permission_type' not in attrs:
-                raise serializers.ValidationError({"permission_type": "permission_type обязателен при создании."})
-
-        if is_global:
-            attrs['object_id'] = None
-        elif object_id is None:
-            raise serializers.ValidationError({"object_id": "object_id обязателен для локального доступа."})
-
-        return attrs
-
-    def get_model_name(self, obj):
-        return obj.content_type.model if obj.content_type else None
-
-    def get_object_display(self, obj):
-        return str(obj.content_object) if obj.content_object else None
+        model = AccessType
+        fields = ['id', 'name', 'display_name']
+        
+    def get_display_name(self, obj):
+        return str(obj)
 
 
 class ManagerListSerializer(serializers.ModelSerializer):
@@ -85,10 +33,11 @@ class ManagerListSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(source='user.avatar', read_only=True)
     telephone = serializers.CharField(source='user.telephone', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    access_types = AccessTypeSerializer(many=True, read_only=True)
 
     class Meta:
         model = Manager
-        fields = ['id', 'full_name', 'avatar', 'telephone', 'email', 'franchise']
+        fields = ['id', 'full_name', 'avatar', 'telephone', 'email', 'franchise', 'access_types']
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"
@@ -105,7 +54,7 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField(source='user.date_of_birth', read_only=True)
     document_photo = serializers.ImageField(source='manager_document.photo', read_only=True)
     document_number = serializers.CharField(source='manager_document.number', read_only=True)
-    permissions = ManagerPermissionSerializer(many=True, read_only=True)
+    access_types = AccessTypeSerializer(many=True, read_only=True)
 
     franchise_name = serializers.CharField(source='franchise.name', read_only=True)
     franchise_city = serializers.CharField(source='franchise.city.title', read_only=True)
@@ -125,7 +74,7 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
             'date_of_birth',
             'document_photo',
             'document_number',
-            'permissions',
+            'access_types',
             'franchise_name',
             'franchise_city',
             'franchise_director',
@@ -145,10 +94,16 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(write_only=True)
     telephone = serializers.CharField(write_only=True, required=False)
     franchise_id = serializers.IntegerField(write_only=True, required=False)
+    access_types = serializers.PrimaryKeyRelatedField(
+        queryset=AccessType.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Manager
-        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'franchise_id']
+        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'franchise_id', 'access_types']
 
     def create(self, validated_data):
         email = validated_data.pop('email')
@@ -156,6 +111,12 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         last_name = validated_data.pop('last_name')
         telephone = validated_data.pop('telephone', None)
         franchise_id = validated_data.get('franchise_id')
+        access_types = validated_data.pop('access_types', [])
+
+        # Проверка прав доступа - только админ может создавать менеджеров
+        request = self.context.get('request')
+        if not (request and request.user.role == 'admin'):
+            raise serializers.ValidationError("Только администраторы могут создавать менеджеров.")
 
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "Пользователь с таким email уже существует."})
@@ -179,6 +140,10 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         else:
             manager = Manager.objects.create(user=user)
 
+        # Добавляем типы доступа
+        if access_types:
+            manager.access_types.set(access_types)
+
         content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}"
         Notification.objects.create(user=user, content=content)
         return manager
@@ -200,7 +165,11 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField(source='user.date_of_birth', required=False)
     password = serializers.CharField(write_only=True, required=False)
     document = ManagerDocumentSerializer(source='manager_document', required=False)
-    permissions = ManagerPermissionSerializer(many=True, required=False)
+    access_types = serializers.PrimaryKeyRelatedField(
+        queryset=AccessType.objects.all(),
+        many=True,
+        required=False
+    )
     franchise_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
@@ -213,14 +182,14 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
             'date_of_birth',
             'password',
             'document',
-            'permissions',
+            'access_types',
             'franchise_id'
         ]
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         document_data = validated_data.pop('manager_document', None)
-        permissions_data = validated_data.pop('permissions', None)
+        access_types = validated_data.pop('access_types', None)
         franchise_id = validated_data.pop('franchise_id', None)
         user = instance.user
 
@@ -256,10 +225,9 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
                 defaults=defaults
             )
 
-        if permissions_data and self.context['request'].user.role == 'admin':
-            instance.permissions.all().delete()
-            for perm_data in permissions_data:
-                ManagerPermission.objects.create(manager=instance, **perm_data)
+        # Проверка прав на изменение доступов - только админ может изменять права
+        if access_types is not None and self.context['request'].user.role == 'admin':
+            instance.access_types.set(access_types)
 
         if franchise_id:
             try:

@@ -1,11 +1,13 @@
 from django.contrib import admin
-from .models import Manager, ManagerDocuments, ManagerPermission
+from .models import Manager, ManagerDocuments, AccessType
 
 
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
-    list_display = ['user']
-    search_fields = ['user__email']
+    list_display = ['user', 'franchise']
+    search_fields = ['user__email', 'user__first_name', 'user__last_name']
+    list_filter = ['franchise', 'access_types']
+    filter_horizontal = ['access_types']
 
 
 @admin.register(ManagerDocuments)
@@ -13,8 +15,11 @@ class ManagerDocumentsAdmin(admin.ModelAdmin):
     list_display = ['manager', 'number']
 
 
-@admin.register(ManagerPermission)
-class ManagerPermissionAdmin(admin.ModelAdmin):
-    list_display = ['manager', 'content_type', 'object_id', 'permission_type', 'is_global']
-    list_filter = ['content_type', 'permission_type', 'is_global']
-    search_fields = ['manager__user__email']
+@admin.register(AccessType)
+class AccessTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'get_display_name']
+    search_fields = ['name']
+    
+    def get_display_name(self, obj):
+        return str(obj)
+    get_display_name.short_description = 'Отображаемое имя'

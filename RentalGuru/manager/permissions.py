@@ -4,53 +4,73 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from franchise.models import Franchise
-from manager.models import ManagerPermission
-
-
-class CheckManagerPermission(BasePermission):
-    """
-    Проверяет права менеджера на доступ к объекту.
-    """
-    def get_permission_type(self, request):
-        """Определяет необходимый тип разрешения на основе метода запроса"""
-        if request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return 'read'
-        elif request.method in ['PUT', 'PATCH']:
-            return 'edit'
-        elif request.method == 'DELETE':
-            return 'delete'
-        elif request.method == 'POST':
-            return 'edit'
-        return 'read'
-
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_authenticated and request.user.role == 'admin':
-            return True
-
-        if not request.user.is_authenticated or not hasattr(request.user, 'manager'):
-            return False
-
-        manager = request.user.manager
-        content_type = ContentType.objects.get_for_model(obj)
-        permission_type = self.get_permission_type(request)
-
-        if ManagerPermission.objects.filter(
-            manager=manager,
-            content_type=content_type,
-            permission_type=permission_type,
-            is_global=True
-        ).exists():
-            return True
-
-        return ManagerPermission.objects.filter(
-            manager=manager,
-            content_type=content_type,
-            object_id=obj.id,
-            permission_type=permission_type
-        ).exists()
 
 
 logger = logging.getLogger('payment')
+
+
+class HasAccessType(BasePermission):
+    """
+    Проверяет, есть ли у менеджера доступ к определенному типу ресурсов.
+    Используется как базовый класс для других permissions.
+    """
+    access_type = None  # Должно быть переопределено в наследниках
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+            
+        if request.user.role == 'admin':
+            return True
+            
+        if not hasattr(request.user, 'manager') or not request.user.manager:
+            return False
+            
+        manager = request.user.manager
+        if not self.access_type:
+            return True  # Если access_type не указан, разрешаем доступ
+            
+        return manager.access_types.filter(name=self.access_type).exists()
+
+
+class LessorsAccess(HasAccessType):
+    """Доступ к арендодателям"""
+    access_type = 'lessors'
+
+
+class DepartmentsAccess(HasAccessType):
+    """Доступ к подразделениям"""
+    access_type = 'departments'
+
+
+class PartnershipAccess(HasAccessType):
+    """Доступ к партнерской программе"""
+    access_type = 'partnership'
+
+
+class StaffAccess(HasAccessType):
+    """Доступ к персоналу"""
+    access_type = 'staff'
+
+
+class RentOrdersAccess(HasAccessType):
+    """Доступ к аренде и заказам"""
+    access_type = 'rent_orders'
+
+
+class RentJournalAccess(HasAccessType):
+    """Доступ к журналу аренды"""
+    access_type = 'rent_journal'
+
+
+class ChatsAccess(HasAccessType):
+    """Доступ к чатам"""
+    access_type = 'chats'
+
+
+class ReportsAccess(HasAccessType):
+    """Доступ к отчетам"""
+    access_type = 'reports'
 
 
 class IsFranchiseDirector(BasePermission):
@@ -106,6 +126,9 @@ class UniversalPermission(BasePermission):
         if not request.user.is_authenticated:
             return False
 
+        if request.user.role == 'admin':
+            return True
+
         # Получаем франшизу пользователя, если он является директором
         franchise = Franchise.objects.filter(director=request.user).first()
 
@@ -125,26 +148,10 @@ class UniversalPermission(BasePermission):
         if not manager or not manager.franchise:
             return False
 
-        content_type = ContentType.objects.get_for_model(obj)
-
         logger.info(f"Checking permissions for manager {manager} on {obj}")
-
-        # Проверка, есть ли у менеджера разрешение на данный тип объекта
-        if not self._has_permission(manager, content_type):
-            logger.warning(f"Manager {manager} does not have permission for {content_type}")
-            return False
 
         # Проверка принадлежности объекта франшизе менеджера
         return self._is_object_in_franchise(manager.franchise, obj)
-
-    def _has_permission(self, manager, content_type):
-        """
-        Проверяет, есть ли у менеджера права на указанный content_type.
-        """
-        return ManagerPermission.objects.filter(
-            manager=manager,
-            content_type=content_type,
-        ).exists()
 
     def _is_object_in_franchise(self, franchise, obj):
         """
@@ -191,7 +198,7 @@ class UniversalPermission(BasePermission):
 class ManagerObjectPermission(BasePermission):
     """
     Комбинированный пермишн, использующий UniversalPermission при наличии франшизы
-    и ManagerObjectPermission при её отсутствии.
+    и базовую проверку при её отсутствии.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -199,7 +206,8 @@ class ManagerObjectPermission(BasePermission):
         if manager and manager.franchise:
             return UniversalPermission().has_object_permission(request, view, obj)
         else:
-            return CheckManagerPermission().has_object_permission(request, view, obj)
+            # Если у менеджера нет франшизы, предоставляем базовый доступ
+            return request.user.is_authenticated and request.user.role in ['admin', 'manager']
 
 
 class WebSocketPermissionChecker:
@@ -218,22 +226,15 @@ class WebSocketPermissionChecker:
         if not user.is_authenticated or not hasattr(user, 'manager'):
             return False
 
-        content_type = ContentType.objects.get_for_model(obj)
-
-        if ManagerPermission.objects.filter(
-            manager=user.manager,
-            content_type=content_type,
-            permission_type='read',
-            is_global=True
-        ).exists():
+        manager = user.manager
+        if not manager:
+            return False
+            
+        # Проверяем доступ к чатам
+        if manager.access_types.filter(name='chats').exists():
             return True
-
-        return ManagerPermission.objects.filter(
-            manager=user.manager,
-            content_type=content_type,
-            object_id=obj.id,
-            permission_type='read'
-        ).exists()
+            
+        return False
 
     @staticmethod
     def check_chat_permission(user, chat):
@@ -241,13 +242,6 @@ class WebSocketPermissionChecker:
         Проверка прав доступа пользователя к чату.
         """
         return WebSocketPermissionChecker.has_permission(user, chat)
-
-    """
-    def get_permissions(self):
-        if hasattr(self.request.user, 'manager') and self.request.user.manager:
-            return [ManagerObjectPermission()]
-        return super().get_permissions()
-    """
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -267,7 +261,8 @@ class IsAdminOrSelf(BasePermission):
         if hasattr(request.user, 'franchise') and request.user.franchise == obj.franchise:
             return True
         if request.user.role == 'manager' and obj.user == request.user:
-            if 'permissions' in request.data:
+            # Менеджер не может изменять свои права доступа
+            if 'access_types' in request.data:
                 return False
             return True
         return False

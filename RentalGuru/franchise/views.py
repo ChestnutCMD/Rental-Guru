@@ -23,7 +23,8 @@ from .add_lessor import RequestAddLessor
 from .filters import LessorStatisticsFilter
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, \
-    IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector, IsAdminManagerOrLessorOrFranchiseDirector
+    IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector, IsAdminManagerOrLessorOrFranchiseDirector, \
+    LessorsPermission, DepartmentsPermission
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
@@ -142,7 +143,7 @@ class ChatsByParkView(APIView):
 @extend_schema(summary="Франшиза CRUD", description="CRUD фарншизы")
 class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = Franchise.objects.all()
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [DepartmentsPermission, IsDirectorOrAdminForGet]
 
     def get_queryset(self):
         user = self.request.user
@@ -499,7 +500,7 @@ class RequestAddLessorViewSet(viewsets.ModelViewSet):
 
 @extend_schema(summary="Список арендодателей", description="Список арендодателей")
 class LessorListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [LessorsPermission]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, format=None):

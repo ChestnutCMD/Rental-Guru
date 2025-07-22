@@ -2,7 +2,7 @@ from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
 from influencer.models import Influencer
-from manager.permissions import ManagerObjectPermission
+from manager.permissions import ManagerObjectPermission, PartnershipAccess
 
 
 class IsAdminOrManager(permissions.BasePermission):
@@ -15,28 +15,44 @@ class IsAdminOrManager(permissions.BasePermission):
         return self.has_permission(request, view)
 
 
-class IsAdminOrInfluencer(ManagerObjectPermission):
+class IsAdminOrInfluencer(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (request.user.role == 'admin' or hasattr(request.user, 'influencer'))
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.role == 'admin':
+            return True
+        if hasattr(request.user, 'influencer'):
+            return obj == request.user.influencer
+        return False
+
+
+class IsAdminOrManagerForRequest(ManagerObjectPermission):
+    def has_permission(self, request, view):
+        if super().has_permission(request, view):
+            return True
+        return request.user.is_authenticated and request.user.role in ['admin', 'manager']
+
+
+class IsAdminOrOwner(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        if super().has_object_permission(request, view, obj):
+        if request.user.role == 'admin':
             return True
-        return obj.user == request.user
+        if hasattr(obj, 'influencer'):
+            return obj.influencer.user == request.user
+        return False
 
 
-class IsAdminOrOwner(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.role in ['admin', 'manager']:
-            return True
-        influencer_id = view.kwargs.get('influencer_id')
-        influencer = Influencer.objects.filter(id=influencer_id).first()
-        return influencer and influencer.user == request.user
-
+# Новые permissions для менеджеров с типами доступа
+class PartnershipPermission(PartnershipAccess):
+    """Permission для доступа к партнерской программе"""
+    
     def has_object_permission(self, request, view, obj):
-        return obj.influencer.user == request.user
-
-
-class IsAdminOrManagerForRequest(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ['admin', 'manager']
+        # Сначала проверяем базовые права доступа
+        if not self.has_permission(request, view):
+            return False
+        # Если права есть, применяем стандартную логику
+        return ManagerObjectPermission().has_object_permission(request, view, obj)

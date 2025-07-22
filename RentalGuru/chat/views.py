@@ -19,7 +19,7 @@ from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
 from .filters import MessageFilter, TripFilter, TripFilterBackend, RequestRentFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
-from .permissions import IsAdminOrOwner
+from .permissions import IsAdminOrOwner, ChatsPermission
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, IssueSupportSerializer, \
     ChatSupportRetrieveSerializer
@@ -539,7 +539,7 @@ class ChatSupportPagination(LimitOffsetPagination):
                                                   }  
                     """)
 class ChatSupportListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ChatsPermission]
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -584,7 +584,7 @@ class ChatSupportListView(APIView):
                                                   }
                     """)
 class ChatSupportRetrieveView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ChatsPermission]
 
     def get(self, request, pk, *args, **kwargs):
         try:
@@ -615,7 +615,7 @@ class ChatSupportRetrieveView(APIView):
 class IssueSupportViewSet(viewsets.ModelViewSet):
     queryset = IssueSupport.objects.all()
     serializer_class = IssueSupportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ChatsPermission]
 
     def get_queryset(self):
         user = self.request.user
@@ -628,7 +628,7 @@ class IssueSupportViewSet(viewsets.ModelViewSet):
 class MessageSupportViewSet(viewsets.ModelViewSet):
     queryset = MessageSupport.objects.all()
     serializer_class = MessageSupportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ChatsPermission]
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)

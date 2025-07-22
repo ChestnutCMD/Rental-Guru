@@ -16,7 +16,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from influencer.models import Influencer, ReferralLink, InfluencerRequest, QRCode, PromoCode, UsedPromoCode, \
     RequestWithdraw, RegistrationSource
-from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest, IsAdminOrOwner
+from influencer.permissions import IsAdminOrManager, IsAdminOrInfluencer, IsAdminOrManagerForRequest, IsAdminOrOwner, PartnershipPermission
 from influencer.serializers import InfluencerSerializer, ReferralLinkSerializer, InfluencerDetailSerializer, \
     InfluencerRequestCreateSerializer, InfluencerRequestListSerializer, QRCodeSerializer, PromoCodeSerializer, \
     InfluencerListSerializer, RequestWithdrawSerializer, PaymentSerializer, RequestWithdrawListSerializer, \
@@ -42,7 +42,7 @@ class InfluencerViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'create']:
-            return [permission() for permission in [IsAdminOrManager]]
+            return [permission() for permission in [PartnershipPermission]]
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             return [permission() for permission in [IsAdminOrInfluencer]]
         return super().get_permissions()
@@ -125,21 +125,21 @@ class InfluencerRequestCreateView(CreateAPIView):
 class InfluencerRequestListView(ListAPIView):
     queryset = InfluencerRequest.objects.all()
     serializer_class = InfluencerRequestListSerializer
-    permission_classes = [IsAdminOrManagerForRequest]
+    permission_classes = [PartnershipPermission]
 
 
 @extend_schema(summary="Удаление заявки", description="Удаление заявки")
 class InfluencerRequestDeleteView(DestroyAPIView):
     queryset = InfluencerRequest.objects.all()
     serializer_class = InfluencerRequestListSerializer
-    permission_classes = [IsAdminOrManagerForRequest]
+    permission_classes = [PartnershipPermission]
 
 
 @extend_schema(summary="Реферальные ссылки", description="Реферальные ссылки")
 class ReferralLinkViewSet(viewsets.ModelViewSet):
     queryset = ReferralLink.objects.all()
     serializer_class = ReferralLinkSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PartnershipPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['influencer__id']
 
@@ -202,7 +202,7 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 class PromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer
-    permission_classes = [IsAdminOrManagerForRequest]
+    permission_classes = [PartnershipPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['influencer__id']
 
@@ -319,7 +319,7 @@ class PromoCodeByTitleAPIView(APIView):
 @extend_schema(summary='Заявки на вывод стредств', description='Вывод средств')
 class RequestWithdrawViewSet(viewsets.ModelViewSet):
     serializer_class = RequestWithdrawSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PartnershipPermission]
 
     def get_serializer_class(self):
         if self.action == 'list':

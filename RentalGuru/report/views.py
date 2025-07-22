@@ -12,7 +12,7 @@ from app.models import Lessor, User
 from franchise.models import Franchise
 from influencer.models import Influencer
 from report.filters import LessorReportFilter, InfluencerReportFilter, FranchiseReportFilter, UserRegistrationReportFilter
-from report.permissions import IsAdminRole
+from report.permissions import IsAdminRole, ReportsPermission
 from report.serializers import LessorReportSerializer, InfluencerReportSerializer, FranchiseReportSerializer, \
     UserReportSerializer, FranchiseReportSerializerV2
 
@@ -22,7 +22,7 @@ class LessorReportView(ListAPIView):
     serializer_class = LessorReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = LessorReportFilter
-    permission_classes = [IsAdminRole]
+    permission_classes = [ReportsPermission]
 
     def get_queryset(self):
         queryset = Lessor.objects.select_related('user').distinct()
@@ -84,7 +84,7 @@ class InfluencerReportView(ListAPIView):
     serializer_class = InfluencerReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = InfluencerReportFilter
-    permission_classes = [IsAdminRole]
+    permission_classes = [ReportsPermission]
 
     def get_queryset(self):
         return Influencer.objects.select_related('user').all()
@@ -146,7 +146,7 @@ class FranchiseReportView(ListAPIView):
     serializer_class = FranchiseReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = FranchiseReportFilter
-    permission_classes = [IsAdminRole]
+    permission_classes = [ReportsPermission]
 
     def get_queryset(self):
         return Franchise.objects.all()
@@ -198,7 +198,7 @@ class FranchiseReportViewV2(ListAPIView):
     serializer_class = FranchiseReportSerializerV2
     filter_backends = [DjangoFilterBackend]
     filterset_class = FranchiseReportFilter
-    permission_classes = [IsAdminRole]
+    permission_classes = [ReportsPermission]
 
     def get_queryset(self):
         return Franchise.objects.all()
@@ -262,6 +262,7 @@ class UserRegistrationReportView(ListAPIView):
     serializer_class = UserReportSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserRegistrationReportFilter
+    permission_classes = [ReportsPermission]
 
     def get_queryset(self):
         queryset = User.objects.all()

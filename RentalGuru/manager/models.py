@@ -11,10 +11,56 @@ from RentalGuru import settings
 from franchise.models import Franchise
 
 
+"""
+Нужно переписать сериализаторы и вью в соответствии с новой моделью доступов AccessType (старая модель доступов закоментированна).
+Создавать и изменять права менеджеров может только пользователь user.role=='admin'
+Нужно удалить старые пермишены для менеджеров, основанные на старой модели доступа, в файле permissions.py
+Нужно перепроверить и исправить пермишены по всему проекту, в том числе и в вебсокетах в файле /chat/consumers.py
+Нужно сделать новые пермишены для менеджеров в следующих вьюсетах и вью:
+Арендодатели		https://rentalguru.ru/franchise/lessors
+Подразделения		https://rentalguru.ru/franchise/franchise/
+Партнерская программа	https://rentalguru.ru/influencer/influencers/, https://rentalguru.ru/influencer/influencer_requests/, https://rentalguru.ru/influencer/referral-links/, https://rentalguru.ru/influencer/request_withdraw/
+Персонал		https://rentalguru.ru/manager/managers/
+Аренда и заказы 	https://rentalguru.ru/journal/current/
+Аренда журнал 		https://rentalguru.ru/journal/
+Чаты			https://rentalguru.ru/chat/support_chats/
+Отчеты			https://rentalguru.ru/report/franchise_report_v2/, https://rentalguru.ru/report/influencer_report/, https://rentalguru.ru/report/user-registration-report/
+Если у менеджера в доступах указан соответствующий раздел, то разрешать доступ
+Если для каких то вью нет инструкций по доступам для менеджеров, то предоставить доступ 
+"""
+
+class AccessType(models.Model):
+    TYPE_CHOICES = (
+        ('lessors', 'Арендодатели'),
+        ('departments', 'Подразделения'),
+        ('partnership', 'Партнерская программа'),
+        ('staff', 'Персонал'),
+        ('rent_orders', 'Аренда и заказы'),
+        ('rent_journal', 'Аренда журнал'),
+        ('chats', 'Чаты'),
+        ('reports', 'Отчеты')
+    )
+
+    name = models.CharField(
+        max_length=50,
+        choices=TYPE_CHOICES,
+        unique=True,
+        verbose_name="Тип доступа"
+    )
+
+    def __str__(self):
+        return dict(self.TYPE_CHOICES).get(self.name, self.name)
+
+    class Meta:
+        verbose_name = "Тип доступа"
+        verbose_name_plural = "Типы доступов"
+
+
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
     password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
     franchise = models.ForeignKey(Franchise, null=True, blank=True, default=None, on_delete=models.SET_NULL, verbose_name='Франшиза', related_name='managers')
+    access_types = models.ManyToManyField(AccessType, blank=True, verbose_name='Типы доступа', related_name='managers')
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
@@ -48,59 +94,59 @@ class ManagerDocuments(models.Model):
         verbose_name_plural = 'Паспортные данные'
 
 
-class ManagerPermission(models.Model):
-    """
-    Модель для управления доступами менеджеров к объектам.
-    """
-    manager = models.ForeignKey("Manager", on_delete=models.CASCADE, related_name="permissions")
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Тип модели")
-    object_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="ID объекта")
-    content_object = GenericForeignKey("content_type", "object_id")
-    permission_type = models.CharField(
-        max_length=50,
-        choices=[
-            ('read', 'Чтение'),
-            ('edit', 'Редактирование'),
-            ('delete', 'Удаление'),
-        ],
-        verbose_name="Тип доступа",
-    )
-    is_global = models.BooleanField(default=False, verbose_name="Глобальный доступ")
-
-    class Meta:
-        unique_together = ('manager', 'content_type', 'object_id', 'permission_type', 'is_global')
-        verbose_name = "Права менеджера"
-        verbose_name_plural = "Права менеджеров"
-
-    def __str__(self):
-        if self.is_global:
-            return f"{self.manager.user} — {self.permission_type} на все объекты {self.content_type.model}"
-        return f"{self.manager.user} — {self.permission_type} на объект {self.content_type.model} ID {self.object_id}"
-
-    def clean(self):
-        """
-        Валидация модели перед сохранением.
-        """
-        if not self.content_type:
-            raise ValidationError({
-                'content_type': "content_type обязателен для указания модели."
-            })
-
-        if self.is_global:
-            if self.object_id is not None:
-                raise ValidationError({
-                    'object_id': "object_id должно быть пустым для глобального доступа."
-                })
-        else:
-            if self.object_id is None:
-                raise ValidationError({
-                    'object_id': "object_id обязателен для локального доступа."
-                })
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        """
-        Вызываем clean перед сохранением.
-        """
-        self.clean()
-        super().save(*args, **kwargs)
+# class ManagerPermission(models.Model):
+#     """
+#     Модель для управления доступами менеджеров к объектам.
+#     """
+#     manager = models.ForeignKey("Manager", on_delete=models.CASCADE, related_name="permissions")
+#     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Тип модели")
+#     object_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="ID объекта")
+#     content_object = GenericForeignKey("content_type", "object_id")
+#     permission_type = models.CharField(
+#         max_length=50,
+#         choices=[
+#             ('read', 'Чтение'),
+#             ('edit', 'Редактирование'),
+#             ('delete', 'Удаление'),
+#         ],
+#         verbose_name="Тип доступа",
+#     )
+#     is_global = models.BooleanField(default=False, verbose_name="Глобальный доступ")
+#
+#     class Meta:
+#         unique_together = ('manager', 'content_type', 'object_id', 'permission_type', 'is_global')
+#         verbose_name = "Права менеджера"
+#         verbose_name_plural = "Права менеджеров"
+#
+#     def __str__(self):
+#         if self.is_global:
+#             return f"{self.manager.user} — {self.permission_type} на все объекты {self.content_type.model}"
+#         return f"{self.manager.user} — {self.permission_type} на объект {self.content_type.model} ID {self.object_id}"
+#
+#     def clean(self):
+#         """
+#         Валидация модели перед сохранением.
+#         """
+#         if not self.content_type:
+#             raise ValidationError({
+#                 'content_type': "content_type обязателен для указания модели."
+#             })
+#
+#         if self.is_global:
+#             if self.object_id is not None:
+#                 raise ValidationError({
+#                     'object_id': "object_id должно быть пустым для глобального доступа."
+#                 })
+#         else:
+#             if self.object_id is None:
+#                 raise ValidationError({
+#                     'object_id': "object_id обязателен для локального доступа."
+#                 })
+#         super().clean()
+#
+#     def save(self, *args, **kwargs):
+#         """
+#         Вызываем clean перед сохранением.
+#         """
+#         self.clean()
+#         super().save(*args, **kwargs)
