@@ -218,6 +218,12 @@ class RequestRent(models.Model):
 
     def calculate_amount(self):
         """ Расчет стоимости суммы к оплате """
+        if not hasattr(self.vehicle, 'owner') or not hasattr(self.vehicle.owner, 'lessor'):
+            self.vehicle = (
+                self.vehicle.__class__.objects
+                .select_related('owner', 'owner__lessor')
+                .get(pk=self.vehicle.pk)
+            )
         commission = self.vehicle.owner.lessor.commission
         return Decimal(self.total_cost) / Decimal(100) * commission
 
