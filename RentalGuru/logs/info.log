@@ -128,3 +128,7 @@ INFO 2025-07-23 13:25:26,733 django.utils.autoreload D:\Backend\projects\Rental-
 INFO 2025-07-23 13:25:26,733 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
 INFO 2025-07-23 13:25:27,954 django.utils.autoreload Watching for file changes with StatReloader
 INFO 2025-07-23 13:25:27,954 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:31:18,228 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
+INFO 2025-07-23 13:31:18,228 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
+INFO 2025-07-23 13:31:19,532 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:31:19,532 django.utils.autoreload Watching for file changes with StatReloader
