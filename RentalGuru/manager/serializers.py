@@ -84,8 +84,11 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(write_only=True)
     telephone = serializers.CharField(write_only=True, required=False)
     city_id = serializers.IntegerField(write_only=True, required=False)
-    access_types = serializers.ListField(
-        child=serializers.DictField(), write_only=True, required=False
+    access_types = serializers.PrimaryKeyRelatedField(
+        queryset=AccessType.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
     )
 
     class Meta:
@@ -97,8 +100,8 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
         telephone = validated_data.pop('telephone', None)
-        city_id = validated_data.get('city_id')
-        access_types_data = validated_data.pop('access_types', [])
+        city_id = validated_data.pop('city_id', None)
+        access_types = validated_data.pop('access_types', [])
 
         request = self.context.get('request')
         if not (request and request.user.role == 'admin'):
@@ -127,29 +130,17 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         else:
             manager = Manager.objects.create(user=user)
 
-        # Добавляем типы доступа
-        access_types = []
-        for at in access_types_data:
-            name = at.get('name')
-            permission = at.get('permission')
-            if not name or not permission:
-                raise serializers.ValidationError(
-                    {"access_types": "Каждый элемент должен содержать 'name' и 'permission'."}
-                )
-            try:
-                at_instance = AccessType.objects.get(name=name, permission=permission)
-                access_types.append(at_instance)
-            except AccessType.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"access_types": f"Доступ с name={name} и permission={permission} не найден."}
-                )
-
+        # Устанавливаем access_types
         if access_types:
             manager.access_types.set(access_types)
 
-        content = f"Здравствуйте, {first_name}!\n\nВы были зарегистрированы как менеджер. Ваш пароль для входа: {password}"
+        content = (
+            f"Здравствуйте, {first_name}!\n\n"
+            f"Вы были зарегистрированы как менеджер. Ваш пароль для входа: {password}"
+        )
         Notification.objects.create(user=user, content=content)
         return manager
+
 
 class CustomAvatarField(serializers.ImageField):
     def to_internal_value(self, data):
