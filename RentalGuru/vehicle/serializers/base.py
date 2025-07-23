@@ -154,6 +154,7 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
         return internal_value
 
     def update(self, instance, validated_data):
+        request = self.context.get('request')
         original_verified = instance.verified
 
         safe_fields = {
@@ -193,15 +194,6 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
                 except json.JSONDecodeError:
                     prices_data = []
 
-            new_prices_set = {
-                (p.get('name'), Decimal(str(p.get('price'))), Decimal(str(p.get('discount', 0))))
-                for p in prices_data
-            }
-            current_prices_set = {
-                (p['name'], p['price'], p['discount'])
-                for p in instance.rent_prices.values('name', 'price', 'discount')
-            }
-
         if availabilities_data:
             if isinstance(availabilities_data, str):
                 try:
@@ -209,7 +201,9 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
                 except json.JSONDecodeError:
                     availabilities_data = []
 
-        if should_reset_verified:
+        if request and request.user.role == 'admin':
+            instance.verified = True
+        elif should_reset_verified:
             instance.verified = False
         else:
             instance.verified = original_verified
