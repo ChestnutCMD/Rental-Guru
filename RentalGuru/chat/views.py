@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from RentalGuru import settings
 from app.models import Lessor, Renter
-from manager.permissions import ManagerObjectPermission
+from manager.permissions import ManagerObjectPermission, ChatsAccess
 from notification.models import Notification
 from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
@@ -541,7 +541,7 @@ class ChatSupportPagination(LimitOffsetPagination):
                                                   }  
                     """)
 class ChatSupportListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ChatsAccess]
 
     def get(self, request, *args, **kwargs):
         user = request.user
