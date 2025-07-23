@@ -88,17 +88,36 @@ class BaseViewSet(viewsets.ModelViewSet):
             instance.save()
 
 
-@extend_schema(summary="Автомобиль CRUD", description="""Сортировка по цене от меньшего к большему:\n
-                                                  URL: ?ordering=price
-                                                  \nСортировка по цене от большего к меньшему:\n
-                                                  URL: ?ordering=-price
-                                                  \nСортировка по популярности:\n
-                                                  URL: ?ordering=count_trip""")
+@extend_schema(summary="Автомобиль CRUD",
+               description="Автомобили CRUD",
+               parameters=[
+                   OpenApiParameter(
+                       name="ordering",
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       description=(
+                               "Поле для сортировки. "
+                               "Доступные значения: "
+                               "`price`, `-price`, "
+                               "`count_trip`, `-count_trip`, "
+                               "`average_rating`, `-average_rating`, "
+                               "`last_update`, `-last_update`."
+                       ),
+                       enum=[
+                           "price", "-price",
+                           "count_trip", "-count_trip",
+                           "average_rating", "-average_rating",
+                           "last_update", "-last_update"
+                       ],
+                   )
+               ],
+               )
 class AutoViewSet(BaseViewSet):
     queryset = Auto.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = AutoFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         user = self.request.user
@@ -119,6 +138,7 @@ class AutoViewSet(BaseViewSet):
                     queryset = queryset.filter(verified=True)
         else:
             queryset = queryset.filter(verified=True)
+
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -131,12 +151,36 @@ class AutoViewSet(BaseViewSet):
         return AutoUpdateSerializer
 
 
-@extend_schema(summary="Мотоцикл", description="Мотоцикл")
+@extend_schema(summary="Мотоцикл",
+               description="Мотоцикл",
+               parameters=[
+                   OpenApiParameter(
+                       name="ordering",
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       description=(
+                               "Поле для сортировки. "
+                               "Доступные значения: "
+                               "`price`, `-price`, "
+                               "`count_trip`, `-count_trip`, "
+                               "`average_rating`, `-average_rating`, "
+                               "`last_update`, `-last_update`."
+                       ),
+                       enum=[
+                           "price", "-price",
+                           "count_trip", "-count_trip",
+                           "average_rating", "-average_rating",
+                           "last_update", "-last_update"
+                       ],
+                   )
+               ],
+               )
 class BikeViewSet(BaseViewSet):
     queryset = Bike.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BikeFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         user = self.request.user
@@ -169,12 +213,36 @@ class BikeViewSet(BaseViewSet):
         return BikeUpdateSerializer
 
 
-@extend_schema(summary="Судно", description="Судно")
+@extend_schema(summary="Судно",
+               description="Судно",
+               parameters=[
+                   OpenApiParameter(
+                       name="ordering",
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       description=(
+                               "Поле для сортировки. "
+                               "Доступные значения: "
+                               "`price`, `-price`, "
+                               "`count_trip`, `-count_trip`, "
+                               "`average_rating`, `-average_rating`, "
+                               "`last_update`, `-last_update`."
+                       ),
+                       enum=[
+                           "price", "-price",
+                           "count_trip", "-count_trip",
+                           "average_rating", "-average_rating",
+                           "last_update", "-last_update"
+                       ],
+                   )
+               ],
+               )
 class ShipViewSet(BaseViewSet):
     queryset = Ship.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = ShipFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         user = self.request.user
@@ -207,12 +275,36 @@ class ShipViewSet(BaseViewSet):
         return ShipUpdateSerializer
 
 
-@extend_schema(summary="Вертолет", description="Вертолет")
+@extend_schema(summary="Вертолет",
+               description="Вертолет",
+               parameters=[
+                   OpenApiParameter(
+                       name="ordering",
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       description=(
+                               "Поле для сортировки. "
+                               "Доступные значения: "
+                               "`price`, `-price`, "
+                               "`count_trip`, `-count_trip`, "
+                               "`average_rating`, `-average_rating`, "
+                               "`last_update`, `-last_update`."
+                       ),
+                       enum=[
+                           "price", "-price",
+                           "count_trip", "-count_trip",
+                           "average_rating", "-average_rating",
+                           "last_update", "-last_update"
+                       ],
+                   )
+               ],
+               )
 class HelicopterViewSet(BaseViewSet):
     queryset = Helicopter.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = HelicopterFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         user = self.request.user
@@ -245,12 +337,36 @@ class HelicopterViewSet(BaseViewSet):
         return HelicopterUpdateSerializer
 
 
-@extend_schema(summary="Спецтехника", description="Спецтехника")
+@extend_schema(summary="Спецтехника",
+               description="Спецтехника",
+               parameters=[
+                   OpenApiParameter(
+                       name="ordering",
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       description=(
+                               "Поле для сортировки. "
+                               "Доступные значения: "
+                               "`price`, `-price`, "
+                               "`count_trip`, `-count_trip`, "
+                               "`average_rating`, `-average_rating`, "
+                               "`last_update`, `-last_update`."
+                       ),
+                       enum=[
+                           "price", "-price",
+                           "count_trip", "-count_trip",
+                           "average_rating", "-average_rating",
+                           "last_update", "-last_update"
+                       ],
+                   )
+               ],
+               )
 class SpecialTechnicViewSet(BaseViewSet):
     queryset = SpecialTechnic.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = SpecialTechnicFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         user = self.request.user
@@ -571,7 +687,8 @@ class AllVehiclesListView(ListAPIView):
     pagination_class = AllVehiclesPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = BaseFilter
-    ordering_fields = ['price', 'count_trip']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
+    ordering = ['-last_update']
 
     def get_queryset(self):
         request = self.request

@@ -13,3 +13,118 @@ INFO 2025-05-08 14:11:39,919 daphne.cli Starting server at tcp:port=8000:interfa
 INFO 2025-05-08 14:11:39,920 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
 INFO 2025-05-08 14:11:39,920 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
 INFO 2025-05-08 14:11:39,921 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-23 12:01:16,258 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:01:16,258 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:01:24,108 django.server "GET / HTTP/1.1" 200 4644
+ERROR 2025-07-23 12:01:24,540 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+ERROR 2025-07-23 12:01:24,729 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+INFO 2025-07-23 12:01:27,006 django.server "GET / HTTP/1.1" 200 4644
+ERROR 2025-07-23 12:01:27,189 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+ERROR 2025-07-23 12:01:27,346 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+INFO 2025-07-23 12:01:28,045 django.server "GET / HTTP/1.1" 200 4644
+ERROR 2025-07-23 12:01:28,272 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+ERROR 2025-07-23 12:01:28,452 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+INFO 2025-07-23 12:01:29,084 django.server "GET / HTTP/1.1" 200 4644
+ERROR 2025-07-23 12:01:29,288 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+ERROR 2025-07-23 12:01:29,446 django.server "GET /api/schema/ HTTP/1.1" 500 235724
+INFO 2025-07-23 12:02:17,834 django.server "GET / HTTP/1.1" 200 4644
+INFO 2025-07-23 12:02:23,933 django.server "GET /api/schema/ HTTP/1.1" 200 1055401
+INFO 2025-07-23 12:04:15,184 django.server "GET /franchise/city/ HTTP/1.1" 200 52
+INFO 2025-07-23 12:10:19,090 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:10:19,090 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:10:20,296 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:10:20,296 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:11:22,011 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:11:22,011 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:11:23,170 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:11:23,170 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:12:10,001 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:12:10,001 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:12:11,105 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:12:11,105 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:12:31,097 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:12:31,097 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:12:35,149 django.server "GET /franchise/city/ HTTP/1.1" 200 52
+INFO 2025-07-23 12:12:38,744 django.server "GET / HTTP/1.1" 200 4644
+INFO 2025-07-23 12:12:44,771 django.server "GET /api/schema/ HTTP/1.1" 200 1055767
+INFO 2025-07-23 12:12:50,730 django.server "GET /franchise/city/ HTTP/1.1" 200 52
+INFO 2025-07-23 12:14:56,586 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:14:56,586 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:14:57,835 django.server "GET / HTTP/1.1" 200 4644
+INFO 2025-07-23 12:15:03,791 django.server "GET /api/schema/ HTTP/1.1" 200 1055978
+INFO 2025-07-23 12:16:04,082 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:16:04,082 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:16:05,225 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:16:05,225 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:16:44,817 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:16:44,817 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\franchise\views.py changed, reloading.
+INFO 2025-07-23 12:16:46,004 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:16:46,004 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:17:03,291 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:17:03,291 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:17:05,158 django.server "GET / HTTP/1.1" 200 4644
+INFO 2025-07-23 12:17:11,144 django.server "GET /api/schema/ HTTP/1.1" 200 1056031
+INFO 2025-07-23 12:17:24,521 django.server "GET /franchise/city/?ordering=finished_trips_count HTTP/1.1" 200 52
+INFO 2025-07-23 12:17:29,141 django.server "GET /franchise/city/?ordering=title HTTP/1.1" 200 52
+INFO 2025-07-23 12:17:34,752 django.server "GET /franchise/city/?ordering=-title HTTP/1.1" 200 52
+INFO 2025-07-23 12:17:41,351 django.server "GET /franchise/city/ HTTP/1.1" 200 52
+INFO 2025-07-23 12:35:18,030 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 12:35:18,030 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 12:35:19,172 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:35:19,172 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:36:05,646 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 12:36:05,646 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 12:36:06,750 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:36:06,750 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:38:29,872 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:38:29,872 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:38:30,958 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:38:30,958 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:38:55,082 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:38:55,082 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:38:56,245 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:38:56,245 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:42:23,534 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:42:23,534 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:42:24,604 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:42:24,604 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:42:47,461 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:42:47,461 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:42:48,532 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:42:48,532 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:44:44,920 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:44:44,920 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:45:58,281 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:45:58,281 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:46:02,484 django.server "GET / HTTP/1.1" 200 4644
+INFO 2025-07-23 12:46:03,172 django.server "GET /api/schema/ HTTP/1.1" 200 1062347
+ERROR 2025-07-23 12:46:39,279 django.server "GET /vehicle/autos/?ordering=-average_rating HTTP/1.1" 500 26430
+INFO 2025-07-23 12:47:18,390 django.server "GET /vehicle/autos/?ordering=-average_rating HTTP/1.1" 200 703
+INFO 2025-07-23 12:51:19,583 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:51:19,583 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:51:21,054 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:51:21,054 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:54:58,430 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:54:58,430 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:54:59,536 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:54:59,536 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:58:00,198 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:58:00,198 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\views.py changed, reloading.
+INFO 2025-07-23 12:58:01,352 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 12:58:01,352 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:03:18,623 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:03:18,623 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:03:19,683 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:03:19,683 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:04:02,675 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:04:02,675 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:04:03,710 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:04:03,710 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:04:32,485 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:04:32,485 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\vehicle\models.py changed, reloading.
+INFO 2025-07-23 13:04:33,587 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:04:33,587 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:25:26,733 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
+INFO 2025-07-23 13:25:26,733 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
+INFO 2025-07-23 13:25:27,954 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-23 13:25:27,954 django.utils.autoreload Watching for file changes with StatReloader

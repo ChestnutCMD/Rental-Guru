@@ -237,6 +237,7 @@ class Vehicle(PolymorphicModel):
     latitude = models.FloatField(null=True, blank=True, verbose_name='Широта')
     longitude = models.FloatField(null=True, blank=True, verbose_name='Долгота')
     ratings = models.JSONField(default=default_rating, verbose_name='Рейтинг транспорта')
+    average_rating = models.FloatField(default=0, verbose_name='Средний рейтинг')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
     last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
 
@@ -263,6 +264,10 @@ class Vehicle(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         previous_instance = Vehicle.objects.filter(pk=self.pk).first()
+        # Обновление рейтинга
+        avg = self.get_average_rating().get('rating', 0) or 0
+        self.average_rating = avg
+        super().save(*args, **kwargs)
         # Комиссия на доставку
         if self.price_delivery > 0:
             if previous_instance:
@@ -311,6 +316,7 @@ class Vehicle(PolymorphicModel):
 
 class RentPrice(models.Model):
     RENT_PERIOD = (
+        ('hour', 'Час'),
         ('day', 'День'),
         ('week', 'Неделя'),
         ('month', 'Месяц'),

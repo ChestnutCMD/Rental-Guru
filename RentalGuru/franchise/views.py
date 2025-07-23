@@ -1,11 +1,13 @@
 from datetime import timedelta
+from enum import Enum
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, status, generics
+from rest_framework import viewsets, status, generics, filters
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
@@ -431,7 +433,25 @@ class RequestFranchiseDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdminOrManager]
 
 
-@extend_schema(summary="Список городов", description="Список городов")
+class CityOrderingEnum(str, Enum):
+    TITLE_ASC = "title"
+    TITLE_DESC = "-title"
+    FINISHED_COUNT_ASC = "finished_trips_count"
+    FINISHED_COUNT_DESC = "-finished_trips_count"
+
+
+@extend_schema(summary="Список городов",
+               description="Список городов",
+               parameters=[
+                   OpenApiParameter(
+                       name='ordering',
+                       type=OpenApiTypes.STR,
+                       location=OpenApiParameter.QUERY,
+                       enum=[e.value for e in CityOrderingEnum],
+                       description="Сортировка: `title`, `-title`, `finished_trips_count`, `-finished_trips_count`"
+                   )
+                ]
+            )
 class CityView(generics.ListAPIView):
     serializer_class = CitySerializer
     queryset = City.objects.annotate(
@@ -442,7 +462,10 @@ class CityView(generics.ListAPIView):
                 JOIN public.chat_trip t ON t.object_id = v.id AND t.content_type_id = ct.id
                 WHERE v.city_id = public.franchise_city.id AND t.status = 'finished'
             """, [])
-    ).order_by('-finished_trips_count')
+    )
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['title', 'finished_trips_count']
+    ordering = ['title']
 
 
 @extend_schema(summary='Отображение города по ID', description='Отображение города по ID')
