@@ -90,8 +90,10 @@ class RequestRent(models.Model):
         from vehicle.models import RentPrice
         from datetime import datetime
 
+        # Проверяем наличие почасового тарифа
         hourly_price = RentPrice.objects.filter(vehicle=self.vehicle, name='hour').first()
 
+        # Если есть почасовой тариф и указано время, используем почасовую логику
         if hourly_price and self.start_time and self.end_time and self.start_date and self.end_date:
             start_datetime = datetime.combine(self.start_date, self.start_time)
             end_datetime = datetime.combine(self.end_date, self.end_time)
@@ -102,14 +104,17 @@ class RequestRent(models.Model):
             total_duration = end_datetime - start_datetime
             total_hours = total_duration.total_seconds() / 3600
 
+            # Если аренда меньше суток, используем почасовой тариф
             if total_hours <= 24:
                 total_cost = total_hours * float(hourly_price.total)
 
+                # Добавление стоимости доставки
                 if self.delivery and self.delivery_cost > 0:
                     total_cost += float(self.vehicle.price_delivery)
 
                 return total_cost
 
+        # Иначе используем оригинальную логику для дневных тарифов
         rental_days = self.rental_days
         if rental_days <= 0:
             raise ValueError("Количество дней аренды должно быть положительным.")
@@ -121,6 +126,7 @@ class RequestRent(models.Model):
             ('year', 365),
         ]
 
+        # Проверка, есть ли подходящие периоды
         rent_price = None
         for period, period_days in period_priorities:
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
@@ -130,9 +136,11 @@ class RequestRent(models.Model):
         if not rent_price:
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
 
+        # Вычисление общей стоимости аренды (оригинальная логика)
         period_days = next(days for period, days in period_priorities if period == rent_price.name)
         total_cost = (rental_days / period_days) * float(rent_price.total)
 
+        # Добавление стоимости доставки и начисление комиссии на доставку
         if self.delivery and self.delivery_cost > 0:
             total_cost += float(self.vehicle.price_delivery)
 
@@ -218,12 +226,6 @@ class RequestRent(models.Model):
 
     def calculate_amount(self):
         """ Расчет стоимости суммы к оплате """
-        if not hasattr(self.vehicle, 'owner') or not hasattr(self.vehicle.owner, 'lessor'):
-            self.vehicle = (
-                self.vehicle.__class__.objects
-                .select_related('owner', 'owner__lessor')
-                .get(pk=self.vehicle.pk)
-            )
         commission = self.vehicle.owner.lessor.commission
         return Decimal(self.total_cost) / Decimal(100) * commission
 

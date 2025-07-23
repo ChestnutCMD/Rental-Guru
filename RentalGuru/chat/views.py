@@ -268,21 +268,14 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        
+
         optimized_queryset = RequestRent.objects.select_related(
-            'vehicle_content_type',
+            'content_type',
             'organizer'
         ).prefetch_related(
             Prefetch(
                 'organizer__renter',
                 queryset=Renter.objects.select_related('user')
-            )
-        ).annotate(
-            lessor_exists=Exists(
-                Lessor.objects.filter(user=OuterRef('vehicle_content_object__owner'))
-            ),
-            lessor_id=Subquery(
-                Lessor.objects.filter(user=OuterRef('vehicle_content_object__owner')).values('id')[:1]
             )
         )
 
@@ -293,10 +286,15 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         # Менеджеры с доступом видят заявки в своем городе
         if hasattr(user, 'manager') and user.manager:
             manager = user.manager
-            if manager.access_types.filter(name='rent_orders').exists() or manager.access_types.filter(name='rent_journal').exists():
+            if manager.access_types.filter(name='rent_orders').exists() or manager.access_types.filter(
+                    name='rent_journal').exists():
                 if manager.city:
                     lessor_ids = Lessor.objects.filter(franchise__city=manager.city).values_list('id', flat=True)
-                    vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+                    vehicle_ids = []
+                    for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
+                        model_vehicle_ids = model.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id',
+                                                                                                               flat=True)
+                        vehicle_ids.extend(model_vehicle_ids)
                     return optimized_queryset.filter(object_id__in=vehicle_ids)
                 else:
                     return optimized_queryset
@@ -304,7 +302,10 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         # Директор франшизы видит заявки своей франшизы
         if hasattr(user, 'franchise') and user.franchise:
             lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
-            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+            vehicle_ids = []
+            for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
+                model_vehicle_ids = model.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+                vehicle_ids.extend(model_vehicle_ids)
             return optimized_queryset.filter(object_id__in=vehicle_ids)
 
         if hasattr(user, 'renter'):
@@ -318,8 +319,11 @@ class RequestRentViewSet(viewsets.ModelViewSet):
                 ContentType.objects.get_for_model(Helicopter),
                 ContentType.objects.get_for_model(SpecialTechnic),
             ]
-            vehicle_ids = Vehicle.objects.filter(owner=user).values_list('id', flat=True)
-            return optimized_queryset.filter(vehicle_content_type__in=content_types, object_id__in=vehicle_ids)
+            vehicle_ids = []
+            for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
+                model_vehicle_ids = model.objects.filter(owner=user).values_list('id', flat=True)
+                vehicle_ids.extend(model_vehicle_ids)
+            return optimized_queryset.filter(content_type__in=content_types, object_id__in=vehicle_ids)
 
         return RequestRent.objects.none()
 
