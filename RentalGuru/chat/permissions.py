@@ -17,7 +17,7 @@ class IsAdminOrOwner(ManagerObjectPermission):
             return True
         # Проверка принадлежности ресурса пользователю
         if isinstance(obj, Trip):
-            return obj.renter == request.user
+            return obj.organizer == request.user
         elif isinstance(obj, Chat):
             return request.user in obj.participants.all()
         elif isinstance(obj, Message):

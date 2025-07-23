@@ -27,99 +27,97 @@ from rest_framework.exceptions import ValidationError as DRFValidationError, Per
 from .utils import is_period_contained, subtract_periods
 
 
-class BaseTripViewSet(viewsets.ModelViewSet):
-    model = None
-
-    def get_queryset(self):
-        queryset = Trip.objects.all().order_by('-created_at')
-        if not queryset.exists():
-            return queryset
-
-        user = self.request.user
-
-        # Админы видят все поездки
-        if user.role == 'admin':
-            return queryset
-
-        # Менеджеры с доступом к чатам видят поездки в их городе
-        if hasattr(user, 'manager') and user.manager:
-            manager = user.manager
-            if manager.access_types.filter(name='chats').exists():
-                if manager.city:
-                    # Менеджер видит поездки франшиз в своем городе
-                    lessor_ids = Lessor.objects.filter(franchise__city=manager.city).values_list('id', flat=True)
-                    vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
-                    return queryset.filter(object_id__in=vehicle_ids)
-                else:
-                    # Менеджер без города видит все поездки
-                    return queryset
-
-        # Директор франшизы видит поездки своей франшизы
-        if hasattr(user, 'franchise') and user.franchise:
-            lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
-            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
-            return queryset.filter(object_id__in=vehicle_ids)
-
-        # Арендаторы видят только свои поездки
-        if hasattr(user, 'renter'):
-            return queryset.filter(renter=user)
-
-        # Арендодатели видят поездки своих транспортных средств
-        if hasattr(user, 'lessor'):
-            content_types = [
-                ContentType.objects.get_for_model(Auto),
-                ContentType.objects.get_for_model(Bike),
-                ContentType.objects.get_for_model(Ship),
-                ContentType.objects.get_for_model(Helicopter),
-                ContentType.objects.get_for_model(SpecialTechnic),
-            ]
-            vehicle_ids = Vehicle.objects.filter(owner=user).values_list('id', flat=True)
-            return queryset.filter(content_type__in=content_types, object_id__in=vehicle_ids)
-
-        return Trip.objects.none()
-
-
 @extend_schema(summary="Поездка",
                description='Поездка',
                parameters=[
-                            OpenApiParameter(
-                                name="status",
-                                description="Статус поездки ('current', 'started', 'finished', 'canceled')",
-                                type=str,
-                                enum=['current', 'started', 'finished', 'canceled'],
-                                required=False,
-                            ),
-                            OpenApiParameter(
-                                name='lessor_id', type=int,
-                                description='ID арендодателя (доступно только для admin/manager)'
-                            )
-                           ]
-               )
-class TripViewSet(BaseTripViewSet):
-    queryset = Trip.objects.all()
-    serializer_class = TripSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrOwner]
-    filter_backends = [TripFilterBackend, DjangoFilterBackend]
-    filterset_class = TripFilter
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        status = self.request.query_params.get('status')
-
-        if status:
-            queryset = queryset.filter(status=status)
-
-        return queryset
-
-
-@extend_schema(summary="Чат",
-               description='Чат',
-               parameters=[
+                   OpenApiParameter(
+                       name="status",
+                       description="Статус поездки ('current', 'started', 'finished', 'canceled')",
+                       type=str,
+                       enum=['current', 'started', 'finished', 'canceled'],
+                       required=False,
+                   ),
                    OpenApiParameter(
                        name='lessor_id', type=int,
                        description='ID арендодателя (доступно только для admin/manager)'
                    )
                ]
+               )
+class TripViewSet(viewsets.ModelViewSet):
+    serializer_class = TripSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [TripFilterBackend, DjangoFilterBackend]
+    filterset_class = TripFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Trip.objects.all()
+
+        # Если админ или менеджер без франшизы, отдаем все поездки
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
+            return queryset
+
+        # Если директор франшизы или менеджер франшизы, показываем поездки, связанные с франшизой
+        if hasattr(user, 'franchise') and user.franchise:
+            lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
+            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
+            return queryset.filter(object_id__in=vehicle_ids)
+
+        # Если арендатор, показываем только его поездки
+        if hasattr(user, 'renter'):
+            return queryset.filter(organizer=user)
+
+        # Если арендодатель, показываем поездки по его транспорту
+        if hasattr(user, 'lessor'):
+            vehicle_ids = Vehicle.objects.filter(owner=user).values_list('id', flat=True)
+            return queryset.filter(object_id__in=vehicle_ids)
+
+        return Trip.objects.none()
+
+
+@extend_schema(summary="Чат между арендатором и арендодателем",
+               description="""\nЧат между арендатором и арендодателем. 
+                                                                                Создается автоматически при создании 
+                                                                                заявки на аренду с открытой датой, либо 
+                                                                                при принятии заявки на аренду 
+                                                                                арендодателем. Чат доступен по адресу:\n 
+                    wss://<host_name>/ws/chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Пометить сообщение как прочитанное: {"type": "mark_as_read", "message_id": 82}
+                    Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
+                    Отправка сообщения: {"type": "send_message", "message": "hello"}
+                    Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
+                    Удаление сообщения: {"type": "delete_message", "delete": 74}
+                    Отправка сообщения с файлом: {"type": "send_message", 
+                                                  "message": {
+                                                              "content": "Hello!",
+                                                              "file": "data:image/jpeg;base64,/9j/4AAQS..."
+                                                              "name": "example.jpg"                                                              
+                                                             }
+                                                  }  
+
+                        Обновление заявки со стороны арендодателя: {
+                                                                    "update_request_rent": {
+                                                                        "content_type": "Auto",
+                                                                        "object_id": 7,
+                                                                        "start_time": "09:00",
+                                                                        "end_time": "18:00",
+                                                                        "start_date": "2024-11-01",
+                                                                        "end_date": "2024-11-10",
+                                                                        "total_cost": "500.00"
+                                                                        }
+                                                                    }
+                        Обновление статуса заявки со стороны арендатора: {
+                                                                          "update_status": {
+                                                                             "status": "accept"
+                                                                             }
+                                                                        }""",
+               parameters=[
+                   OpenApiParameter(
+                       name="lessor_id",
+                       description="ID арендодателя",
+                       type=int,
+                       required=False,
+                   )]
                )
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
@@ -129,8 +127,8 @@ class ChatViewSet(viewsets.ModelViewSet):
         user = self.request.user
         lessor_id = self.request.query_params.get('lessor_id')
 
-        # 1. Админы видят все чаты
-        if user.role == 'admin':
+        # 1. Админ и обычный менеджер (имеют полный доступ)
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
             queryset = Chat.objects.all()
             if lessor_id:
                 queryset = queryset.filter(
@@ -147,45 +145,7 @@ class ChatViewSet(viewsets.ModelViewSet):
                           'id'))
                 )
 
-        # 2. Менеджеры с доступом к чатам
-        elif hasattr(user, 'manager') and user.manager:
-            manager = user.manager
-            if manager.access_types.filter(name='chats').exists():
-                if manager.city:
-                    # Менеджер видит чаты франшиз в своем городе
-                    queryset = Chat.objects.filter(
-                        Q(request_rent__content_type__model='auto',
-                          request_rent__object_id__in=Auto.objects.filter(owner__lessor__franchise__city=manager.city).values('id')) |
-                        Q(request_rent__content_type__model='bike',
-                          request_rent__object_id__in=Bike.objects.filter(owner__lessor__franchise__city=manager.city).values('id')) |
-                        Q(request_rent__content_type__model='ship',
-                          request_rent__object_id__in=Ship.objects.filter(owner__lessor__franchise__city=manager.city).values('id')) |
-                        Q(request_rent__content_type__model='helicopter',
-                          request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__franchise__city=manager.city).values('id')) |
-                        Q(request_rent__content_type__model='specialtechnic',
-                          request_rent__object_id__in=SpecialTechnic.objects.filter(owner__lessor__franchise__city=manager.city).values('id'))
-                    )
-                else:
-                    # Менеджер без города видит все чаты
-                    queryset = Chat.objects.all()
-                    
-                if lessor_id:
-                    queryset = queryset.filter(
-                        Q(request_rent__content_type__model='auto',
-                          request_rent__object_id__in=Auto.objects.filter(owner__lessor__id=lessor_id).values('id')) |
-                        Q(request_rent__content_type__model='bike',
-                          request_rent__object_id__in=Bike.objects.filter(owner__lessor__id=lessor_id).values('id')) |
-                        Q(request_rent__content_type__model='ship',
-                          request_rent__object_id__in=Ship.objects.filter(owner__lessor__id=lessor_id).values('id')) |
-                        Q(request_rent__content_type__model='helicopter',
-                          request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__id=lessor_id).values('id')) |
-                        Q(request_rent__content_type__model='specialtechnic',
-                          request_rent__object_id__in=SpecialTechnic.objects.filter(owner__lessor__id=lessor_id).values('id'))
-                    )
-            else:
-                queryset = Chat.objects.none()
-
-        # 3. Директор франшизы видит чаты своей франшизы
+        # 2. Директор франшизы или франшизный менеджер (ограничение по франшизе)
         elif hasattr(user, 'franchise') and user.franchise:
             queryset = Chat.objects.filter(
                 Q(request_rent__content_type__model='auto',
@@ -201,10 +161,9 @@ class ChatViewSet(viewsets.ModelViewSet):
                   request_rent__object_id__in=Helicopter.objects.filter(owner__lessor__franchise=user.franchise).values(
                       'id')) |
                 Q(request_rent__content_type__model='specialtechnic',
-                  request_rent__object_id__in=SpecialTechnic.objects.filter(owner__lessor__franchise=user.franchise).values(
-                      'id'))
+                  request_rent__object_id__in=SpecialTechnic.objects.filter(
+                      owner__lessor__franchise=user.franchise).values('id'))
             )
-
             if lessor_id:
                 queryset = queryset.filter(
                     Q(request_rent__content_type__model='auto',
@@ -220,10 +179,9 @@ class ChatViewSet(viewsets.ModelViewSet):
                           'id'))
                 )
 
-        # 4. Обычный пользователь (только его чаты)
+        # 3. Обычный пользователь (только его чаты)
         else:
             queryset = Chat.objects.filter(participants=user)
-            
         queryset = queryset.annotate(
             last_message_timestamp=Max('messages__timestamp')
         ).order_by('-last_message_timestamp')
@@ -235,77 +193,89 @@ class ChatViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-@extend_schema(summary="Сообщения", description='Сообщения')
+@extend_schema(summary="Сообщения чата арендодателя и арендатора", description="Сообщения чата арендодателя и "
+                                                                               "арендатора")
 class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsAdminOrOwner]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = MessageFilter
+    ordering_fields = ['timestamp']
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
-            return Message.objects.all()
-        if hasattr(user, 'renter') and user.renter:
-            return Message.objects.filter(Q(chat__participants=user) | Q(sender=user))
-        if hasattr(user, 'lessor') and user.lessor:
-            return Message.objects.filter(Q(chat__participants=user) | Q(sender=user))
-        if hasattr(user, 'manager') and user.manager:
-            # Менеджеры видят сообщения чатов в зависимости от их доступов
-            if user.manager.access_types.filter(name='chats').exists():
-                return Message.objects.all()
-        return Message.objects.none()
+        return Message.objects.filter(chat__participants=user)
 
 
-@extend_schema(summary="Заявки на аренду", description='Заявки на аренду')
+@extend_schema(summary="Заявка на аренду", description="Заявка на аренду. Создать может только пользователь renter.\
+                                                После создания пользователь, который является владельцем транспорта,\
+                                                может обновить статус заявки - принять или отклонить (accept|denied).\
+                                                При изменении статуса на accept автоматически создается поездка Trip)",
+               parameters=[
+                   OpenApiParameter(
+                       name="status",
+                       description="Статус заявки ('accept', 'denied', 'unknown')",
+                       type=str,
+                       enum=['accept', 'denied', 'unknown'],
+                       required=False,
+                   ),
+                   OpenApiParameter(
+                       name='lessor_id', type=int,
+                       description='ID арендодателя (доступно только для admin/manager)'
+                   )
+               ]
+               )
 class RequestRentViewSet(viewsets.ModelViewSet):
-    queryset = RequestRent.objects.all()
     serializer_class = RequestRentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [TripFilterBackend]
     filterset_class = RequestRentFilter
 
     def get_queryset(self):
         user = self.request.user
+        base_queryset = RequestRent.objects.filter(is_deleted=False)
 
-        optimized_queryset = RequestRent.objects.select_related(
+        payments_subquery = Payment.objects.filter(
+            request_rent=OuterRef('pk')
+        ).order_by('id')[:1]
+
+        trip_subquery = Trip.objects.filter(
+            content_type=OuterRef('content_type'),
+            object_id=OuterRef('object_id'),
+            status='current'
+        ).order_by('id')[:1]
+
+        optimized_queryset = base_queryset.select_related(
             'content_type',
-            'organizer'
+            'promocode'
         ).prefetch_related(
-            Prefetch(
-                'organizer__renter',
-                queryset=Renter.objects.select_related('user')
-            )
+            'chat'
+        ).annotate(
+
+            prefetched_payment_id=Subquery(payments_subquery.values('id')),
+            prefetched_payment_amount=Subquery(payments_subquery.values('amount')),
+
+            trip_id=Subquery(trip_subquery.values('id')),
+            renter_id=Subquery(trip_subquery.values('organizer_id')),
         )
 
-        # Админы видят все заявки
-        if user.role == 'admin':
+        renter_ids = optimized_queryset.exclude(renter_id=None).values_list('renter_id', flat=True)
+
+        if renter_ids:
+            optimized_queryset = optimized_queryset.prefetch_related(
+                Prefetch(
+                    'organizer__renter',
+                    queryset=Renter.objects.filter(user_id__in=renter_ids),
+                    to_attr='_prefetched_renter'
+                )
+            )
+
+        if user.role == 'admin' or (hasattr(user, 'manager') and not hasattr(user, 'franchise')):
             return optimized_queryset
 
-        # Менеджеры с доступом видят заявки в своем городе
-        if hasattr(user, 'manager') and user.manager:
-            manager = user.manager
-            if manager.access_types.filter(name='rent_orders').exists() or manager.access_types.filter(
-                    name='rent_journal').exists():
-                if manager.city:
-                    lessor_ids = Lessor.objects.filter(franchise__city=manager.city).values_list('id', flat=True)
-                    vehicle_ids = []
-                    for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
-                        model_vehicle_ids = model.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id',
-                                                                                                               flat=True)
-                        vehicle_ids.extend(model_vehicle_ids)
-                    return optimized_queryset.filter(object_id__in=vehicle_ids)
-                else:
-                    return optimized_queryset
-
-        # Директор франшизы видит заявки своей франшизы
         if hasattr(user, 'franchise') and user.franchise:
             lessor_ids = Lessor.objects.filter(franchise=user.franchise).values_list('id', flat=True)
-            vehicle_ids = []
-            for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
-                model_vehicle_ids = model.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
-                vehicle_ids.extend(model_vehicle_ids)
+            vehicle_ids = Vehicle.objects.filter(owner__lessor__id__in=lessor_ids).values_list('id', flat=True)
             return optimized_queryset.filter(object_id__in=vehicle_ids)
 
         if hasattr(user, 'renter'):
@@ -313,17 +283,20 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
         if hasattr(user, 'lessor'):
             content_types = [
-                ContentType.objects.get_for_model(Auto),
-                ContentType.objects.get_for_model(Bike),
-                ContentType.objects.get_for_model(Ship),
-                ContentType.objects.get_for_model(Helicopter),
-                ContentType.objects.get_for_model(SpecialTechnic),
+                ContentType.objects.get_for_model(model)
+                for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]
             ]
-            vehicle_ids = []
-            for model in [Auto, Bike, Ship, Helicopter, SpecialTechnic]:
-                model_vehicle_ids = model.objects.filter(owner=user).values_list('id', flat=True)
-                vehicle_ids.extend(model_vehicle_ids)
-            return optimized_queryset.filter(content_type__in=content_types, object_id__in=vehicle_ids)
+
+            vehicle_ids = {
+                content_type: content_type.model_class().objects.filter(owner=user).values_list('id', flat=True)
+                for content_type in content_types
+            }
+
+            q_objects = Q()
+            for content_type, ids in vehicle_ids.items():
+                q_objects |= Q(content_type=content_type, object_id__in=ids)
+
+            return optimized_queryset.filter(q_objects)
 
         return RequestRent.objects.none()
 
@@ -371,7 +344,8 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         #     raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
         # Проверка рейтинга арендатора
-        if vehicle_instance.drivers_rating > Decimal(request.user.renter.get_average_rating()) and request.user.renter.get_average_rating() != 0:
+        if vehicle_instance.drivers_rating > Decimal(
+                request.user.renter.get_average_rating()) and request.user.renter.get_average_rating() != 0:
             raise DRFValidationError(f"Низкий рейтинг арендатора для данного транспорта")
 
         if availabilities.filter(on_request=True).exists():
@@ -475,7 +449,8 @@ class RequestRentViewSet(viewsets.ModelViewSet):
 
                 availabilities = list(vehicle_instance.availabilities.values('start_date', 'end_date'))
                 if not availabilities:
-                    raise DRFValidationError("Данных о наличии свободных периодов аренды для этого транспорта не найдено.")
+                    raise DRFValidationError(
+                        "Данных о наличии свободных периодов аренды для этого транспорта не найдено.")
 
                 # Преобразование дат в строки
                 for availability in availabilities:
@@ -522,28 +497,37 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         return Response({'detail': 'Заявка удалена.'}, status=status.HTTP_204_NO_CONTENT)
 
 
-class CustomLimitOffsetPagination(LimitOffsetPagination):
-    default_limit = 10
-    limit_query_param = 'limit'
-    offset_query_param = 'offset'
-
-
-class ChatSupportPagination(LimitOffsetPagination):
-    default_limit = 20
-    limit_query_param = 'limit'
-    offset_query_param = 'offset'
-    max_limit = 100
-
-
-@extend_schema(summary="Темы обращений в техподдержку", description="Темы обращений в техподдержку")
+@extend_schema(summary="Тема чата с техподдержкой", description="Тема чата с техподдержкой")
 class TopicSupportViewSet(viewsets.ModelViewSet):
     queryset = TopicSupport.objects.all()
     serializer_class = TopicSupportSerializer
-    permission_classes = [IsAuthenticated]
+    permissions = [IsAuthenticated]
 
 
-@extend_schema(summary="Список чатов техподдержки", description="""\nЧат с техподдержкой. Доступен по адресу:\n
+class ChatSupportPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
+@extend_schema(summary="Список чатов техподдержки",
+               parameters=[
+                   OpenApiParameter(
+                       name="limit",
+                       description="Количество объектов на странице",
+                       required=False,
+                       type=int
+                   ),
+                   OpenApiParameter(
+                       name="offset",
+                       description="Начальная позиция (смещение)",
+                       required=False,
+                       type=int
+                   ),
+               ],
+
+               description="""\nЧат с техподдержкой. Доступен по адресу:\n
                     wss://<host_name>/ws/support_chat/<chat_id>/?token=<JWT>&lang=<lang>\n
+                    Чат создается при создании обращения\n
                     Получение предыдущих сообщений: {"type": "load_previous_messages", "offset": 20, "limit": 10}
                     Отправка сообщения: {"type": "send_message", "message": "hello"}
                     Обновление сообщения: {"type": "update_message", "update": 74, "content": "Hello" }
@@ -554,21 +538,21 @@ class TopicSupportViewSet(viewsets.ModelViewSet):
                                                               "file": "data:image/jpeg;base64,/9j/4AAQS..."
                                                               "name": "example.jpg"                                                              
                                                              }
-                                                  }
+                                                  }  
                     """)
 class ChatSupportListView(APIView):
-    permission_classes = [ChatsPermission]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.role in ['admin', 'manager']:
             chats = ChatSupport.objects.select_related(
-                                                        'creator',
-                                                        'creator__lessor',
-                                                        'creator__renter',
-                                                        'creator__influencer',
-                                                        'creator__franchise'
-                                                    ).all()
+                'creator',
+                'creator__lessor',
+                'creator__renter',
+                'creator__influencer',
+                'creator__franchise'
+            ).all()
             paginator = ChatSupportPagination()
             paginated_chats = paginator.paginate_queryset(chats, request)
             if paginated_chats is None:
@@ -577,12 +561,12 @@ class ChatSupportListView(APIView):
             return paginator.get_paginated_response(serializer.data)
         else:
             chats = ChatSupport.objects.select_related(
-                                                        'creator',
-                                                        'creator__lessor',
-                                                        'creator__renter',
-                                                        'creator__influencer',
-                                                        'creator__franchise'
-                                                    ).filter(creator=user)
+                'creator',
+                'creator__lessor',
+                'creator__renter',
+                'creator__influencer',
+                'creator__franchise'
+            ).filter(creator=user)
             serializer = ChatSupportSerializer(chats, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -602,7 +586,7 @@ class ChatSupportListView(APIView):
                                                   }
                     """)
 class ChatSupportRetrieveView(APIView):
-    permission_classes = [ChatsPermission]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk, *args, **kwargs):
         try:
@@ -633,7 +617,7 @@ class ChatSupportRetrieveView(APIView):
 class IssueSupportViewSet(viewsets.ModelViewSet):
     queryset = IssueSupport.objects.all()
     serializer_class = IssueSupportSerializer
-    permission_classes = [ChatsPermission]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -646,16 +630,16 @@ class IssueSupportViewSet(viewsets.ModelViewSet):
 class MessageSupportViewSet(viewsets.ModelViewSet):
     queryset = MessageSupport.objects.all()
     serializer_class = MessageSupportSerializer
-    permission_classes = [ChatsPermission]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
 
 @extend_schema(summary="Количество непрочитанных сообщений",
-            description="Возвращает количество непрочитанных сообщений во всех чатах пользователя, включая чат техподдержки.",
-            responses={200: {'application/json': {'example': {'unread_messages': 5}}}}
-    )
+               description="Возвращает количество непрочитанных сообщений во всех чатах пользователя, включая чат техподдержки.",
+               responses={200: {'application/json': {'example': {'unread_messages': 5}}}}
+               )
 class UnreadMessagesCountAPIView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -663,14 +647,14 @@ class UnreadMessagesCountAPIView(APIView):
         user_chats = Chat.objects.filter(participants=user).values_list('id', flat=True)
 
         unread_in_chats = (Message.objects.filter(chat_id__in=user_chats, is_read=False, deleted=False)
-                            .exclude(sender=user).count())
+                           .exclude(sender=user).count())
 
         chat_support = (ChatSupport.objects.filter(creator=user).values_list('id', flat=True).first())
 
         unread_in_support = 0
         if chat_support:
             unread_in_support = (MessageSupport.objects.filter(chat_id=chat_support, is_read=False, deleted=False)
-                                .exclude(sender=user).count())
+                                 .exclude(sender=user).count())
 
         total_unread = unread_in_chats + unread_in_support
 
