@@ -140,18 +140,18 @@ class UniversalPermission(BasePermission):
             logger.info(f"User {request.user} is a director and has access to {obj}")
             return True
 
-        # Проверка, является ли пользователь менеджером франшизы
+        # Проверка, является ли пользователь менеджером
         if request.user.role != 'manager' or not hasattr(request.user, 'manager'):
             return False
 
         manager = request.user.manager
-        if not manager or not manager.franchise:
+        if not manager or not manager.city:
             return False
 
         logger.info(f"Checking permissions for manager {manager} on {obj}")
 
-        # Проверка принадлежности объекта франшизе менеджера
-        return self._is_object_in_franchise(manager.franchise, obj)
+        # Проверка принадлежности объекта городу менеджера (через франшизу)
+        return self._is_object_in_manager_city(manager.city, obj)
 
     def _is_object_in_franchise(self, franchise, obj):
         """
@@ -194,19 +194,61 @@ class UniversalPermission(BasePermission):
 
         return result
 
+    def _is_object_in_manager_city(self, city, obj):
+        """
+        Проверяет, принадлежит ли объект городу менеджера (через франшизу в этом городе).
+        """
+        if not obj:
+            return False
+
+        model_name = ContentType.objects.get_for_model(obj).model.lower()
+
+        model_checks = {
+            'auto': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'bike': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'ship': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'helicopter': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'specialtechnic': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'vehicle': lambda obj: getattr(obj.owner, 'lessor', None) and obj.owner.lessor.franchise and obj.owner.lessor.franchise.city,
+            'lessor': lambda obj: obj.franchise and obj.franchise.city,
+            'user': lambda obj: getattr(obj, 'lessor', None) and obj.lessor.franchise and obj.lessor.franchise.city,
+            'chat': lambda obj: getattr(obj.request_rent.vehicle.owner, 'lessor',
+                                        None) and obj.request_rent.vehicle.owner.lessor.franchise and obj.request_rent.vehicle.owner.lessor.franchise.city,
+            'feedback': lambda obj: getattr(obj.vehicle.owner, 'lessor', None) and obj.vehicle.owner.lessor.franchise and obj.vehicle.owner.lessor.franchise.city,
+            'requestrent': lambda obj: getattr(obj.vehicle.owner, 'lessor',
+                                               None) and obj.vehicle.owner.lessor.franchise and obj.vehicle.owner.lessor.franchise.city,
+            'trip': lambda obj: getattr(obj.vehicle.owner, 'lessor', None) and obj.vehicle.owner.lessor.franchise and obj.vehicle.owner.lessor.franchise.city,
+            'franchise': lambda obj: obj.city,
+            'complaint': lambda obj: getattr(obj.vehicle.owner, 'lessor', None) and obj.vehicle.owner.lessor.franchise and obj.vehicle.owner.lessor.franchise.city,
+            'complaintforfeedback': lambda obj: getattr(obj.feedback.vehicle.owner, 'lessor',
+                                                        None) and obj.feedback.vehicle.owner.lessor.franchise and obj.feedback.vehicle.owner.lessor.franchise.city,
+        }
+
+        check_function = model_checks.get(model_name)
+
+        if not check_function:
+            logger.warning(f"Model {model_name} is not found in city permissions map")
+            return False
+
+        object_city = check_function(obj)
+        result = object_city == city
+        logger.info(f"Checking city ownership: {result} for model {model_name} and city {city}")
+
+        return result
+
 
 class ManagerObjectPermission(BasePermission):
     """
-    Комбинированный пермишн, использующий UniversalPermission при наличии франшизы
+    Комбинированный пермишн, использующий UniversalPermission при наличии города
     и базовую проверку при её отсутствии.
     """
 
     def has_object_permission(self, request, view, obj):
         manager = getattr(request.user, 'manager', None)
-        if manager and manager.franchise:
+        if manager and manager.city:
             return UniversalPermission().has_object_permission(request, view, obj)
         else:
-            # Если у менеджера нет франшизы, предоставляем базовый доступ
+            # Если у менеджера нет города, предоставляем базовый доступ
             return request.user.is_authenticated and request.user.role in ['admin', 'manager']
 
 
@@ -258,7 +300,7 @@ class IsAdminOrSelf(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.role == 'admin':
             return True
-        if hasattr(request.user, 'franchise') and request.user.franchise == obj.franchise:
+        if hasattr(request.user, 'franchise') and request.user.franchise == obj.city:
             return True
         if request.user.role == 'manager' and obj.user == request.user:
             # Менеджер не может изменять свои права доступа

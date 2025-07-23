@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
-from franchise.models import Franchise
+from franchise.models import Franchise, City
 
 
 """
@@ -59,7 +59,7 @@ class AccessType(models.Model):
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
     password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
-    franchise = models.ForeignKey(Franchise, null=True, blank=True, default=None, on_delete=models.SET_NULL, verbose_name='Франшиза', related_name='managers')
+    city = models.ForeignKey(City, null=True, blank=True, default=None, on_delete=models.SET_NULL, verbose_name='Город', related_name='managers')
     access_types = models.ManyToManyField(AccessType, blank=True, verbose_name='Типы доступа', related_name='managers')
 
     def __str__(self):
@@ -92,61 +92,3 @@ class ManagerDocuments(models.Model):
     class Meta:
         verbose_name = 'Паспортные данные'
         verbose_name_plural = 'Паспортные данные'
-
-
-# class ManagerPermission(models.Model):
-#     """
-#     Модель для управления доступами менеджеров к объектам.
-#     """
-#     manager = models.ForeignKey("Manager", on_delete=models.CASCADE, related_name="permissions")
-#     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Тип модели")
-#     object_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="ID объекта")
-#     content_object = GenericForeignKey("content_type", "object_id")
-#     permission_type = models.CharField(
-#         max_length=50,
-#         choices=[
-#             ('read', 'Чтение'),
-#             ('edit', 'Редактирование'),
-#             ('delete', 'Удаление'),
-#         ],
-#         verbose_name="Тип доступа",
-#     )
-#     is_global = models.BooleanField(default=False, verbose_name="Глобальный доступ")
-#
-#     class Meta:
-#         unique_together = ('manager', 'content_type', 'object_id', 'permission_type', 'is_global')
-#         verbose_name = "Права менеджера"
-#         verbose_name_plural = "Права менеджеров"
-#
-#     def __str__(self):
-#         if self.is_global:
-#             return f"{self.manager.user} — {self.permission_type} на все объекты {self.content_type.model}"
-#         return f"{self.manager.user} — {self.permission_type} на объект {self.content_type.model} ID {self.object_id}"
-#
-#     def clean(self):
-#         """
-#         Валидация модели перед сохранением.
-#         """
-#         if not self.content_type:
-#             raise ValidationError({
-#                 'content_type': "content_type обязателен для указания модели."
-#             })
-#
-#         if self.is_global:
-#             if self.object_id is not None:
-#                 raise ValidationError({
-#                     'object_id': "object_id должно быть пустым для глобального доступа."
-#                 })
-#         else:
-#             if self.object_id is None:
-#                 raise ValidationError({
-#                     'object_id': "object_id обязателен для локального доступа."
-#                 })
-#         super().clean()
-#
-#     def save(self, *args, **kwargs):
-#         """
-#         Вызываем clean перед сохранением.
-#         """
-#         self.clean()
-#         super().save(*args, **kwargs)

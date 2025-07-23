@@ -3,7 +3,7 @@ from django.utils.timezone import now
 from rest_framework import serializers
 
 from app.models import User
-from franchise.models import Franchise
+from franchise.models import Franchise, City
 from manager.models import AccessType, Manager, ManagerDocuments
 from manager.utils import generate_secure_password
 from notification.models import Notification
@@ -37,7 +37,7 @@ class ManagerListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Manager
-        fields = ['id', 'full_name', 'avatar', 'telephone', 'email', 'franchise', 'access_types']
+        fields = ['id', 'full_name', 'avatar', 'telephone', 'email', 'city', 'access_types']
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"
@@ -56,10 +56,7 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
     document_number = serializers.CharField(source='manager_document.number', read_only=True)
     access_types = AccessTypeSerializer(many=True, read_only=True)
 
-    franchise_name = serializers.CharField(source='franchise.name', read_only=True)
-    franchise_city = serializers.CharField(source='franchise.city.title', read_only=True)
-    franchise_director = serializers.CharField(source='franchise.director', read_only=True)
-    franchise_total_vehicles = serializers.SerializerMethodField()
+    city_name = serializers.CharField(source='city.title', read_only=True)
 
     class Meta:
         model = Manager
@@ -75,16 +72,8 @@ class ManagerDetailSerializer(serializers.ModelSerializer):
             'document_photo',
             'document_number',
             'access_types',
-            'franchise_name',
-            'franchise_city',
-            'franchise_director',
-            'franchise_total_vehicles',
+            'city_name',
         ]
-
-    def get_franchise_total_vehicles(self, obj):
-        if obj.franchise:
-            return obj.franchise.get_total_vehicles()
-        return 0
 
 
 class ManagerCreateSerializer(serializers.ModelSerializer):
@@ -93,7 +82,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
     telephone = serializers.CharField(write_only=True, required=False)
-    franchise_id = serializers.IntegerField(write_only=True, required=False)
+    city_id = serializers.IntegerField(write_only=True, required=False)
     access_types = serializers.PrimaryKeyRelatedField(
         queryset=AccessType.objects.all(),
         many=True,
@@ -103,14 +92,14 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Manager
-        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'franchise_id', 'access_types']
+        fields = ['id', 'email', 'first_name', 'last_name', 'telephone', 'city_id', 'access_types']
 
     def create(self, validated_data):
         email = validated_data.pop('email')
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')
         telephone = validated_data.pop('telephone', None)
-        franchise_id = validated_data.get('franchise_id')
+        city_id = validated_data.get('city_id')
         access_types = validated_data.pop('access_types', [])
 
         # Проверка прав доступа - только админ может создавать менеджеров
@@ -131,12 +120,12 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
             password=password,
             role='manager',
         )
-        if franchise_id:
+        if city_id:
             try:
-                franchise = Franchise.objects.get(id=franchise_id)
-                manager = Manager.objects.create(user=user, franchise=franchise)
-            except Franchise.DoesNotExist:
-                raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
+                city = City.objects.get(id=city_id)
+                manager = Manager.objects.create(user=user, city=city)
+            except City.DoesNotExist:
+                raise serializers.ValidationError({"city_id": "Город с таким ID не найден."})
         else:
             manager = Manager.objects.create(user=user)
 
@@ -170,7 +159,7 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    franchise_id = serializers.IntegerField(write_only=True, required=False)
+    city_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Manager
@@ -183,14 +172,14 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
             'password',
             'document',
             'access_types',
-            'franchise_id'
+            'city_id'
         ]
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         document_data = validated_data.pop('manager_document', None)
         access_types = validated_data.pop('access_types', None)
-        franchise_id = validated_data.pop('franchise_id', None)
+        city_id = validated_data.pop('city_id', None)
         user = instance.user
 
         for field, value in user_data.items():
@@ -229,12 +218,12 @@ class ManagerUpdateSerializer(serializers.ModelSerializer):
         if access_types is not None and self.context['request'].user.role == 'admin':
             instance.access_types.set(access_types)
 
-        if franchise_id:
+        if city_id:
             try:
-                franchise = Franchise.objects.get(id=franchise_id)
-                instance.franchise = franchise
-            except Franchise.DoesNotExist:
-                raise serializers.ValidationError({"franchise_id": "Франшиза с таким ID не найдена."})
+                city = City.objects.get(id=city_id)
+                instance.city = city
+            except City.DoesNotExist:
+                raise serializers.ValidationError({"city_id": "Город с таким ID не найден."})
 
         instance.save()
         return instance

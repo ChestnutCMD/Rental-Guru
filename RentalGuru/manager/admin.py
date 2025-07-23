@@ -4,9 +4,9 @@ from .models import Manager, ManagerDocuments, AccessType
 
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'franchise']
+    list_display = ['user', 'city']
     search_fields = ['user__email', 'user__first_name', 'user__last_name']
-    list_filter = ['franchise', 'access_types']
+    list_filter = ['city', 'access_types']
     filter_horizontal = ['access_types']
 
 

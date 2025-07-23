@@ -26,7 +26,6 @@ class AccessTypeViewSet(ReadOnlyModelViewSet):
     serializer_class = AccessTypeSerializer
 
 
-
 @extend_schema(
         summary="Менеджеры, CRUD",
         description="CRUD для менеджеров"
@@ -65,10 +64,20 @@ class ManagerViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        franchise = Franchise.objects.filter(director=user).first()
-        if franchise:
-            return Manager.objects.filter(franchise=franchise)
-
-        if user.role in ['admin', 'manager']:
+        
+        # Админы видят всех менеджеров
+        if user.role == 'admin':
             return Manager.objects.all()
+            
+        # Директор франшизы видит менеджеров города, где находится его франшиза
+        franchise = Franchise.objects.filter(director=user).first()
+        if franchise and franchise.city:
+            return Manager.objects.filter(city=franchise.city)
+
+        # Менеджеры с соответствующими правами видят всех менеджеров
+        if user.role == 'manager' and hasattr(user, 'manager'):
+            manager = user.manager
+            if manager.access_types.filter(name='staff').exists():
+                return Manager.objects.all()
+                
         return Manager.objects.none()
