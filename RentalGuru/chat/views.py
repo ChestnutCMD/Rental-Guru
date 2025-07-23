@@ -541,7 +541,7 @@ class ChatSupportPagination(LimitOffsetPagination):
                                                   }  
                     """)
 class ChatSupportListView(APIView):
-    permission_classes = [IsAuthenticated, ChatsAccess]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user = request.user
