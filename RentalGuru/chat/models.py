@@ -88,90 +88,55 @@ class RequestRent(models.Model):
     def calculate_rent_price(self):
         """Подсчитывает итоговую стоимость аренды с поддержкой почасовой оплаты."""
         from vehicle.models import RentPrice
-        from datetime import datetime, timedelta
+        from datetime import datetime
 
-        if not self.start_date or not self.end_date:
-            raise ValueError("Даты начала и окончания аренды должны быть указаны.")
+        hourly_price = RentPrice.objects.filter(vehicle=self.vehicle, name='hour').first()
 
-        start_datetime = datetime.combine(self.start_date, self.start_time or datetime.min.time())
-        end_datetime = datetime.combine(self.end_date, self.end_time or datetime.max.time().replace(microsecond=0))
+        if hourly_price and self.start_time and self.end_time and self.start_date and self.end_date:
+            start_datetime = datetime.combine(self.start_date, self.start_time)
+            end_datetime = datetime.combine(self.end_date, self.end_time)
 
-        if end_datetime <= start_datetime:
-            raise ValueError("Время окончания должно быть больше времени начала.")
+            if end_datetime <= start_datetime:
+                raise ValueError("Время окончания должно быть больше времени начала.")
 
-        total_duration = end_datetime - start_datetime
-        total_hours = total_duration.total_seconds() / 3600
-        total_days = total_duration.days + (1 if total_duration.seconds > 0 else 0)
+            total_duration = end_datetime - start_datetime
+            total_hours = total_duration.total_seconds() / 3600
+
+            if total_hours <= 24:
+                total_cost = total_hours * float(hourly_price.total)
+
+                if self.delivery and self.delivery_cost > 0:
+                    total_cost += float(self.vehicle.price_delivery)
+
+                return total_cost
+
+        rental_days = self.rental_days
+        if rental_days <= 0:
+            raise ValueError("Количество дней аренды должно быть положительным.")
 
         period_priorities = [
-            ('hour', total_hours),
-            ('day', total_days),
-            ('week', total_days / 7),
-            ('month', total_days / 30),
-            ('year', total_days / 365),
+            ('day', 1),
+            ('week', 7),
+            ('month', 30),
+            ('year', 365),
         ]
 
-        available_prices = {}
-        for period, _ in period_priorities:
+        rent_price = None
+        for period, period_days in period_priorities:
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
             if rent_price:
-                available_prices[period] = rent_price
+                break
 
-        if not available_prices:
+        if not rent_price:
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
 
-        best_cost = float('inf')
-        best_period = None
-
-        for period, period_value in period_priorities:
-            if period in available_prices:
-                rent_price = available_prices[period]
-
-                if period == 'hour':
-                    cost = total_hours * float(rent_price.total)
-                elif period == 'day':
-                    cost = total_days * float(rent_price.total)
-                elif period == 'week':
-                    weeks = (total_days + 6) // 7
-                    cost = weeks * float(rent_price.total)
-                elif period == 'month':
-                    months = (total_days + 29) // 30
-                    cost = months * float(rent_price.total)
-                else:
-                    years = (total_days + 364) // 365
-                    cost = years * float(rent_price.total)
-
-                if cost < best_cost:
-                    best_cost = cost
-                    best_period = period
-
-        total_cost = best_cost
+        period_days = next(days for period, days in period_priorities if period == rent_price.name)
+        total_cost = (rental_days / period_days) * float(rent_price.total)
 
         if self.delivery and self.delivery_cost > 0:
             total_cost += float(self.vehicle.price_delivery)
 
         return total_cost
-
-    @property
-    def rental_duration_info(self):
-        """Возвращает информацию о продолжительности аренды."""
-        if not self.start_date or not self.end_date:
-            return None
-
-        from datetime import datetime
-
-        start_datetime = datetime.combine(self.start_date, self.start_time or datetime.min.time())
-        end_datetime = datetime.combine(self.end_date, self.end_time or datetime.max.time().replace(microsecond=0))
-
-        total_duration = end_datetime - start_datetime
-        total_hours = total_duration.total_seconds() / 3600
-        total_days = total_duration.days + (1 if total_duration.seconds > 0 else 0)
-
-        return {
-            'total_hours': total_hours,
-            'total_days': total_days,
-            'duration': total_duration
-        }
 
     def clean(self):
         super().clean()
