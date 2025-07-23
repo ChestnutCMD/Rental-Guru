@@ -16,22 +16,23 @@ from manager.serializers import AccessTypeSerializer, ManagerUpdateSerializer, M
 
 
 @extend_schema(
-        summary="Типы доступов для менеджеров",
-        description="Получение списка доступных типов доступов"
-    )
+    summary="Типы доступов для менеджеров",
+    description="Получение списка доступных типов доступов"
+)
 class AccessTypeViewSet(ReadOnlyModelViewSet):
     """ViewSet для получения списка типов доступов"""
     queryset = AccessType.objects.all()
-    permission_classes = [IsAuthenticated]
     serializer_class = AccessTypeSerializer
+    permission_classes = [IsAuthenticated]
 
 
 @extend_schema(
-        summary="Менеджеры, CRUD",
-        description="CRUD для менеджеров"
-    )
+    summary="Менеджеры, CRUD",
+    description="CRUD для менеджеров"
+)
 class ManagerViewSet(ModelViewSet):
-    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types').all()
+    """ViewSet для управления менеджерами"""
+    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types')
     permission_classes = [StaffAccess, IsAdminOrSelf]
 
     def get_serializer_class(self):
@@ -45,13 +46,13 @@ class ManagerViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
+            # Создавать может только админ
             return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()
 
     def destroy(self, request, *args, **kwargs):
-        """Удаление менеджера и связанного пользователя."""
+        """Удаление менеджера и связанного пользователя"""
         instance = self.get_object()
-
         with transaction.atomic():
             user = instance.user
             user.delete()
@@ -64,20 +65,21 @@ class ManagerViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # Админы видят всех менеджеров
+
+        # Админ видит всех
         if user.role == 'admin':
             return Manager.objects.all()
-            
-        # Директор франшизы видит менеджеров города, где находится его франшиза
+
+        # Директор франшизы — только менеджеров в своём городе
         franchise = Franchise.objects.filter(director=user).first()
         if franchise and franchise.city:
             return Manager.objects.filter(city=franchise.city)
 
-        # Менеджеры с соответствующими правами видят всех менеджеров
+        # Менеджер с доступом 'staff' — всех менеджеров
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
             if manager.access_types.filter(name='staff').exists():
                 return Manager.objects.all()
-                
+
+        # Остальные — никого
         return Manager.objects.none()

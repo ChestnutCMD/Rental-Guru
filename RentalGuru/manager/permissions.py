@@ -14,23 +14,58 @@ class HasAccessType(BasePermission):
     Проверяет, есть ли у менеджера доступ к определенному типу ресурсов.
     Используется как базовый класс для других permissions.
     """
-    access_type = None  # Должно быть переопределено в наследниках
-    
+    access_type = None
+
+    METHOD_PERMISSION_MAP = {
+        'GET': 'read',
+        'HEAD': 'read',
+        'OPTIONS': 'read',
+        'POST': 'edit',
+        'PUT': 'edit',
+        'PATCH': 'edit',
+        'DELETE': 'delete',
+    }
+
+    ACTION_PERMISSION_MAP = {
+        'list': 'read',
+        'retrieve': 'read',
+        'create': 'edit',
+        'update': 'edit',
+        'partial_update': 'edit',
+        'destroy': 'delete',
+    }
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
-            
+
         if request.user.role == 'admin':
             return True
-            
+
         if not hasattr(request.user, 'manager') or not request.user.manager:
             return False
-            
+
         manager = request.user.manager
         if not self.access_type:
-            return True  # Если access_type не указан, разрешаем доступ
-            
-        return manager.access_types.filter(name=self.access_type).exists()
+            return True
+
+        required_permission = self._get_required_permission(request, view)
+        if not required_permission:
+            return False
+
+        return manager.access_types.filter(
+            name=self.access_type,
+            permission=required_permission
+        ).exists()
+
+    def _get_required_permission(self, request, view):
+        """Определяет требуемый тип разрешения на основе метода или действия"""
+        if hasattr(view, 'action') and view.action:
+            permission = self.ACTION_PERMISSION_MAP.get(view.action)
+            if permission:
+                return permission
+
+        return self.METHOD_PERMISSION_MAP.get(request.method)
 
 
 class LessorsAccess(HasAccessType):

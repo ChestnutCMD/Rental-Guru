@@ -2,12 +2,17 @@ from django.contrib import admin
 from .models import Manager, ManagerDocuments, AccessType
 
 
+class AccessTypeInline(admin.TabularInline):
+    model = Manager.access_types.through
+    extra = 1
+
+
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'city']
-    search_fields = ['user__email', 'user__first_name', 'user__last_name']
-    list_filter = ['city', 'access_types']
-    filter_horizontal = ['access_types']
+    list_display = ('id', 'user', 'city')
+    inlines = [AccessTypeInline]
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'user__email')
+    list_filter = ('city', 'access_types')
 
 
 @admin.register(ManagerDocuments)
@@ -17,9 +22,7 @@ class ManagerDocumentsAdmin(admin.ModelAdmin):
 
 @admin.register(AccessType)
 class AccessTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'get_display_name']
-    search_fields = ['name']
-    
-    def get_display_name(self, obj):
-        return str(obj)
-    get_display_name.short_description = 'Отображаемое имя'
+    list_display = ('id', 'name', 'permission')
+    list_filter = ('name', 'permission')
+    search_fields = ('name',)
+    ordering = ('name', 'permission')

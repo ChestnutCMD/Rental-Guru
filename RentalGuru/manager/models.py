@@ -41,19 +41,22 @@ class AccessType(models.Model):
         ('reports', 'Отчеты')
     )
 
-    name = models.CharField(
-        max_length=50,
-        choices=TYPE_CHOICES,
-        unique=True,
-        verbose_name="Тип доступа"
+    PERMISSION_CHOICES = (
+        ('read', 'Чтение'),
+        ('edit', 'Редактирование'),
+        ('delete', 'Удаление')
     )
 
-    def __str__(self):
-        return dict(self.TYPE_CHOICES).get(self.name, self.name)
+    name = models.CharField(max_length=50, choices=TYPE_CHOICES, verbose_name="Тип доступа")
+    permission = models.CharField(max_length=10, default='read', choices=PERMISSION_CHOICES, verbose_name="Тип действия")
 
     class Meta:
+        unique_together = ('name', 'permission')
         verbose_name = "Тип доступа"
         verbose_name_plural = "Типы доступов"
+
+    def __str__(self):
+        return f"{dict(self.TYPE_CHOICES).get(self.name, self.name)} — {dict(self.PERMISSION_CHOICES).get(self.permission, self.permission)}"
 
 
 class Manager(models.Model):
