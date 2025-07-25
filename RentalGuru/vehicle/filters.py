@@ -26,6 +26,7 @@ class BaseFilter(filters.FilterSet):
     delivery = filters.BooleanFilter(field_name='delivery')
     ensurance = filters.CharFilter(field_name='ensurance')
     long_distance = filters.BooleanFilter(field_name='long_distance')
+    average_rating = filters.RangeFilter(field_name='average_rating', label='Средняя оценка')
 
     class Meta:
         abstract = True
@@ -146,7 +147,7 @@ class AutoFilter(BaseFilter):
         fields = [
             'day_price', 'verified_only', 'mileage_per_day', 'rental_date', 'features_for_children',
             'features_functions', 'vehicle_class', 'features_additionally', 'fuel_type', 'brand', 'seat_count',
-            'transmission', 'year', 'super_host'
+            'transmission', 'year', 'super_host', 'average_rating'
         ]
 
 

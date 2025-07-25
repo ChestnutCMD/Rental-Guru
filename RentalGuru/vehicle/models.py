@@ -267,7 +267,6 @@ class Vehicle(PolymorphicModel):
         # Обновление рейтинга
         avg = self.get_average_rating().get('rating', 0) or 0
         self.average_rating = avg
-        super().save(*args, **kwargs)
         # Комиссия на доставку
         if self.price_delivery > 0:
             if previous_instance:

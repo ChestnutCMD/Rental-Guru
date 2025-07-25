@@ -361,7 +361,6 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     availabilities = AvailabilitySerializer(many=True)
     photos = serializers.SerializerMethodField()
     rent_prices = RentPriceSerializer(many=True)
-    average_ratings = serializers.SerializerMethodField()
     brand = VehicleBrandSerializer(read_only=True)
     model = VehicleModelGetSerializer(read_only=True)
     vehicle_type = serializers.SerializerMethodField()
@@ -372,20 +371,16 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     lessor_last_name = serializers.SerializerMethodField()
     lessor_first_name = serializers.SerializerMethodField()
     lessor_avatar = serializers.SerializerMethodField()
+    average_rating = serializers.FloatField(read_only=True)
 
     class Meta:
         fields = [
-            'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
+            'id', 'brand', 'model', 'average_rating', 'rent_prices', 'availabilities', 'is_super_host',
             'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified',
             'lessor_last_name', 'lessor_first_name', 'lessor_avatar']
-        read_only_fields = ['average_ratings']
 
     def get_city(self, obj):
         return obj.city.title if obj.city else None
-
-    @extend_schema_field(serializers.FloatField())
-    def get_average_ratings(self, obj):
-        return obj.get_average_rating()
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_photos(self, obj):

@@ -655,7 +655,6 @@ class AllVehiclesPagination(LimitOffsetPagination):
 @extend_schema(summary="Список всего транспорта",
                description="Список всего транспорта",
                parameters=[
-                   OpenApiParameter("ordering", type=OpenApiTypes.STR, description="Сортировка по полям"),
                    OpenApiParameter("super_host", type=OpenApiTypes.BOOL, description="Суперхост"),
                    OpenApiParameter("day_price", type=OpenApiTypes.STR, description="Дневная цена в формате 'min,max'"),
                    OpenApiParameter("verified_only", type=OpenApiTypes.BOOL,
@@ -680,8 +679,29 @@ class AllVehiclesPagination(LimitOffsetPagination):
                                     description="Тип транспорта"),
                    OpenApiParameter("long_distance", type=OpenApiTypes.BOOL, description="Междугородние поездки"),
                    OpenApiParameter("delivery", type=OpenApiTypes.BOOL, description="Доставка"),
-               ]
-               )
+                   OpenApiParameter("average_rating_min", type=OpenApiTypes.NUMBER, description="Минимальный рейтинг"),
+                   OpenApiParameter("average_rating_max", type=OpenApiTypes.NUMBER, description="Максимальный рейтинг"),
+                   OpenApiParameter(
+                                   name="ordering",
+                                   type=OpenApiTypes.STR,
+                                   location=OpenApiParameter.QUERY,
+                                   description=(
+                                           "Поле для сортировки. "
+                                           "Доступные значения: "
+                                           "`price`, `-price`, "
+                                           "`count_trip`, `-count_trip`, "
+                                           "`average_rating`, `-average_rating`, "
+                                           "`last_update`, `-last_update`."
+                                   ),
+                                   enum=[
+                                       "price", "-price",
+                                       "count_trip", "-count_trip",
+                                       "average_rating", "-average_rating",
+                                       "last_update", "-last_update"
+                                   ],
+                               )
+                           ],
+                           )
 class AllVehiclesListView(ListAPIView):
     permission_classes = [AllowAny]
     pagination_class = AllVehiclesPagination
