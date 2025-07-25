@@ -1,14 +1,10 @@
 from datetime import timedelta
-
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 from django.utils.timezone import now
-from rest_framework.exceptions import ValidationError
 
 from RentalGuru import settings
-from franchise.models import Franchise, City
+from franchise.models import City
 
 
 """
@@ -28,6 +24,7 @@ from franchise.models import Franchise, City
 Если у менеджера в доступах указан соответствующий раздел, то разрешать доступ
 Если для каких то вью нет инструкций по доступам для менеджеров, то предоставить доступ 
 """
+
 
 class AccessType(models.Model):
     TYPE_CHOICES = (
@@ -62,7 +59,7 @@ class AccessType(models.Model):
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
     password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
-    city = models.ForeignKey(City, null=True, blank=True, default=None, on_delete=models.SET_NULL, verbose_name='Город', related_name='managers')
+    cities = models.ManyToManyField(City, blank=True, null=True, verbose_name='Города', related_name='managers')
     access_types = models.ManyToManyField(AccessType, blank=True, verbose_name='Типы доступа', related_name='managers')
 
     def __str__(self):

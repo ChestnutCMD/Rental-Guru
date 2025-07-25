@@ -1,16 +1,13 @@
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from franchise.models import Franchise
 from manager.models import AccessType, Manager
-from manager.permissions import IsAdminOrSelf, IsAdminOrDirector, IsAdmin, StaffAccess
+from manager.permissions import IsAdminOrSelf, IsAdmin, StaffAccess
 from manager.serializers import AccessTypeSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
     ManagerListSerializer, ManagerCreateSerializer
 
@@ -32,7 +29,7 @@ class AccessTypeViewSet(ReadOnlyModelViewSet):
 )
 class ManagerViewSet(ModelViewSet):
     """ViewSet для управления менеджерами"""
-    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types')
+    queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types', 'cities')
     permission_classes = [StaffAccess, IsAdminOrSelf]
 
     def get_serializer_class(self):
@@ -46,7 +43,6 @@ class ManagerViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
-            # Создавать может только админ
             return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()
 
@@ -66,20 +62,16 @@ class ManagerViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Админ видит всех
         if user.role == 'admin':
             return Manager.objects.all()
 
-        # Директор франшизы — только менеджеров в своём городе
         franchise = Franchise.objects.filter(director=user).first()
         if franchise and franchise.city:
-            return Manager.objects.filter(city=franchise.city)
+            return Manager.objects.filter(cities=franchise.city)
 
-        # Менеджер с доступом 'staff' — всех менеджеров
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
             if manager.access_types.filter(name='staff').exists():
                 return Manager.objects.all()
 
-        # Остальные — никого
         return Manager.objects.none()
