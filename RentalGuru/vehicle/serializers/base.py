@@ -369,12 +369,15 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     free_deposit = serializers.SerializerMethodField()
     is_super_host = serializers.SerializerMethodField()
     city = serializers.StringRelatedField()
+    lessor_last_name = serializers.SerializerMethodField()
+    lessor_first_name = serializers.SerializerMethodField()
+    lessor_avatar = serializers.SerializerMethodField()
 
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_ratings', 'rent_prices', 'availabilities', 'is_super_host',
-            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified'
-        ]
+            'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified',
+            'lessor_last_name', 'lessor_first_name', 'lessor_avatar']
         read_only_fields = ['average_ratings']
 
     def get_city(self, obj):
@@ -414,6 +417,24 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.BooleanField())
     def get_is_super_host(self, obj):
         return obj.owner.lessor.super_host
+
+    @extend_schema_field(serializers.CharField())
+    def get_lessor_last_name(self, obj):
+        return obj.owner.last_name
+
+    @extend_schema_field(serializers.CharField())
+    def get_lessor_first_name(self, obj):
+        return obj.owner.first_name
+
+    @extend_schema_field(serializers.URLField())
+    def get_lessor_avatar(self, obj):
+        avatar = getattr(obj.owner, "avatar", None)
+        if avatar and avatar.name:
+            try:
+                return avatar.url
+            except ValueError:
+                return None
+        return None
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):
