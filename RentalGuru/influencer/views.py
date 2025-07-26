@@ -44,7 +44,7 @@ class InfluencerViewSet(ModelViewSet):
         if self.action in ['list', 'create']:
             return [permission() for permission in [PartnershipPermission]]
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return [permission() for permission in [IsAdminOrInfluencer, PartnershipPermission]]
+            return [permission() for permission in [IsAdminOrInfluencer | PartnershipPermission]]
         return super().get_permissions()
 
     def get_queryset(self):
@@ -145,7 +145,7 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == 'admin':
+        if user.role in ['admin', 'manager']:
             queryset = ReferralLink.objects.select_related('influencer__user')
             influencer_id = self.request.query_params.get('influencer_id')
             if influencer_id:
@@ -168,7 +168,7 @@ class QRCodeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Возвращает QR-коды только текущего пользователя."""
         user = self.request.user
-        if user.role == 'admin':
+        if user.role in ['admin', 'manager']:
             queryset = QRCode.objects.select_related('influencer', 'influencer__user')
             influencer_id = self.request.query_params.get('influencer_id')
             if influencer_id:
