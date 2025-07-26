@@ -511,12 +511,16 @@ class WithdrawInfluencerSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     avatar = CustomAvatarField(source='user.avatar', required=False)
-    account_number = serializers.CharField(source='organization.bank_details.account_number')
+    account_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Influencer
         fields = ['id', 'first_name', 'last_name', 'avatar', 'account_number', ]
 
+    def get_account_number(self, obj):
+        if obj.organization and obj.organization.bank_details:
+            return obj.organization.bank_details.account_number
+        return None
 
 class RequestWithdrawListSerializer(serializers.ModelSerializer):
     influencer = WithdrawInfluencerSerializer()
