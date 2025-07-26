@@ -344,9 +344,16 @@ class RequestRentViewSet(viewsets.ModelViewSet):
         #     raise DRFValidationError("Транспорт сдается только верифицированным пользователям")
 
         # Проверка рейтинга арендатора
-        if vehicle_instance.drivers_rating > Decimal(
-                request.user.renter.get_average_rating()) and request.user.renter.get_average_rating() != 0:
-            raise DRFValidationError(f"Низкий рейтинг арендатора для данного транспорта")
+        renter_rating = request.user.renter.get_average_rating()
+        vehicle_rating = vehicle_instance.drivers_rating
+
+        if (
+                vehicle_rating is not None and
+                renter_rating is not None and
+                renter_rating != 0 and
+                vehicle_rating > Decimal(renter_rating)
+        ):
+            raise DRFValidationError("Низкий рейтинг арендатора для данного транспорта")
 
         if availabilities.filter(on_request=True).exists():
             request_start_date = None
@@ -643,18 +650,38 @@ class MessageSupportViewSet(viewsets.ModelViewSet):
 class UnreadMessagesCountAPIView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
-
         user_chats = Chat.objects.filter(participants=user).values_list('id', flat=True)
-
-        unread_in_chats = (Message.objects.filter(chat_id__in=user_chats, is_read=False, deleted=False)
-                           .exclude(sender=user).count())
-
-        chat_support = (ChatSupport.objects.filter(creator=user).values_list('id', flat=True).first())
+        unread_in_chats = (
+            Message.objects
+            .filter(chat_id__in=user_chats, is_read=False, deleted=False)
+            .exclude(sender=user)
+            .count()
+        )
 
         unread_in_support = 0
-        if chat_support:
-            unread_in_support = (MessageSupport.objects.filter(chat_id=chat_support, is_read=False, deleted=False)
-                                 .exclude(sender=user).count())
+
+        if user.role in ['admin', 'manager']:
+            creator_ids = ChatSupport.objects.values_list('creator_id', flat=True)
+            unread_in_support = (
+                MessageSupport.objects
+                .filter(is_read=False, deleted=False)
+                .exclude(sender_id__in=creator_ids)
+                .count()
+            )
+        else:
+            chat_support_id = (
+                ChatSupport.objects
+                .filter(creator=user)
+                .values_list('id', flat=True)
+                .first()
+            )
+            if chat_support_id:
+                unread_in_support = (
+                    MessageSupport.objects
+                    .filter(chat_id=chat_support_id, is_read=False, deleted=False)
+                    .exclude(sender=user)
+                    .count()
+                )
 
         total_unread = unread_in_chats + unread_in_support
 

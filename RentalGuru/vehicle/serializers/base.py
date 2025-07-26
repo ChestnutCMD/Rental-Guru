@@ -421,6 +421,10 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     def get_lessor_first_name(self, obj):
         return obj.owner.first_name
 
+    @extend_schema_field(serializers.CharField())
+    def get_lessor_first_name(self, obj):
+        return obj.owner.telephone if obj.owner.telephone else None
+
     @extend_schema_field(serializers.URLField())
     def get_lessor_avatar(self, obj):
         avatar = getattr(obj.owner, "avatar", None)

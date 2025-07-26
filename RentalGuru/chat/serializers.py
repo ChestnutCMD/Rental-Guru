@@ -429,7 +429,12 @@ class ChatSupportSerializer(serializers.ModelSerializer):
 
     def get_unread_messages_count(self, obj):
         user = self.context['request'].user
-        return obj.message_support.filter(is_read=False, deleted=False).exclude(sender=user).count()
+        if user.role in ['admin', 'manager']:
+            creator_ids = ChatSupport.objects.values_list('creator_id', flat=True)
+            return obj.message_support.filter(is_read=False, deleted=False).exclude(sender_id__in=creator_ids).count()
+
+        else:
+            return obj.message_support.filter(is_read=False, deleted=False).exclude(sender=user).count()
 
     def get_role(self, obj):
         user = obj.creator
