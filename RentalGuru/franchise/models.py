@@ -41,7 +41,7 @@ class Franchise(models.Model):
     name = models.CharField(max_length=50, verbose_name='Имя компании')
     date_register = models.DateField(null=True, blank=True, verbose_name='Дата регистрации')
     country = models.CharField(max_length=50, verbose_name='Страна')
-    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, verbose_name='Город')
+    city = models.ForeignKey(City, on_delete=models.PROTECT, null=True, verbose_name='Город')
     address = models.CharField(max_length=255, null=True, blank=True, verbose_name="Адрес")
 
     inn = models.CharField(max_length=12, unique=True, verbose_name='ИНН')
