@@ -44,7 +44,7 @@ class InfluencerViewSet(ModelViewSet):
         if self.action in ['list', 'create']:
             return [permission() for permission in [PartnershipPermission]]
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return [permission() for permission in [IsAdminOrInfluencer]]
+            return [permission() for permission in [IsAdminOrInfluencer, PartnershipPermission]]
         return super().get_permissions()
 
     def get_queryset(self):
@@ -139,7 +139,7 @@ class InfluencerRequestDeleteView(DestroyAPIView):
 class ReferralLinkViewSet(viewsets.ModelViewSet):
     queryset = ReferralLink.objects.all()
     serializer_class = ReferralLinkSerializer
-    permission_classes = [PartnershipPermission]
+    permission_classes = [IsAdminOrOwner | PartnershipPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['influencer__id']
 
@@ -161,7 +161,7 @@ class ReferralLinkViewSet(viewsets.ModelViewSet):
 class QRCodeViewSet(viewsets.ModelViewSet):
     queryset = QRCode.objects.all()
     serializer_class = QRCodeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner | PartnershipPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['influencer__id']
 
@@ -202,7 +202,7 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 class PromoCodeViewSet(ModelViewSet):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer
-    permission_classes = [PartnershipPermission]
+    permission_classes = [IsAdminOrOwner | PartnershipPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['influencer__id']
 

@@ -26,7 +26,7 @@ from .filters import LessorStatisticsFilter
 from .models import VehiclePark, Franchise, RequestFranchise, City
 from .permissions import IsOwnerOrAdmin, IsOwnerOrAdminForGet, IsDirectorOrAdminForGet, IsAdminOrManager, \
     IsAdminOrFranchiseOwner, IsLessorOrFranchiseDirector, IsAdminManagerOrLessorOrFranchiseDirector, \
-    LessorsPermission, DepartmentsPermission
+    LessorsPermission, DepartmentsPermission, IsAdmin
 from franchise.serializers.vehicle_park import VehicleParkRetrieveSerializer, VehicleParkListSerializer, \
     VehicleParkCreateSerializer, VehicleParkUpdateSerializer, ChatSerializer, RequestRentSerializer, VehicleSerializer, \
     VehicleParkStatisticsSerializer
@@ -210,7 +210,7 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
             )]
 )
 class RequestsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [IsAuthenticated, (IsDirectorOrAdminForGet | DepartmentsPermission)]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -271,7 +271,7 @@ class RequestsByFranchiseView(APIView):
 
 @extend_schema(summary="Все чаты франшизы", description="Чаты франшизы")
 class ChatsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [IsAuthenticated, (IsDirectorOrAdminForGet | DepartmentsPermission)]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -295,7 +295,7 @@ class ChatsByFranchiseView(APIView):
 
 @extend_schema(summary="Арендодатели франшизы", description="Арендодатели франшизы")
 class LessorsByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [IsAuthenticated, (IsDirectorOrAdminForGet | DepartmentsPermission)]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -325,7 +325,7 @@ class LessorsByFranchiseView(APIView):
         )]
 )
 class VehiclesByFranchiseView(APIView):
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [IsAuthenticated, (IsDirectorOrAdminForGet | DepartmentsPermission)]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, franchise_id, format=None):
@@ -381,7 +381,7 @@ class VehiclesByFranchiseView(APIView):
         ]
 )
 class FranchiseStatisticsView(APIView):
-    permission_classes = [IsAuthenticated, IsDirectorOrAdminForGet]
+    permission_classes = [IsAuthenticated, (IsDirectorOrAdminForGet | DepartmentsPermission)]
 
     def get(self, request, franchise_id):
         try:
@@ -423,14 +423,14 @@ class RequestFranchiseCreateView(generics.CreateAPIView):
 class RequestFranchiseListView(generics.ListAPIView):
     queryset = RequestFranchise.objects.all()
     serializer_class = RequestFranchiseSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrManager]
+    permission_classes = [IsAuthenticated, (IsAdmin | DepartmentsPermission)]
 
 
 @extend_schema(summary="Удаление заявки на создание франшизы", description="Удаление заявки на создание франшизы")
 class RequestFranchiseDeleteView(generics.DestroyAPIView):
     queryset = RequestFranchise.objects.all()
     serializer_class = RequestFranchiseSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrManager]
+    permission_classes = [IsAuthenticated, (IsAdmin | DepartmentsPermission)]
 
 
 class CityOrderingEnum(str, Enum):
@@ -537,7 +537,7 @@ class LessorListView(APIView):
 
 @extend_schema(summary="Удаление арендодателя", description="Удаление арендодателя из франшизы")
 class DeleteLessorFromFranchiseView(APIView):
-    permission_classes = [IsLessorOrFranchiseDirector]
+    permission_classes = [IsLessorOrFranchiseDirector | DepartmentsPermission]
 
     def post(self, request, lessor_id):
         lessor = get_object_or_404(Lessor, id=lessor_id)
@@ -548,7 +548,7 @@ class DeleteLessorFromFranchiseView(APIView):
 
 
 class LessorStatisticsView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminManagerOrLessorOrFranchiseDirector]
+    permission_classes = [IsAuthenticated, (IsAdminManagerOrLessorOrFranchiseDirector | DepartmentsPermission)]
 
     @extend_schema(
         summary="Статистика арендодателя",

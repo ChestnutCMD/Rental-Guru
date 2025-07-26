@@ -121,7 +121,7 @@ class TripViewSet(viewsets.ModelViewSet):
                )
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+    permission_classes = [IsAuthenticated, (IsAdminOrOwner | ChatsPermission)]
 
     def get_queryset(self):
         user = self.request.user

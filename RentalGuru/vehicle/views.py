@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from RentalGuru import settings
 from app.models import Lessor
 from chat.models import Trip
-from manager.permissions import ManagerObjectPermission
+from manager.permissions import ManagerObjectPermission, IsFranchiseDirector, VehiclesAccess
 from notification.models import Notification
 from .filters import AutoFilter, BikeFilter, ShipFilter, HelicopterFilter, SpecialTechnicFilter, BaseFilter, \
     VehicleModelFilter, VehicleBrandFilter
@@ -76,9 +76,9 @@ class BaseViewSet(viewsets.ModelViewSet):
         elif self.action == 'retrieve':
             self.permission_classes = [AllowAny]
         elif self.action == 'create':
-            self.permission_classes = [IsAuthenticated, IsAdminOrLessor]
+            self.permission_classes = [IsAuthenticated, (IsAdminOrLessor | IsFranchiseDirector | VehiclesAccess)]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsAdminOrOwner]
+            self.permission_classes = [IsAuthenticated, (IsAdminOrOwner | IsFranchiseDirector | VehiclesAccess)]
         return super().get_permissions()
 
     def perform_update(self, serializer):
@@ -778,7 +778,7 @@ class AllVehiclesListView(ListAPIView):
 
 @extend_schema(summary="Удаление фото транспорта", description="Удаление фото транспорта по id")
 class VehiclePhotoDeleteView(APIView):
-    permission_classes = [IsAdminOrOwner]
+    permission_classes = [IsAdminOrOwner | IsFranchiseDirector | VehiclesAccess]
 
     def get_object(self):
         photo = get_object_or_404(VehiclePhoto, id=self.kwargs['photo_id'])
@@ -922,7 +922,7 @@ class DeleteVehicleDocumentView(APIView):
 @extend_schema(summary="Изменение порядка вывода фото", description="Изменение порядка вывода фото",
                request=UpdatePhotoOrderSerializer)
 class UpdatePhotoOrderView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+    permission_classes = [IsAuthenticated, (IsAdminOrOwner | VehiclesAccess | IsFranchiseDirector)]
 
     def post(self, request, *args, **kwargs):
         serializer = UpdatePhotoOrderSerializer(data=request.data, context={'request': request})

@@ -68,6 +68,11 @@ class HasAccessType(BasePermission):
         return self.METHOD_PERMISSION_MAP.get(request.method)
 
 
+class VehiclesAccess(HasAccessType):
+    """Доступ к арендодателям"""
+    access_type = 'vehicles'
+
+
 class LessorsAccess(HasAccessType):
     """Доступ к арендодателям"""
     access_type = 'lessors'

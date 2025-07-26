@@ -28,6 +28,7 @@ from franchise.models import City
 
 class AccessType(models.Model):
     TYPE_CHOICES = (
+        ('vehicles', 'Транспорт'),
         ('lessors', 'Арендодатели'),
         ('departments', 'Подразделения'),
         ('partnership', 'Партнерская программа'),
