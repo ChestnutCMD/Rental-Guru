@@ -145,7 +145,7 @@ class ChatsByParkView(APIView):
 @extend_schema(summary="Франшиза CRUD", description="CRUD фарншизы")
 class FranchiseViewSet(viewsets.ModelViewSet):
     queryset = Franchise.objects.all()
-    permission_classes = [DepartmentsPermission, IsDirectorOrAdminForGet]
+    permission_classes = [DepartmentsPermission | IsDirectorOrAdminForGet]
 
     def get_queryset(self):
         user = self.request.user
