@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from franchise.models import Franchise
-
+from manager.models import Manager
 
 logger = logging.getLogger('payment')
 
@@ -170,7 +170,7 @@ class IsFranchiseDirector(BasePermission):
             'trip': lambda obj: obj.vehicle.owner.lessor.franchise,
             'franchise': lambda obj: obj,
             'complaint': lambda obj: obj.vehicle.owner.lessor.franchise,
-            'complaintforfeedback': lambda obj: obj.feedback.vehicle.owner.lessor.franchise,
+            'complaintforfeedback': lambda obj: obj.feedback.vehicle.owner.lessor.franchise
         }
 
         model_name = obj._meta.model_name.lower()
@@ -353,4 +353,31 @@ class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         if request.user.role == 'admin':
             return True
+        return False
+
+
+class IsDirector(BasePermission):
+    """
+    Доступ директору франшизы только к просмотру объектов в рамках своей франшизы (по городам).
+    """
+    def has_permission(self, request, view):
+        # Разрешаем доступ только к list и retrieve
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.role == 'director':
+            return view.action in ['list', 'retrieve']
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.role != 'director':
+            return False
+
+        franchise = Franchise.objects.filter(director=request.user).first()
+        if not franchise:
+            return False
+
+        if isinstance(obj, Manager):
+            return obj.cities.filter(id=franchise.city.id).exists()
+
         return False
