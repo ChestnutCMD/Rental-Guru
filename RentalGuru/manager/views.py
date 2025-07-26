@@ -64,12 +64,12 @@ class ManagerViewSet(ModelViewSet):
             return Manager.objects.all()
 
         franchise = Franchise.objects.filter(director=user).first()
-        if franchise and franchise.city:
-            return Manager.objects.filter(cities=franchise.city)
+        if franchise:
+            return Manager.objects.filter(cities__in=[franchise.city])
 
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
-            if manager.access_types.filter(name='staff').exists():
+            if manager and manager.access_types.filter(name='staff').exists():
                 return Manager.objects.all()
 
         return Manager.objects.none()
