@@ -30,7 +30,7 @@ class AccessTypeViewSet(ReadOnlyModelViewSet):
 class ManagerViewSet(ModelViewSet):
     """ViewSet для управления менеджерами"""
     queryset = Manager.objects.select_related('user', 'manager_document').prefetch_related('access_types', 'cities')
-    permission_classes = [StaffAccess | IsAdminOrSelf]
+    permission_classes = [StaffAccess]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -40,11 +40,6 @@ class ManagerViewSet(ModelViewSet):
         if self.action == 'retrieve':
             return ManagerDetailSerializer
         return ManagerListSerializer
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return [IsAuthenticated(), StaffAccess()]
-        return super().get_permissions()
 
     def destroy(self, request, *args, **kwargs):
         """Удаление менеджера и связанного пользователя"""
