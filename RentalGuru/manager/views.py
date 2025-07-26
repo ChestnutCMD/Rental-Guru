@@ -42,6 +42,7 @@ class ManagerViewSet(ModelViewSet):
         return ManagerListSerializer
 
     def get_permissions(self):
+        logger.info(f"Getting permissions for action: {getattr(self, 'action', 'unknown')}")
         return super().get_permissions()
 
     def destroy(self, request, *args, **kwargs):
@@ -59,17 +60,29 @@ class ManagerViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        logger.info(f"Getting queryset for user: {user}, role: {getattr(user, 'role', None)}")
 
+        # Админы имеют доступ ко всем менеджерам
         if user.role == 'admin':
+            logger.info("User is admin, returning all managers")
             return Manager.objects.all()
 
+        # Директора франшизы имеют доступ ко всем менеджерам своей франшизы
         franchise = Franchise.objects.filter(director=user).first()
         if franchise:
+            logger.info(f"User is franchise director of {franchise}")
             return Manager.objects.filter(cities__in=[franchise.city])
 
+        # Менеджеры с доступом к персоналу имеют глобальный доступ ко всем менеджерам
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
+            logger.info(f"User is manager: {manager}")
             if manager and manager.access_types.filter(name='staff').exists():
+                logger.info("Manager has staff access, returning all managers")
                 return Manager.objects.all()
+            else:
+                logger.warning("Manager does not have staff access")
 
+        # По умолчанию возвращаем пустой queryset
+        logger.warning("Returning empty queryset")
         return Manager.objects.none()
