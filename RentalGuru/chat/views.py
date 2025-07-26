@@ -661,11 +661,13 @@ class UnreadMessagesCountAPIView(APIView):
         unread_in_support = 0
 
         if user.role in ['admin', 'manager']:
-            creator_ids = ChatSupport.objects.values_list('creator_id', flat=True)
             unread_in_support = (
                 MessageSupport.objects
-                .filter(is_read=False, deleted=False)
-                .exclude(sender_id__in=creator_ids)
+                .filter(
+                    is_read=False,
+                    deleted=False,
+                    sender_id__in=ChatSupport.objects.values_list('creator_id', flat=True)
+                )
                 .count()
             )
         else:
