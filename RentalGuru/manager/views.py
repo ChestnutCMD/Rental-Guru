@@ -67,7 +67,7 @@ class ManagerViewSet(ModelViewSet):
         if user.role == 'admin':
             return Manager.objects.all()
 
-        if user.role == 'director':
+        if Franchise.objects.filter(director=user).exists():
             franchise = Franchise.objects.filter(director=user).first()
             if franchise:
                 return Manager.objects.filter(cities=franchise.city)

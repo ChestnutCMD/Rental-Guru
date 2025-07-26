@@ -357,34 +357,25 @@ class IsAdmin(BasePermission):
 
 
 class IsDirector(BasePermission):
-    """
-    Доступ директору франшизы только к просмотру объектов в рамках своей франшизы (по городам).
-    """
     def has_permission(self, request, view):
         user = request.user
         if not user.is_authenticated:
             return False
 
-        # Только директор франшизы и только list/retrieve
-        if user.role == 'director':
+        if hasattr(user, 'franchise'):
             return view.action in ['list', 'retrieve']
 
-        # Все остальные пользователи – проверка по другим пермишенам
         return True
 
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        if user.role != 'director':
-            return True  # Не директор - проверяют другие пермишены
+        if not hasattr(user, 'franchise'):
+            return True
 
-        # Директор – проверяем по городам
-        franchise = Franchise.objects.filter(director=user).first()
-        if not franchise:
-            return False
-
-        # Менеджер должен быть из города франшизы
+        franchise = user.franchise
         if isinstance(obj, Manager):
             return obj.cities.filter(id=franchise.city.id).exists()
 
         return False
+
