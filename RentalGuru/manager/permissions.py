@@ -36,36 +36,58 @@ class HasAccessType(BasePermission):
     }
 
     def has_permission(self, request, view):
+        logger.info(f"Checking has_permission for user: {request.user}, role: {getattr(request.user, 'role', None)}")
+        logger.info(f"Access type: {self.access_type}, Method: {request.method}")
+
         if not request.user.is_authenticated:
+            logger.warning("User is not authenticated")
             return False
 
         if request.user.role == 'admin':
+            logger.info("User is admin, granting access")
             return True
 
         if not hasattr(request.user, 'manager') or not request.user.manager:
+            logger.warning(f"User {request.user} has no manager attribute or manager is None")
             return False
 
         manager = request.user.manager
+        logger.info(f"Manager: {manager}, Manager ID: {manager.id}")
+
         if not self.access_type:
+            logger.info("No access_type specified, granting access")
             return True
 
         required_permission = self._get_required_permission(request, view)
+        logger.info(f"Required permission: {required_permission}")
+
         if not required_permission:
+            logger.warning("Could not determine required permission")
             return False
 
-        return manager.access_types.filter(
+        # Проверяем доступные типы доступа у менеджера
+        available_access_types = manager.access_types.all()
+        logger.info(f"Available access types: {[f'{at.name}:{at.permission}' for at in available_access_types]}")
+
+        has_access = manager.access_types.filter(
             name=self.access_type,
             permission=required_permission
         ).exists()
+
+        logger.info(f"Has access result: {has_access}")
+        return has_access
 
     def _get_required_permission(self, request, view):
         """Определяет требуемый тип разрешения на основе метода или действия"""
         if hasattr(view, 'action') and view.action:
             permission = self.ACTION_PERMISSION_MAP.get(view.action)
             if permission:
+                logger.info(f"Permission from action {view.action}: {permission}")
                 return permission
 
-        return self.METHOD_PERMISSION_MAP.get(request.method)
+        permission = self.METHOD_PERMISSION_MAP.get(request.method)
+        logger.info(f"Permission from method {request.method}: {permission}")
+        return permission
 
 
 class VehiclesAccess(HasAccessType):

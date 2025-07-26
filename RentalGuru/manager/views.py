@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -11,6 +13,8 @@ from manager.permissions import IsAdminOrSelf, IsAdmin, StaffAccess
 from manager.serializers import AccessTypeSerializer, ManagerUpdateSerializer, ManagerDetailSerializer, \
     ManagerListSerializer, ManagerCreateSerializer
 
+
+logger = logging.getLogger(__name__)
 
 @extend_schema(
     summary="Типы доступов для менеджеров",
