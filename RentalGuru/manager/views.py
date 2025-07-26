@@ -41,6 +41,9 @@ class ManagerViewSet(ModelViewSet):
             return ManagerDetailSerializer
         return ManagerListSerializer
 
+    def get_permissions(self):
+        return super().get_permissions()
+
     def destroy(self, request, *args, **kwargs):
         """Удаление менеджера и связанного пользователя"""
         instance = self.get_object()
