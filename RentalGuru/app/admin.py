@@ -5,9 +5,21 @@ from feedback.models import FeedbackRenter
 from .models import User, Lessor, Renter, Currency, Language, RenterDocuments
 
 
+@admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'role', 'date_of_birth', 'telephone', 'currency', 'avatar')
+    list_display = (
+        'email', 'first_name', 'last_name', 'role', 'date_of_birth',
+        'telephone', 'currency', 'avatar', 'get_influencer_id'
+    )
     list_filter = ('role',)
+
+    @admin.display(description='ID Инфлюенсера')
+    def get_influencer_id(self, obj):
+        if hasattr(obj, 'lessor') and obj.lessor.influencer:
+            return obj.lessor.influencer.id
+        elif hasattr(obj, 'renter') and obj.renter.influencer:
+            return obj.renter.influencer.id
+        return '-'
 
 
 class BaseUserAdminForm(forms.ModelForm):
@@ -175,7 +187,6 @@ class CurrencyAdmin(admin.ModelAdmin):
     list_display = ['code', 'title']
 
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Lessor, LessorAdmin)
 admin.site.register(Renter, RenterAdmin)
 admin.site.register(Language)
