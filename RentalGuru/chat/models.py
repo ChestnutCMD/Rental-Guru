@@ -182,15 +182,16 @@ class RequestRent(models.Model):
         """Создание платежа через Тиньков API"""
         from payment.models import Payment
 
-        amount = self.calculate_amount()
+        # Рассчитываем комиссию (сумму к оплате)
+        commission_amount = self.calculate_amount()
         discount_amount = 0
 
-        # Обработка промокода
+        # Обработка промокода - скидка применяется к комиссии
         if self.promocode:
-            discount_amount = amount / 100 * Decimal(self.promocode.total)
-            amount -= discount_amount
+            discount_amount = commission_amount * Decimal(self.promocode.total) / Decimal(100)
+            commission_amount -= discount_amount
 
-            # ИЗМЕНЕНИЕ: Отмечаем промокод как использованный
+            # Отмечаем промокод как использованный
             used_promo = UsedPromoCode.objects.filter(
                 user=self.organizer,
                 promo_code=self.promocode
@@ -212,15 +213,17 @@ class RequestRent(models.Model):
                     used=True
                 )
 
-        # Обработка бонусов
+        # Обработка бонусов - вычитаются из итоговой суммы к оплате
+        final_amount = commission_amount
         if self.bonus:
             renter = self.organizer.renter
-            if amount <= self.bonus:
-                renter.bonus_account -= amount
-                amount = 0  # Все покрыто бонусами
-            else:
-                renter.bonus_account -= self.bonus
-                amount -= self.bonus
+            bonus_to_use = min(Decimal(self.bonus), final_amount)  # Не можем использовать больше, чем сумма к оплате
+
+            if renter.bonus_account < bonus_to_use:
+                raise ValueError("Недостаточно бонусов на счете")
+
+            renter.bonus_account -= bonus_to_use
+            final_amount -= bonus_to_use
             renter.save()
 
         influencer = getattr(self.organizer.renter, 'influencer', None)
@@ -228,7 +231,7 @@ class RequestRent(models.Model):
         # Создание записи о платеже
         Payment.objects.create(
             request_rent=self,
-            amount=amount,
+            amount=final_amount,
             deposite=self.deposit_cost,
             delivery=self.delivery_cost,
             promo_code=self.promocode,
@@ -237,11 +240,9 @@ class RequestRent(models.Model):
         )
 
     def calculate_amount(self):
-        """ Расчет стоимости суммы к оплате """
+        """ Расчет стоимости суммы к оплате (комиссия от общей стоимости) """
         commission = self.vehicle.owner.lessor.commission
-        if self.on_request:
-            return Decimal(self.total_cost) / Decimal(100) * commission
-        return Decimal(self.total_cost) / (Decimal(100) + commission) * commission
+        return Decimal(self.total_cost) * commission / Decimal(100)
 
     def __str__(self):
         return f'Заявка на аренду №-{self.pk}'
