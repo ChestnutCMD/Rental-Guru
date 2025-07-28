@@ -37,14 +37,14 @@ def check_promocode(user, promocode):
         return "Промокод не применен. Нажмите на кнопку применить."
 
     # Дополнительная проверка: нет ли активных заявок с этим промокодом у данного пользователя
-    active_request_with_promo = RequestRent.objects.filter(
-        organizer=user,
-        promocode=promo_code,
-        status__in=['unknown', 'accept'],
-        is_deleted=False
-    ).exists()
-
-    if active_request_with_promo:
-        return "У вас уже есть активная заявка с этим промокодом."
+    # active_request_with_promo = RequestRent.objects.filter(
+    #     organizer=user,
+    #     promocode=promo_code,
+    #     status__in=['unknown', 'accept'],
+    #     is_deleted=False
+    # ).exists()
+    #
+    # if active_request_with_promo:
+    #     return "У вас уже есть активная заявка с этим промокодом."
 
     return promo_code
