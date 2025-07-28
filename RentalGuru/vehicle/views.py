@@ -78,7 +78,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             self.permission_classes = [IsAuthenticated, (IsAdminOrLessor | IsFranchiseDirector | VehiclesAccess)]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, (IsAdminOrOwner | IsFranchiseDirector | VehiclesAccess)]
+            self.permission_classes = [IsAuthenticated, (IsAdminOrOwner | VehiclesAccess)]
         return super().get_permissions()
 
     def perform_update(self, serializer):

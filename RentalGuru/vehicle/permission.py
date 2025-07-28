@@ -2,7 +2,7 @@ from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
 from franchise.models import Franchise
-from manager.permissions import ManagerObjectPermission, IsFranchiseDirector
+from manager.permissions import ManagerObjectPermission, IsFranchiseDirector, VehiclesAccess
 
 
 class IsAdminOrReadOnly(ManagerObjectPermission):
@@ -27,7 +27,7 @@ class IsAdminOrLessor(permissions.BasePermission):
     Пользовательское разрешение, позволяющее создавать объекты только администраторам и арендодателям.
     """
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.role in ['admin', 'manager'] or hasattr(request.user, 'lessor')) or hasattr(request.user, 'franchise')
+        return request.user.is_authenticated and (request.user.role == 'admin' or hasattr(request.user, 'lessor')) or hasattr(request.user, 'franchise')
 
 
 class IsAdminOrOwner(ManagerObjectPermission):
@@ -41,6 +41,10 @@ class IsAdminOrOwner(ManagerObjectPermission):
             # Проверка владельца
         if hasattr(obj, 'owner') and obj.owner == request.user:
             return True
+
+        if request.user.role == 'manager':
+            vehicles_access = VehiclesAccess()
+            return vehicles_access.has_permission(request, view)
 
             # Проверка директора франшизы
         franchise = Franchise.objects.filter(director=request.user).first()
