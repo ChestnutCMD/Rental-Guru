@@ -1,8 +1,33 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
+from app.models import Lessor, Renter
 from influencer.models import Influencer, ReferralLink, BankDetails, Organization, InfluencerDocuments, QRCode, \
     PromoCode
+
+
+class RenterInline(admin.TabularInline):
+    model = Renter
+    extra = 0
+    readonly_fields = ('user', 'verification', 'rating')
+    can_delete = False
+    verbose_name = "Арендатор"
+    verbose_name_plural = "Арендаторы"
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
+class LessorInline(admin.TabularInline):
+    model = Lessor
+    extra = 0
+    readonly_fields = ('user', 'super_host', 'count_trip', 'average_response_time', 'commission')
+    can_delete = False
+    verbose_name = "Арендодатель"
+    verbose_name_plural = "Арендодатели"
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class ReferralLinkInline(admin.TabularInline):
@@ -50,6 +75,8 @@ class InfluencerAdmin(admin.ModelAdmin):
         InfluencerDocumentsInline,
         ReferralLinkInline,
         QRCodeInline,
+        RenterInline,
+        LessorInline,
     ]
 
     fieldsets = (
