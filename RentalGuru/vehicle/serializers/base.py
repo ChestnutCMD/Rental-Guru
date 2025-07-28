@@ -201,7 +201,7 @@ class BaseVehicleUpdateSerializer(BaseVehicleSerializer):
                 except json.JSONDecodeError:
                     availabilities_data = []
 
-        if request and request.user.role == 'admin':
+        if request and request.user.role in ['admin', 'manager']:
             instance.verified = True
         elif should_reset_verified:
             instance.verified = False

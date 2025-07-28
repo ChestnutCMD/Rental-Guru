@@ -43,6 +43,5 @@ def handle_request_rent_post_save(sender, instance, created, **kwargs):
                 start_time=instance.start_time,
                 end_time=instance.end_time,
                 total_cost=instance.total_cost,
-                amount=instance.amount,
                 chat=chat
             )

@@ -132,3 +132,254 @@ INFO 2025-07-23 13:31:18,228 django.utils.autoreload D:\Backend\projects\Rental-
 INFO 2025-07-23 13:31:18,228 django.utils.autoreload D:\Backend\projects\Rental-Guru\RentalGuru\chat\models.py changed, reloading.
 INFO 2025-07-23 13:31:19,532 django.utils.autoreload Watching for file changes with StatReloader
 INFO 2025-07-23 13:31:19,532 django.utils.autoreload Watching for file changes with StatReloader
+INFO 2025-07-25 20:57:10,466 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 20:57:10,467 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 20:57:10,468 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 20:57:10,468 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 20:58:04,437 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 20:58:07,971 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 20:59:28,052 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 20:59:30,827 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 20:59:30,828 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 20:59:30,828 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 20:59:30,829 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 20:59:33,315 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:00:11,127 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:00:14,200 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:00:14,200 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:00:14,200 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:00:14,201 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:00:36,547 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:00:38,922 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:00:38,923 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:00:38,923 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:00:38,924 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:03:10,044 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:03:12,840 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:03:12,841 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:03:12,841 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:03:12,842 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:19:59,465 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:20:02,560 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:20:02,560 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:20:02,560 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:20:02,562 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:23:29,420 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:31,539 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:34,271 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:38,860 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:50,703 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:52,402 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:54,288 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:56,057 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:23:57,893 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 21:33:06,633 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:33:09,617 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:33:09,617 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:33:09,618 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:33:09,618 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:41:14,371 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:41:17,507 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:41:17,508 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:41:17,508 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:41:17,509 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 21:41:59,818 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 21:42:02,659 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:42:02,660 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 21:42:02,660 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 21:42:02,661 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:02:06,854 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 22:08:29,544 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:08:32,491 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:08:32,492 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:08:32,492 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:08:32,493 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:11:19,004 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:11:22,034 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:11:22,035 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:11:22,035 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:11:22,036 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:13:13,906 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:13:16,462 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:13:16,462 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:13:16,462 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:13:16,463 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:16:30,197 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:16:32,820 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:16:32,821 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:16:32,821 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:16:32,822 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:16:35,134 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 22:22:34,524 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:22:37,328 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:22:37,328 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:22:37,329 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:22:37,330 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:22:43,393 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 22:26:08,113 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 22:26:11,268 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:26:11,269 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 22:26:11,269 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 22:26:11,270 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 22:26:15,561 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 23:10:28,185 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 23:10:31,097 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:10:31,097 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 23:10:31,097 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:10:31,098 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 23:20:38,704 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 23:20:41,365 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:20:41,365 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 23:20:41,366 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:20:41,367 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 23:28:46,970 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 23:28:49,547 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:28:49,548 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 23:28:49,548 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:28:49,549 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 23:30:10,143 daphne.server Killed 0 pending application instances
+INFO 2025-07-25 23:30:12,649 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:30:12,650 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-25 23:30:12,650 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-25 23:30:12,651 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-25 23:32:27,649 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-25 23:43:17,543 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:26:24,131 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:26:24,132 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:26:24,132 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:26:24,133 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:27:32,335 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-26 21:28:21,130 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:28:23,893 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:23,893 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:28:23,894 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:23,895 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:28:30,953 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:28:33,365 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:33,365 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:28:33,366 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:33,367 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:28:39,397 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:28:41,963 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:41,964 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:28:41,964 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:28:41,966 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:29:18,215 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:29:20,990 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:29:20,991 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:29:20,991 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:29:20,992 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:30:20,413 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:30:22,982 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:30:22,982 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:30:22,982 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:30:22,983 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-26 21:35:20,101 daphne.server Killed 0 pending application instances
+INFO 2025-07-26 21:35:22,831 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:35:22,831 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-26 21:35:22,832 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-26 21:35:22,833 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 00:05:28,757 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 00:05:32,189 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 00:05:32,189 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 00:05:32,190 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 00:05:32,191 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 00:07:13,946 manager.views Getting permissions for action: list
+INFO 2025-07-27 00:08:30,476 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 00:08:33,063 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 00:08:33,063 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 00:08:33,063 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 00:08:33,064 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 00:08:34,658 manager.views Getting permissions for action: list
+INFO 2025-07-27 00:08:34,658 payment Checking has_permission for user: string string, role: manager
+INFO 2025-07-27 00:08:34,658 payment Access type: staff, Method: GET
+INFO 2025-07-27 00:08:34,660 payment Manager: string string, Manager ID: 3
+INFO 2025-07-27 00:08:34,660 payment Permission from action list: read
+INFO 2025-07-27 00:08:34,660 payment Required permission: read
+INFO 2025-07-27 00:08:34,665 payment Available access types: ['lessors:read', 'partnership:read']
+INFO 2025-07-27 00:08:34,669 payment Has access result: False
+INFO 2025-07-27 00:09:53,234 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:05,935 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:14,687 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:32,666 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:39,081 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:47,571 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:54,792 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:10:57,460 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:11:02,627 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 00:11:08,929 manager.views Getting permissions for action: list
+INFO 2025-07-27 00:11:08,929 payment Checking has_permission for user: string string, role: manager
+INFO 2025-07-27 00:11:08,929 payment Access type: staff, Method: GET
+INFO 2025-07-27 00:11:08,932 payment Manager: string string, Manager ID: 3
+INFO 2025-07-27 00:11:08,932 payment Permission from action list: read
+INFO 2025-07-27 00:11:08,932 payment Required permission: read
+INFO 2025-07-27 00:11:08,935 payment Available access types: ['lessors:read', 'partnership:read', 'staff:read']
+INFO 2025-07-27 00:11:08,940 payment Has access result: True
+INFO 2025-07-27 00:11:08,940 manager.views Getting queryset for user: string string, role: manager
+INFO 2025-07-27 00:11:08,945 manager.views User is manager: string string
+INFO 2025-07-27 00:11:08,947 manager.views Manager has staff access, returning all managers
+INFO 2025-07-27 00:11:19,595 manager.views Getting permissions for action: list
+INFO 2025-07-27 00:11:19,596 payment Checking has_permission for user: string string, role: manager
+INFO 2025-07-27 00:11:19,596 payment Access type: staff, Method: GET
+INFO 2025-07-27 00:11:19,598 payment Manager: string string, Manager ID: 3
+INFO 2025-07-27 00:11:19,599 payment Permission from action list: read
+INFO 2025-07-27 00:11:19,599 payment Required permission: read
+INFO 2025-07-27 00:11:19,601 payment Available access types: ['lessors:read', 'partnership:read', 'staff:read']
+INFO 2025-07-27 00:11:19,603 payment Has access result: True
+INFO 2025-07-27 00:11:19,603 manager.views Getting queryset for user: string string, role: manager
+INFO 2025-07-27 00:11:19,605 manager.views User is manager: string string
+INFO 2025-07-27 00:11:19,608 manager.views Manager has staff access, returning all managers
+INFO 2025-07-27 12:56:23,091 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 12:56:23,092 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 12:56:23,092 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 12:56:23,093 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 12:56:26,767 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 12:56:34,284 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 12:56:41,398 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:31:52,275 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 13:31:54,791 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:31:54,791 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 13:31:54,792 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:31:54,793 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 13:32:06,210 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:32:13,905 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:33:09,341 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 13:33:11,883 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:33:11,884 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 13:33:11,884 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:33:11,885 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 13:33:15,615 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:33:55,205 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 13:33:57,697 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:33:57,697 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 13:33:57,698 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:33:57,699 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 13:36:21,773 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 13:36:24,263 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:36:24,263 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 13:36:24,263 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:36:24,264 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 13:36:53,354 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:37:17,666 daphne.server Killed 0 pending application instances
+INFO 2025-07-27 13:37:20,218 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:37:20,218 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-27 13:37:20,219 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-27 13:37:20,220 daphne.server Listening on TCP address 127.0.0.1:8000
+INFO 2025-07-27 13:37:23,735 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:39:19,379 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:39:21,686 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:39:24,147 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:39:26,157 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:11,917 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:14,320 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:25,950 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:28,896 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:32,281 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:40:35,158 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:41:05,736 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:41:10,394 notification.views Service Worker найден по пути: C:\Users\13can\Desktop\RentalGuru\RentalGuru\staticfiles\firebase-messaging-sw.js
+INFO 2025-07-27 13:42:00,293 daphne.server Killed 0 pending application instances
+INFO 2025-07-28 15:02:50,102 daphne.cli Starting server at tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-28 15:02:50,102 daphne.server HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-07-28 15:02:50,102 daphne.server Configuring endpoint tcp:port=8000:interface=127.0.0.1
+INFO 2025-07-28 15:02:50,103 daphne.server Listening on TCP address 127.0.0.1:8000

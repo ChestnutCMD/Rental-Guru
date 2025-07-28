@@ -41,7 +41,7 @@ class RequestRent(models.Model):
     is_deleted = models.BooleanField(default=False, verbose_name='Удалена')
     promocode = models.OneToOneField(PromoCode, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Активный промокод")
     bonus = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Использованные бонусные рубли")
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Сумма к оплате")
+    #amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Сумма к оплате")
 
     @property
     def owner(self):
@@ -156,18 +156,6 @@ class RequestRent(models.Model):
             self.delivery_cost = self.vehicle.price_delivery if self.delivery else 0.00
             # Рассчитываем итоговую стоимость при создании
             self.total_cost = self.calculate_rent_price()
-            self.amount = self.calculate_amount()
-            discount_amount = 0
-
-            # Обработка промокода
-            if self.promocode:
-                discount_amount = self.amount / 100 * Decimal(self.promocode.total)
-                self.amount -= discount_amount
-
-            # Обработка бонусов
-            if self.bonus:
-                self.amount -= self.bonus
-
             # Проверка является ли заявки по запросу
             from vehicle.models import Availability
             availabilities = Availability.objects.filter(vehicle=self.vehicle)
@@ -227,7 +215,9 @@ class RequestRent(models.Model):
     def calculate_amount(self):
         """ Расчет стоимости суммы к оплате """
         commission = self.vehicle.owner.lessor.commission
-        return Decimal(self.total_cost) / Decimal(100) * commission
+        if self.on_request:
+            return Decimal(self.total_cost) / Decimal(100) * commission
+        return Decimal(self.total_cost) / (Decimal(100) + commission) * commission
 
     def __str__(self):
         return f'Заявка на аренду №-{self.pk}'
@@ -278,7 +268,6 @@ class Trip(models.Model):
     start_date = models.DateField(verbose_name='Начало поездки')
     end_date = models.DateField(verbose_name='Конец поездки')
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Стоимость аренды', default=0.00)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Сумма к оплате")
 
     @property
     def owner(self):
