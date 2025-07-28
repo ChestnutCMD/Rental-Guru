@@ -76,7 +76,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         elif self.action == 'retrieve':
             self.permission_classes = [AllowAny]
         elif self.action == 'create':
-            self.permission_classes = [IsAuthenticated, (IsAdminOrLessor | IsFranchiseDirector | VehiclesAccess)]
+            self.permission_classes = [IsAuthenticated, (IsAdminOrLessor | VehiclesAccess)]
         elif self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAuthenticated, (IsAdminOrOwner | VehiclesAccess)]
         return super().get_permissions()

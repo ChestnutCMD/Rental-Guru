@@ -30,23 +30,14 @@ class IsAdminOrLessor(permissions.BasePermission):
         return request.user.is_authenticated and (request.user.role == 'admin' or hasattr(request.user, 'lessor')) or hasattr(request.user, 'franchise')
 
 
-class IsAdminOrOwner(ManagerObjectPermission):
+class IsAdminOrOwner(BasePermission):
     """
     Пользовательское разрешение, позволяющее редактировать объект только администраторам или владельцам объекта.
     """
     def has_object_permission(self, request, view, obj):
-        if super().has_object_permission(request, view, obj):
-            return True
-
-            # Проверка владельца
         if hasattr(obj, 'owner') and obj.owner == request.user:
             return True
 
-        if request.user.role == 'manager':
-            vehicles_access = VehiclesAccess()
-            return vehicles_access.has_permission(request, view)
-
-            # Проверка директора франшизы
         franchise = Franchise.objects.filter(director=request.user).first()
         if franchise and franchise == obj.owner.lessor.franchise:
             return True
