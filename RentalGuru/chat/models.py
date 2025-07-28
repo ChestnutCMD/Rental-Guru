@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
 from RentalGuru import settings
-from influencer.models import PromoCode
+from influencer.models import PromoCode, UsedPromoCode
 
 
 class RequestRent(models.Model):
@@ -39,9 +39,10 @@ class RequestRent(models.Model):
     delivery = models.BooleanField(default=False, verbose_name='Доставка')
     on_request = models.BooleanField(null=True, blank=True, verbose_name='Заявка по запросу')
     is_deleted = models.BooleanField(default=False, verbose_name='Удалена')
-    promocode = models.OneToOneField(PromoCode, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Активный промокод")
-    bonus = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Использованные бонусные рубли")
-    #amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Сумма к оплате")
+    promocode = models.ForeignKey(PromoCode, on_delete=models.SET_NULL, blank=True, null=True,
+                                  verbose_name="Активный промокод", related_name='request_rents')
+    bonus = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                verbose_name="Использованные бонусные рубли")
 
     @property
     def owner(self):
@@ -168,11 +169,12 @@ class RequestRent(models.Model):
 
         else:
             original = RequestRent.objects.get(pk=self.pk)
-            with transaction.atomic():
+            if original.status != 'accept' and self.status == 'accept':
+                # ИЗМЕНЕНИЕ: Сначала сохраняем, потом создаем платеж
                 super(RequestRent, self).save(*args, **kwargs)
-                if original.status != 'accept' and self.status == 'accept':
-                    # self.total_cost = self.calculate_rent_price()
+                with transaction.atomic():
                     self.create_payment()
+                return  # Выходим, чтобы избежать двойного сохранения
 
         super(RequestRent, self).save(*args, **kwargs)
 
@@ -187,6 +189,28 @@ class RequestRent(models.Model):
         if self.promocode:
             discount_amount = amount / 100 * Decimal(self.promocode.total)
             amount -= discount_amount
+
+            # ИЗМЕНЕНИЕ: Отмечаем промокод как использованный
+            used_promo = UsedPromoCode.objects.filter(
+                user=self.organizer,
+                promo_code=self.promocode
+            ).first()
+
+            if used_promo:
+                if used_promo.used:
+                    # Промокод уже был использован - это не должно происходить
+                    raise ValueError("Промокод уже был использован ранее")
+                else:
+                    # Отмечаем как использованный
+                    used_promo.used = True
+                    used_promo.save()
+            else:
+                # Если записи нет (что странно, но возможно), создаем новую
+                UsedPromoCode.objects.create(
+                    user=self.organizer,
+                    promo_code=self.promocode,
+                    used=True
+                )
 
         # Обработка бонусов
         if self.bonus:

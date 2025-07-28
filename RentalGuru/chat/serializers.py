@@ -202,11 +202,12 @@ class RequestRentSerializer(serializers.ModelSerializer):
         validated_data['organizer'] = request.user
         renter = validated_data['organizer'].renter
 
-        # Обработка промокодов
+        # ИЗМЕНЕНИЕ: Обработка промокодов
         if query_promocode:
             promo_code = check_promocode(request.user, query_promocode)
             if isinstance(promo_code, str):
                 raise serializers.ValidationError({"message": promo_code})
+
             validated_data['promocode'] = promo_code
 
         # Обработка бонусов
@@ -246,14 +247,17 @@ class RequestRentSerializer(serializers.ModelSerializer):
         representation['vehicle_type'] = instance.content_type.model
         representation['vehicle_id'] = instance.object_id
 
-        if hasattr(instance, 'prefetched_payment_amount'):
+        # ИЗМЕНЕНИЕ: Улучшенное получение amount и payment_id
+        if hasattr(instance, 'prefetched_payment_amount') and instance.prefetched_payment_amount is not None:
             representation['amount'] = instance.prefetched_payment_amount
         else:
-            payment = Payment.objects.filter(request_rent=instance).first()
-            representation['amount'] = payment.amount if payment else None
+            try:
+                payment = Payment.objects.filter(request_rent=instance).first()
+                representation['amount'] = float(payment.amount) if payment else None
+            except:
+                representation['amount'] = None
 
         if hasattr(instance, 'renter_id') and instance.renter_id:
-
             renter = None
             if hasattr(instance, '_prefetched_renter'):
                 renter = instance._prefetched_renter
@@ -263,8 +267,15 @@ class RequestRentSerializer(serializers.ModelSerializer):
                 representation['renter_first_name'] = renter.first_name
                 representation['renter_last_name'] = renter.last_name
 
-        if instance.status == 'accept' and hasattr(instance, 'prefetched_payment_id'):
-            representation['payment_id'] = instance.prefetched_payment_id
+        if instance.status == 'accept':
+            if hasattr(instance, 'prefetched_payment_id') and instance.prefetched_payment_id is not None:
+                representation['payment_id'] = instance.prefetched_payment_id
+            else:
+                try:
+                    payment = Payment.objects.filter(request_rent=instance).first()
+                    representation['payment_id'] = payment.id if payment else None
+                except:
+                    representation['payment_id'] = None
 
         return representation
 
