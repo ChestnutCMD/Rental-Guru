@@ -27,6 +27,7 @@ class BaseFilter(filters.FilterSet):
     ensurance = filters.CharFilter(field_name='ensurance')
     long_distance = filters.BooleanFilter(field_name='long_distance')
     average_rating = filters.RangeFilter(field_name='average_rating', label='Средняя оценка')
+    verified = filters.BooleanFilter(field_name='verified', label='Верифицированный транспорт')
 
     class Meta:
         abstract = True

@@ -681,6 +681,7 @@ class AllVehiclesPagination(LimitOffsetPagination):
                    OpenApiParameter("delivery", type=OpenApiTypes.BOOL, description="Доставка"),
                    OpenApiParameter("average_rating_min", type=OpenApiTypes.NUMBER, description="Минимальный рейтинг"),
                    OpenApiParameter("average_rating_max", type=OpenApiTypes.NUMBER, description="Максимальный рейтинг"),
+                   OpenApiParameter("verified", type=OpenApiTypes.BOOL, description="Верифицированный транспорт"),
                    OpenApiParameter(
                                    name="ordering",
                                    type=OpenApiTypes.STR,
