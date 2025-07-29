@@ -371,13 +371,14 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     lessor_last_name = serializers.SerializerMethodField()
     lessor_first_name = serializers.SerializerMethodField()
     lessor_avatar = serializers.SerializerMethodField()
+    lessor_telephone = serializers.SerializerMethodField()
     average_rating = serializers.FloatField(read_only=True)
 
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_rating', 'rent_prices', 'availabilities', 'is_super_host',
             'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified',
-            'lessor_last_name', 'lessor_first_name', 'lessor_avatar']
+            'lessor_last_name', 'lessor_first_name', 'lessor_avatar', 'lessor_telephone']
 
     def get_city(self, obj):
         return obj.city.title if obj.city else None
@@ -422,7 +423,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
         return obj.owner.first_name
 
     @extend_schema_field(serializers.CharField())
-    def get_lessor_first_name(self, obj):
+    def get_lessor_telephone(self, obj):
         return obj.owner.telephone if obj.owner.telephone else None
 
     @extend_schema_field(serializers.URLField())
