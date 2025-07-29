@@ -376,7 +376,7 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'brand', 'model', 'average_rating', 'rent_prices', 'availabilities', 'is_super_host',
             'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified',
-            ]
+            'lessor']
 
     def get_city(self, obj):
         return obj.city.title if obj.city else None
