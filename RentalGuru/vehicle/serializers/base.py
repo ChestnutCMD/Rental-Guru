@@ -368,17 +368,15 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     free_deposit = serializers.SerializerMethodField()
     is_super_host = serializers.SerializerMethodField()
     city = serializers.StringRelatedField()
-    lessor_last_name = serializers.SerializerMethodField()
-    lessor_first_name = serializers.SerializerMethodField()
-    lessor_avatar = serializers.SerializerMethodField()
-    lessor_telephone = serializers.SerializerMethodField()
     average_rating = serializers.FloatField(read_only=True)
+    lessor = serializers.SerializerMethodField()
+
 
     class Meta:
         fields = [
             'id', 'brand', 'model', 'average_rating', 'rent_prices', 'availabilities', 'is_super_host',
             'photos', 'vehicle_type', 'free_delivery', 'free_deposit', 'latitude', 'longitude', 'city', 'verified',
-            'lessor_last_name', 'lessor_first_name', 'lessor_avatar', 'lessor_telephone']
+            ]
 
     def get_city(self, obj):
         return obj.city.title if obj.city else None
@@ -414,27 +412,17 @@ class BaseVehicleListSerializer(serializers.ModelSerializer):
     def get_is_super_host(self, obj):
         return obj.owner.lessor.super_host
 
-    @extend_schema_field(serializers.CharField())
-    def get_lessor_last_name(self, obj):
-        return obj.owner.last_name
-
-    @extend_schema_field(serializers.CharField())
-    def get_lessor_first_name(self, obj):
-        return obj.owner.first_name
-
-    @extend_schema_field(serializers.CharField())
-    def get_lessor_telephone(self, obj):
-        return obj.owner.telephone if obj.owner.telephone else None
-
-    @extend_schema_field(serializers.URLField())
-    def get_lessor_avatar(self, obj):
-        avatar = getattr(obj.owner, "avatar", None)
-        if avatar and avatar.name:
-            try:
-                return avatar.url
-            except ValueError:
-                return None
-        return None
+    @extend_schema_field(serializers.DictField())
+    def get_lessor(self, obj):
+        owner = obj.owner
+        return {
+            "id": owner.lessor.id,
+            "user_id": owner.id,
+            "first_name": owner.first_name,
+            "last_name": owner.last_name,
+            "telephone": owner.telephone if owner.telephone else None,
+            "avatar": owner.avatar.url if getattr(owner, "avatar", None) and owner.avatar.name else None
+        }
 
 
 class VehicleClassSerializer(serializers.ModelSerializer):
