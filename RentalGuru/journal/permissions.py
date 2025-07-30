@@ -6,10 +6,6 @@ from manager.permissions import RentOrdersAccess, RentJournalAccess
 
 class IsAdminManagerOrFranchiseOwner(permissions.BasePermission):
     def has_permission(self, request, view):
-
-        if request.user.role in ['admin', 'manager']:
-            return True
-
         return Franchise.objects.filter(director=request.user).exists()
 
 
