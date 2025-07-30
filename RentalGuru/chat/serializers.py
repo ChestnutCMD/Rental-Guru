@@ -167,7 +167,7 @@ class TripSerializer(serializers.ModelSerializer):
             if request.user != instance.organizer and request.user.role not in ['admin', 'manager'] and request.user != instance.vehicle.owner:
                 raise serializers.ValidationError({"detail": "Вы не можете завершить поездку."})
 
-            if now < instance.end_date and not instance.chat.request_rent.on_request:
+            if now() < instance.end_date and not instance.chat.request_rent.on_request:
                 vehicle = instance.vehicle
 
                 remaining_period = {
