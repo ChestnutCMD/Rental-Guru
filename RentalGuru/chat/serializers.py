@@ -171,21 +171,27 @@ class TripSerializer(serializers.ModelSerializer):
                 vehicle = instance.vehicle
 
                 remaining_period = {
-                    'start_date': now,
+                    'start_date': now().date(),
                     'end_date': instance.end_date
                 }
 
-                # Получить текущие периоды доступности (не по запросу)
                 current_availabilities = Availability.objects.filter(vehicle=vehicle, on_request=False)
                 existing_periods = [
-                    {'start_date': a.start_date, 'end_date': a.end_date}
+                    {
+                        'start_date': a.start_date,
+                        'end_date': a.end_date
+                    }
                     for a in current_availabilities
                 ]
 
-                # Добавить оставшееся время
                 existing_periods.append(remaining_period)
 
-                # Объединяем и пересоздаём периоды
+                for p in existing_periods:
+                    if hasattr(p['start_date'], 'date'):
+                        p['start_date'] = p['start_date'].date()
+                    if hasattr(p['end_date'], 'date'):
+                        p['end_date'] = p['end_date'].date()
+
                 merged = merge_periods(existing_periods)
                 current_availabilities.delete()
 
