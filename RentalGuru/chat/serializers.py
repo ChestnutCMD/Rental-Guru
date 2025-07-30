@@ -119,8 +119,6 @@ class TripSerializer(serializers.ModelSerializer):
                 renter = request_rent.organizer.renter
                 renter.bonus_account += request_rent.bonus
                 renter.save()
-                request_rent.bonus = 0
-                request_rent.save(update_fields=['bonus'])
 
             # Отменяем запись об использовании промокода
             if request_rent.promocode:
@@ -250,7 +248,7 @@ class RequestRentSerializer(serializers.ModelSerializer):
         validated_data['organizer'] = request.user
         renter = validated_data['organizer'].renter
 
-        # ИЗМЕНЕНИЕ: Обработка промокодов
+        # Обработка промокодов
         if query_promocode:
             promo_code = check_promocode(request.user, query_promocode)
             if isinstance(promo_code, str):
@@ -262,8 +260,19 @@ class RequestRentSerializer(serializers.ModelSerializer):
         if bonus:
             if renter.bonus_account < bonus:
                 raise serializers.ValidationError({"message": "На бонусном счете недостаточно средств"})
-            else:
-                validated_data['bonus'] = bonus
+            temp_instance = RequestRent(**validated_data)
+            vehicle = content_type.get_object_for_this_type(id=vehicle_id)
+            temp_instance.vehicle = vehicle
+            temp_instance.total_cost = temp_instance.calculate_rent_price()
+
+            commission = vehicle.owner.lessor.commission
+            amount = Decimal(temp_instance.total_cost) * commission / Decimal(100)
+
+            max_bonus_allowed = amount - Decimal('1.00')
+            if max_bonus_allowed > 0 and bonus > max_bonus_allowed:
+                bonus = max_bonus_allowed
+
+            validated_data['bonus'] = bonus
 
         return super().create(validated_data)
 
