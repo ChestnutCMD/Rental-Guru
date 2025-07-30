@@ -240,7 +240,7 @@ class Vehicle(PolymorphicModel):
     average_rating = models.FloatField(default=0, verbose_name='Средний рейтинг')
     verified = models.BooleanField(default=False, verbose_name='Верифицирован')
     last_update = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
-
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     payment_method = models.ManyToManyField(PaymentMethod, related_name='vehicles', verbose_name='Способ оплаты')
     count_trip = models.IntegerField(default=0, verbose_name='Количество поездок')
 

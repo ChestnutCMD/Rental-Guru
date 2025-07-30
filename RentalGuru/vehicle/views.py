@@ -101,13 +101,13 @@ class BaseViewSet(viewsets.ModelViewSet):
                                "`price`, `-price`, "
                                "`count_trip`, `-count_trip`, "
                                "`average_rating`, `-average_rating`, "
-                               "`last_update`, `-last_update`."
+                               "`created_at`, `-created_at`."
                        ),
                        enum=[
                            "price", "-price",
                            "count_trip", "-count_trip",
                            "average_rating", "-average_rating",
-                           "last_update", "-last_update"
+                           "created_at", "-created_at"
                        ],
                    )
                ],
@@ -116,8 +116,8 @@ class AutoViewSet(BaseViewSet):
     queryset = Auto.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = AutoFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         user = self.request.user
@@ -164,13 +164,13 @@ class AutoViewSet(BaseViewSet):
                                "`price`, `-price`, "
                                "`count_trip`, `-count_trip`, "
                                "`average_rating`, `-average_rating`, "
-                               "`last_update`, `-last_update`."
+                               "`created_at`, `-created_at`."
                        ),
                        enum=[
                            "price", "-price",
                            "count_trip", "-count_trip",
                            "average_rating", "-average_rating",
-                           "last_update", "-last_update"
+                           "created_at", "-created_at"
                        ],
                    )
                ],
@@ -179,8 +179,8 @@ class BikeViewSet(BaseViewSet):
     queryset = Bike.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = BikeFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         user = self.request.user
@@ -226,13 +226,13 @@ class BikeViewSet(BaseViewSet):
                                "`price`, `-price`, "
                                "`count_trip`, `-count_trip`, "
                                "`average_rating`, `-average_rating`, "
-                               "`last_update`, `-last_update`."
+                               "`created_at`, `-created_at`."
                        ),
                        enum=[
                            "price", "-price",
                            "count_trip", "-count_trip",
                            "average_rating", "-average_rating",
-                           "last_update", "-last_update"
+                           "created_at", "-created_at"
                        ],
                    )
                ],
@@ -241,8 +241,8 @@ class ShipViewSet(BaseViewSet):
     queryset = Ship.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = ShipFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         user = self.request.user
@@ -288,13 +288,13 @@ class ShipViewSet(BaseViewSet):
                                "`price`, `-price`, "
                                "`count_trip`, `-count_trip`, "
                                "`average_rating`, `-average_rating`, "
-                               "`last_update`, `-last_update`."
+                               "`created_at`, `-created_at`."
                        ),
                        enum=[
                            "price", "-price",
                            "count_trip", "-count_trip",
                            "average_rating", "-average_rating",
-                           "last_update", "-last_update"
+                           "created_at", "-created_at"
                        ],
                    )
                ],
@@ -303,8 +303,8 @@ class HelicopterViewSet(BaseViewSet):
     queryset = Helicopter.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = HelicopterFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         user = self.request.user
@@ -350,13 +350,13 @@ class HelicopterViewSet(BaseViewSet):
                                "`price`, `-price`, "
                                "`count_trip`, `-count_trip`, "
                                "`average_rating`, `-average_rating`, "
-                               "`last_update`, `-last_update`."
+                               "`created_at`, `-created_at`."
                        ),
                        enum=[
                            "price", "-price",
                            "count_trip", "-count_trip",
                            "average_rating", "-average_rating",
-                           "last_update", "-last_update"
+                           "created_at", "-created_at"
                        ],
                    )
                ],
@@ -365,8 +365,8 @@ class SpecialTechnicViewSet(BaseViewSet):
     queryset = SpecialTechnic.objects.all()
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = SpecialTechnicFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         user = self.request.user
@@ -692,13 +692,13 @@ class AllVehiclesPagination(LimitOffsetPagination):
                                            "`price`, `-price`, "
                                            "`count_trip`, `-count_trip`, "
                                            "`average_rating`, `-average_rating`, "
-                                           "`last_update`, `-last_update`."
+                                           "`created_at`, `-created_at`."
                                    ),
                                    enum=[
                                        "price", "-price",
                                        "count_trip", "-count_trip",
                                        "average_rating", "-average_rating",
-                                       "last_update", "-last_update"
+                                       "created_at", "-created_at"
                                    ],
                                )
                            ],
@@ -708,8 +708,8 @@ class AllVehiclesListView(ListAPIView):
     pagination_class = AllVehiclesPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = BaseFilter
-    ordering_fields = ['price', 'count_trip', 'average_rating', 'last_update']
-    ordering = ['-last_update']
+    ordering_fields = ['price', 'count_trip', 'average_rating', 'created_at']
+    ordering = ['-average_rating']
 
     def get_queryset(self):
         request = self.request
