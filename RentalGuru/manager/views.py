@@ -74,7 +74,10 @@ class ManagerViewSet(ModelViewSet):
 
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
-            if manager and manager.access_types.filter(name='staff').exists():
-                return Manager.objects.all()
+            if manager:
+                if manager.access_types.filter(name='staff').exists():
+                    return Manager.objects.all()
+                return Manager.objects.filter(pk=manager.pk)
 
+        # Для всех остальных ничего
         return Manager.objects.none()
