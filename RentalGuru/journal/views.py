@@ -126,7 +126,7 @@ class BaseTripView(ListAPIView):
     ]
 )
 class TripByCityView(BaseTripView):
-    permission_classes = [RentJournalPermission | IsAdminManagerOrFranchiseOwner]
+    permission_classes = [IsAuthenticated, (RentJournalPermission | IsAdminManagerOrFranchiseOwner)]
     statuses = ['finished', 'canceled']
 
 
@@ -142,5 +142,5 @@ class TripByCityView(BaseTripView):
     ]
 )
 class CurrentTripByCityView(BaseTripView):
-    permission_classes = [RentOrdersPermission | IsAdminManagerOrFranchiseOwner]
+    permission_classes = [IsAuthenticated, (RentOrdersPermission | IsAdminManagerOrFranchiseOwner)]
     statuses = ['current', 'started']
