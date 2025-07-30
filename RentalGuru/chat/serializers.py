@@ -119,6 +119,8 @@ class TripSerializer(serializers.ModelSerializer):
                 renter = request_rent.organizer.renter
                 renter.bonus_account += request_rent.bonus
                 renter.save()
+                request_rent.bonus = 0
+                request_rent.save(update_fields=['bonus'])
 
             # Отменяем запись об использовании промокода
             if request_rent.promocode:
