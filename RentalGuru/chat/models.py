@@ -121,31 +121,31 @@ class RequestRent(models.Model):
             raise ValueError("Количество дней аренды должно быть положительным.")
 
         period_priorities = [
-            ('day', 1),
-            ('week', 7),
-            ('month', 30),
             ('year', 365),
+            ('month', 30),
+            ('week', 7),
+            ('day', 1),
         ]
 
-        # Проверка, есть ли подходящие периоды
-        rent_price = None
-        for period, period_days in period_priorities:
+        suitable_periods = [(period, days) for period, days in period_priorities if rental_days >= days]
+
+        if not suitable_periods:
+            raise ValueError("Не найден подходящий период аренды для текущего количества дней.")
+
+        for period, period_days in suitable_periods:
             rent_price = RentPrice.objects.filter(vehicle=self.vehicle, name=period).first()
             if rent_price:
                 break
-
-        if not rent_price:
+        else:
             raise ValueError("Не найдена цена аренды для указанного транспортного средства.")
 
-        # Вычисление общей стоимости аренды (оригинальная логика)
-        period_days = next(days for period, days in period_priorities if period == rent_price.name)
         total_cost = (rental_days / period_days) * float(rent_price.total)
 
-        # Добавление стоимости доставки и начисление комиссии на доставку
-        if self.delivery and self.delivery_cost > 0:
+        if self.delivery:
             total_cost += float(self.vehicle.price_delivery)
 
         return total_cost
+
 
     def clean(self):
         super().clean()
