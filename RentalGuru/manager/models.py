@@ -60,7 +60,7 @@ class AccessType(models.Model):
 class Manager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='manager')
     password_updated_at = models.DateTimeField(default=now, verbose_name="Дата изменения пароля")
-    cities = models.ManyToManyField(City, blank=True, null=True, verbose_name='Города', related_name='managers')
+    cities = models.ManyToManyField(City, blank=True, verbose_name='Города', related_name='managers')
     access_types = models.ManyToManyField(AccessType, blank=True, verbose_name='Типы доступа', related_name='managers')
 
     def __str__(self):
