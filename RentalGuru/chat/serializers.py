@@ -148,7 +148,7 @@ class TripSerializer(serializers.ModelSerializer):
         if previous_status != 'finished' and new_status == 'finished':
 
             # Проверка доступа
-            if request.user != instance.organizer and request.user.role not in ['admin', 'manager']:
+            if request.user != instance.organizer and request.user.role not in ['admin', 'manager'] and request.user != instance.vehicle.owner:
                 raise serializers.ValidationError({"detail": "Вы не можете завершить поездку."})
 
             Notification.objects.create(
