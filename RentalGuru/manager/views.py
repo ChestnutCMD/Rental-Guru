@@ -75,9 +75,18 @@ class ManagerViewSet(ModelViewSet):
         if user.role == 'manager' and hasattr(user, 'manager'):
             manager = user.manager
             if manager:
-                if manager.access_types.filter(name='staff').exists():
-                    return Manager.objects.all()
+                action = getattr(self, 'action', None)
+
+                if action in ['list', 'retrieve']:
+                    if manager.access_types.filter(name='staff').exists():
+                        return Manager.objects.all()
+                elif action in ['create', 'update', 'partial_update']:
+                    if manager.access_types.filter(name='staff', permission='edit').exists():
+                        return Manager.objects.all()
+                elif action == 'destroy':
+                    if manager.access_types.filter(name='staff', permission='delete').exists():
+                        return Manager.objects.all()
+
                 return Manager.objects.filter(pk=manager.pk)
 
-        # Для всех остальных ничего
         return Manager.objects.none()
