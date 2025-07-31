@@ -138,7 +138,8 @@ class AutoViewSet(BaseViewSet):
                     queryset = queryset.filter(verified=True)
         else:
             queryset = queryset.filter(verified=True)
-
+        if not self.request.query_params.get('ordering'):
+            queryset = queryset.order_by('-average_rating')
         return queryset.distinct()
 
     def get_serializer_class(self):
