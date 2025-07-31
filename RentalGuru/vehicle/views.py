@@ -715,10 +715,15 @@ class AllVehiclesListView(ListAPIView):
     def get_queryset(self):
         request = self.request
         user = request.user
-        ordering = request.GET.get('ordering', 'price')
+
+        # если ordering передан — используем его, иначе из self.ordering
+        ordering = request.GET.get('ordering') or self.ordering[0]
+
         vehicle_type = request.GET.get('vehicle_type')
 
-        models_to_query = VEHICLE_MODELS.items() if not vehicle_type else [(vehicle_type.lower(), VEHICLE_MODELS.get(vehicle_type.lower()))]
+        models_to_query = VEHICLE_MODELS.items() if not vehicle_type else [
+            (vehicle_type.lower(), VEHICLE_MODELS.get(vehicle_type.lower()))
+        ]
 
         all_vehicles = []
         for type_name, config in models_to_query:
@@ -728,7 +733,7 @@ class AllVehiclesListView(ListAPIView):
 
             base_qs = model_cls.objects.all().annotate(price=Min('rent_prices__price'))
 
-            # Фильтрация по пользователю
+            # фильтрация по пользователю
             if user.is_authenticated:
                 if hasattr(user, 'renter'):
                     base_qs = base_qs.filter(verified=True)
@@ -737,13 +742,12 @@ class AllVehiclesListView(ListAPIView):
             else:
                 base_qs = base_qs.filter(verified=True)
 
-
-            # Фильтрация по lessor_id
+            # фильтрация по lessor_id
             lessor_id = request.GET.get("lessor_id")
             if lessor_id:
                 base_qs = base_qs.filter(owner__lessor__id=lessor_id)
 
-            # Применяем фильтры из BaseFilter
+            # фильтрация через BaseFilter
             filterset = self.filterset_class(request.GET, queryset=base_qs)
             if filterset.is_valid():
                 base_qs = filterset.qs
@@ -759,8 +763,11 @@ class AllVehiclesListView(ListAPIView):
             base_qs = base_qs.order_by(ordering)
             all_vehicles.extend(list(base_qs))
 
-        # Финальная сортировка всех объектов
-        return sorted(all_vehicles, key=lambda obj: getattr(obj, ordering.strip('-')), reverse=ordering.startswith('-'))
+        return sorted(
+            all_vehicles,
+            key=lambda obj: getattr(obj, ordering.strip('-')),
+            reverse=ordering.startswith('-')
+        )
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
