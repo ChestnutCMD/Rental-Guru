@@ -946,3 +946,12 @@ class UpdatePhotoOrderView(APIView):
         update_photo_order(photo.vehicle, old_order, new_order)
 
         return Response({"detail": "Порядок фотографий обновлен"}, status=status.HTTP_200_OK)
+
+
+@extend_schema(summary="Количество неверифицированного транспорта")
+class UnverifiedVehicleCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        count = Vehicle.objects.filter(verified=False).count()
+        return Response({"unverified_vehicle_count": count})

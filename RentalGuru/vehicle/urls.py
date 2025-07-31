@@ -7,7 +7,7 @@ from .views import VehicleBrandViewSet, VehicleModelViewSet, AutoViewSet, BikeVi
     AutoTransmissionListView, AutoFuelTypeListView, AutoBodyTypeListView, VehicleClassListView, AllVehiclesListView, \
     VehiclePhotoDeleteView, VehicleSearchViewSet, DeleteVehicleDocumentView, UpdatePhotoOrderView, \
     AutoFeaturesFunctionsListView, BikeFeaturesFunctionsListView, ShipFeaturesFunctionsListView, ShipTypeListView, \
-    TechnicTypeListView, BikeBodyTypeListView
+    TechnicTypeListView, BikeBodyTypeListView, UnverifiedVehicleCountView
 
 router = DefaultRouter()
 router.register(r'brands', VehicleBrandViewSet)
@@ -46,4 +46,5 @@ urlpatterns = [
     path('photos/<int:photo_id>/delete/', VehiclePhotoDeleteView.as_view(), name='delete_vehicle_photo'),
     path('photos/update_order/', UpdatePhotoOrderView.as_view(), name='update_order_photo'),
     path('documents/delete/<int:document_id>/', DeleteVehicleDocumentView.as_view(), name='delete-vehicle-document'),
+    path('count_unverified/', UnverifiedVehicleCountView.as_view(), name='count_unverified'),
 ]
