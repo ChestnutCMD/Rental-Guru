@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.utils.timezone import now
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -460,19 +461,24 @@ class IssueSupportSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['request'].user
-        chat, created = ChatSupport.objects.get_or_create(creator=user)
-        topic_name = validated_data.pop('topic_name')
-        topic, created = TopicSupport.objects.get_or_create(name=topic_name)
+        with transaction.atomic():
+            chat, created = ChatSupport.objects.get_or_create(creator=user)
 
-        if created:
-            topic.count = 1
-        else:
-            topic.count += 1
-        topic.save()
+            message_support = MessageSupport.objects.create(sender=user, chat=chat, content=validated_data['description'])
+            message_support.save()
 
-        issue = IssueSupport.objects.create(chat=chat, topic=topic, **validated_data)
+            topic_name = validated_data.pop('topic_name')
+            topic, created = TopicSupport.objects.get_or_create(name=topic_name)
 
-        return issue
+            if created:
+                topic.count = 1
+            else:
+                topic.count += 1
+            topic.save()
+
+            issue = IssueSupport.objects.create(chat=chat, topic=topic, **validated_data)
+
+            return issue
 
 
 class ChatSupportSerializer(serializers.ModelSerializer):

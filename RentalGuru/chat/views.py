@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Prefetch, OuterRef, Exists, Subquery, Max
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, permissions, status, filters
@@ -19,7 +20,7 @@ from payment.models import Payment
 from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic, Availability, Vehicle
 from .filters import MessageFilter, TripFilter, TripFilterBackend, RequestRentFilter
 from .models import Trip, Chat, Message, RequestRent, TopicSupport, ChatSupport, MessageSupport, IssueSupport
-from .permissions import IsAdminOrOwner, ChatsPermission
+from .permissions import IsAdminOrOwner, ChatsPermission, ForChatPermission
 from .serializers import TripSerializer, ChatSerializer, MessageSerializer, RequestRentSerializer, \
     TopicSupportSerializer, ChatSupportSerializer, MessageSupportSerializer, IssueSupportSerializer, \
     ChatSupportRetrieveSerializer
@@ -548,12 +549,13 @@ class ChatSupportPagination(LimitOffsetPagination):
                                                   }  
                     """)
 class ChatSupportListView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [ForChatPermission | ChatsAccess]
+    ordering = ('-timestamp',)
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.role in ['admin', 'manager']:
-            chats = ChatSupport.objects.select_related(
+            last_message_subquery = MessageSupport.objects.filter(chat_id=OuterRef('pk')).order_by('-timestamp').values("timestamp")[:1]
+            chats = ChatSupport.objects.annotate(last_message_timestemp=Coalesce(Subquery(last_message_subquery), datetime(1970, 1, 1))).order_by("-last_message_timestemp").select_related(
                 'creator',
                 'creator__lessor',
                 'creator__renter',
