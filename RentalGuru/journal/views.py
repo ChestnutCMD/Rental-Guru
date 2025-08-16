@@ -44,9 +44,15 @@ class BaseTripView(ListAPIView):
             'organizer__renter'
         )
 
-        if user.role in ['admin', 'manager']:
+        if user.role == 'admin':
             return base_qs
-
+        if user.role == 'manager':
+            cities = user.manager.cities.all().values_list('id', flat=True)
+            if cities:
+                vehicles = Vehicle.objects.filter(city__in=cities)
+                return base_qs.filter(object_id__in=vehicles.values_list('id', flat=True))
+            else:
+                return base_qs
         try:
             franchise = Franchise.objects.get(director=user)
         except Franchise.DoesNotExist:

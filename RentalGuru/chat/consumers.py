@@ -217,7 +217,7 @@ class BaseChatConsumer(AsyncWebsocketConsumer):
             message_data = self.format_message(message, user)
 
             # Уведомления для оффлайн пользователей
-            await self.notify_offline_users(user.id)
+            # await self.notify_offline_users(user.id)
 
             # Отправление сообщения всем участникам чата
             await self.channel_layer.group_send(
