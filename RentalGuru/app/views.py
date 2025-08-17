@@ -266,6 +266,22 @@ class UserViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response({"message": "Код подтверждения отправлен на вашу почту."}, status=status.HTTP_200_OK)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if hasattr(instance, 'lessor'):
+            from vehicle.models import Auto, Bike, Ship, Helicopter, SpecialTechnic
+
+            Auto.objects.filter(owner=instance).delete()
+            Bike.objects.filter(owner=instance).delete()
+            Ship.objects.filter(owner=instance).delete()
+            Helicopter.objects.filter(owner=instance).delete()
+            SpecialTechnic.objects.filter(owner=instance).delete()
+
+            print(f"Удален транспорт пользователя {instance.id}")
+
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @extend_schema(summary="Документы арендатора", description="title принимает passport или "
                                                            "license(Водительское уд.). Для license обязательно "
