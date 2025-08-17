@@ -106,12 +106,6 @@ class Lessor(models.Model):
         vehicles_count = vehicles.count()
         vehicles.delete()
 
-    def delete(self, using=None, keep_parents=False):
-        from vehicle.models import Vehicle
-        Vehicle.objects.filter(owner=self.user).delete()
-
-        return super().delete(using=using, keep_parents=keep_parents)
-
     def __str__(self):
         return str(self.user)
 
