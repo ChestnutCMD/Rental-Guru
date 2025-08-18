@@ -45,7 +45,10 @@ class LessorReportView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-
+        if request.user.role == 'manager':
+            cities = request.user.manager.cities.values_list('id', flat=True)
+            if cities.exists():
+                queryset = queryset.filter(user__vehicle__city__in=cities).distinct()
         page = self.paginate_queryset(queryset)
         if page is not None:
             queryset_to_serialize = page
@@ -211,6 +214,10 @@ class FranchiseReportViewV2(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        if request.user.role == 'manager':
+            cities = request.user.manager.cities.all().values_list('id', flat=True)
+            if cities:
+                queryset = queryset.filter(city__in=cities)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
