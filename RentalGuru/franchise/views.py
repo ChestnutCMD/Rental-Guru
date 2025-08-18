@@ -532,10 +532,16 @@ class LessorListView(APIView):
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, format=None):
+        user = request.user
         lessors = Lessor.objects.all()
+        if user.role == 'manager':
+            cities = user.manager.cities.all().values_list('id', flat=True)
+            if cities:
+                lessors = Lessor.objects.filter(user__vehicle__city__in=cities).distinct()
+
         pagination_class = CustomLimitOffsetPagination
         paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(lessors, request)
+        paginated_queryset = paginator.paginate_queryset(lessors.select_related("user", "franchise", "influencer"), request)
         serializer = LessorListSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
 
