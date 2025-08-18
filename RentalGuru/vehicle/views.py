@@ -739,6 +739,10 @@ class AllVehiclesListView(ListAPIView):
                     base_qs = base_qs.filter(verified=True)
                 elif hasattr(user, 'lessor'):
                     base_qs = base_qs.filter(owner=user)
+                elif hasattr(user, 'manager'):
+                    cities = user.manager.cities.all().values_list('id', flat=True)
+                    if cities:
+                        base_qs = base_qs.filter(city__in=cities)
             else:
                 base_qs = base_qs.filter(verified=True)
 
