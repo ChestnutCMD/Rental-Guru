@@ -2,20 +2,20 @@ from django.contrib import admin
 from .models import Manager, ManagerDocuments, AccessType
 
 
-class AccessTypeInline(admin.TabularInline):
-    model = Manager.access_types.through
-    extra = 1
-
-
-class CityInline(admin.TabularInline):
-    model = Manager.cities.through
-    extra = 1
+# class AccessTypeInline(admin.TabularInline):
+#     model = Manager.access_types.through
+#     extra = 1
+#
+#
+# class CityInline(admin.TabularInline):
+#     model = Manager.cities.through
+#     extra = 1
 
 
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'get_cities', 'get_access_types_count')
-    inlines = [CityInline, AccessTypeInline]
+    #inlines = [CityInline, AccessTypeInline]
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'user__email')
     list_filter = ('cities', 'access_types')
     filter_horizontal = ('cities', 'access_types')

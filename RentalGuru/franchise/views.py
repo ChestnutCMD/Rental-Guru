@@ -149,7 +149,12 @@ class FranchiseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['admin', 'manager']:
+        if user.role == 'admin':
+            return self.queryset
+        elif hasattr(user, 'manager'):
+            cities = user.manager.cities.all().values_list('id', flat=True)
+            if cities:
+                return Franchise.objects.filter(city__in=cities)
             return self.queryset
         elif hasattr(user, 'franchise'):
             return Franchise.objects.filter(director=user)
