@@ -2,7 +2,7 @@ from datetime import timedelta
 from enum import Enum
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -535,13 +535,17 @@ class LessorListView(APIView):
         user = request.user
         lessors = Lessor.objects.all()
         if user.role == 'manager':
-            cities = user.manager.cities.all().values_list('id', flat=True)
-            if cities:
-                lessors = Lessor.objects.filter(user__vehicle__city__in=cities).distinct()
+            cities = user.manager.cities.values_list('id', flat=True)
+            if cities.exists():
+                lessors = lessors.filter(user__vehicle__city__in=cities).distinct()
 
-        pagination_class = CustomLimitOffsetPagination
+        lessors = lessors.select_related("user", "franchise").annotate(
+            count_vehicles=Count("user__vehicle", distinct=True)
+        )
+
         paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(lessors.select_related("user", "franchise", "influencer"), request)
+        paginated_queryset = paginator.paginate_queryset(lessors, request)
+
         serializer = LessorListSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
 

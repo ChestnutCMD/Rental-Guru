@@ -376,7 +376,7 @@ class LessorListSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name')
     avatar = serializers.ImageField(source='user.avatar')
     telephone = serializers.CharField(source='user.telephone')
-    count_vehicles = serializers.SerializerMethodField()
+    count_vehicles = serializers.IntegerField(read_only=True)
     user_id = serializers.IntegerField(source='user.id')
 
     class Meta:
@@ -385,9 +385,6 @@ class LessorListSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'first_name', 'last_name', 'avatar', 'telephone', 'count_trip', 'franchise',
             'commission', 'count_vehicles'
                   ]
-
-    def get_count_vehicles(self, obj):
-        return Vehicle.objects.filter(owner=obj.user).count()
 
 
 class PaymentSerializer(serializers.ModelSerializer):
