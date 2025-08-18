@@ -958,4 +958,8 @@ class UnverifiedVehicleCountView(APIView):
 
     def get(self, request):
         count = Vehicle.objects.filter(verified=False).count()
+        if request.user.role == 'manager':
+            cities = request.user.manager.cities.values_list('id', flat=True)
+            if cities:
+                count = Vehicle.objects.filter(verified=False, city__in=cities).count()
         return Response({"unverified_vehicle_count": count})
