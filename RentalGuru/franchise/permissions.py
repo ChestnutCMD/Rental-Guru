@@ -98,15 +98,12 @@ class IsAdminManagerOrLessorOrFranchiseDirector(BasePermission):
         return False
 
 
-# Новые permissions для менеджеров с типами доступа
 class LessorsPermission(LessorsAccess):
     """Permission для доступа к арендодателям"""
     
     def has_object_permission(self, request, view, obj):
-        # Сначала проверяем базовые права доступа
         if not self.has_permission(request, view):
             return False
-        # Если права есть, применяем стандартную логику
         return ManagerObjectPermission().has_object_permission(request, view, obj)
 
 
@@ -114,8 +111,6 @@ class DepartmentsPermission(DepartmentsAccess):
     """Permission для доступа к подразделениям"""
     
     def has_object_permission(self, request, view, obj):
-        # Сначала проверяем базовые права доступа
         if not self.has_permission(request, view):
             return False
-        # Если права есть, применяем стандартную логику
         return ManagerObjectPermission().has_object_permission(request, view, obj)

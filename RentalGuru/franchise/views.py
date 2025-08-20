@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 
 from app.models import Lessor
 from chat.models import Trip, Chat, RequestRent
+from manager.permissions import IsDirector
 from payment.models import Payment
 from .serializers.franchise import PaymentSerializer
 from vehicle.models import Vehicle, Auto, Bike, Ship, Helicopter, SpecialTechnic
@@ -530,7 +531,7 @@ class RequestAddLessorViewSet(viewsets.ModelViewSet):
 
 @extend_schema(summary="Список арендодателей", description="Список арендодателей")
 class LessorListView(APIView):
-    permission_classes = [LessorsPermission]
+    permission_classes = [LessorsPermission | IsDirector]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, format=None):
