@@ -309,7 +309,9 @@ class LessorsByFranchiseView(APIView):
         except Franchise.DoesNotExist:
             return Response({'detail': 'Franchise not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        lessors = Lessor.objects.filter(franchise=franchise)
+        lessors = Lessor.objects.filter(franchise=franchise).select_related("user", "franchise").annotate(
+            count_vehicles=Count("user__vehicle", distinct=True)
+        )
         self.check_object_permissions(request, franchise)
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(lessors, request)
