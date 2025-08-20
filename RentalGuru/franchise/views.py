@@ -531,7 +531,7 @@ class RequestAddLessorViewSet(viewsets.ModelViewSet):
 
 @extend_schema(summary="Список арендодателей", description="Список арендодателей")
 class LessorListView(APIView):
-    permission_classes = [LessorsPermission | IsDirector]
+    permission_classes = [LessorsPermission | IsDirectorOrAdminForGet]
     pagination_class = CustomLimitOffsetPagination
 
     def get(self, request, format=None):
