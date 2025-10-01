@@ -290,10 +290,25 @@ class BaseVehicleCreateSerializer(BaseVehicleSerializer):
         photos_data = validated_data.pop('photos', [])
         min_rent_day = validated_data.get('min_rent_day', '')
         max_rent_day = validated_data.get('max_rent_day', '')
-        if min_rent_day > max_rent_day:
-            raise serializers.ValidationError(f"Минимальное количество дней для аренды должно быть меньше "
-                                              f"максимального количества дней. min_rent_day = {min_rent_day}, "
-                                              f"max_rent_day = {max_rent_day}")
+
+        if min_rent_day is not None and max_rent_day is not None:
+            try:
+                min_rent_day = int(min_rent_day)
+                max_rent_day = int(max_rent_day)
+
+                if min_rent_day > max_rent_day:
+                    raise serializers.ValidationError(
+                        f"Минимальное количество дней для аренды должно быть меньше "
+                        f"максимального количества дней. min_rent_day = {min_rent_day}, "
+                        f"max_rent_day = {max_rent_day}"
+                    )
+
+                validated_data['min_rent_day'] = min_rent_day
+                validated_data['max_rent_day'] = max_rent_day
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    "min_rent_day и max_rent_day должны быть числами"
+                )
 
         if any(not availability.get('on_request', True) for availability in availabilities_data):
             availabilities_data = merge_periods(availabilities_data)
